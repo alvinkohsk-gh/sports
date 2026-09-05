@@ -19,6 +19,17 @@ const DEBUG_SCREENSHOT_PATH = path.join(DEBUG_DIR, 'debug-sgpools-screenshot.png
 // headless browser instead and reads the DOM after it settles.
 const SPORTS_URL = 'https://online.singaporepools.com/en/sports';
 
+// Vercel's /tmp (where DEBUG_HTML_PATH/DEBUG_SCREENSHOT_PATH write to) isn't
+// reachable from outside the function, so the last render is also kept here
+// in memory — /api/debug reads it via getLastCapture() to expose a real
+// sample of the page for building actual selectors, without needing
+// filesystem access to the serverless instance.
+let lastCapture = null;
+
+function getLastCapture() {
+  return lastCapture;
+}
+
 /**
  * Normalizes one fixture into the shape the rest of the app expects.
  */
@@ -106,6 +117,16 @@ async function renderWithBrowser() {
 
     const html = await page.content();
 
+    lastCapture = {
+      capturedAt: new Date().toISOString(),
+      htmlLength: html.length,
+      htmlSample: html.slice(0, 20000),
+      capturedJson: capturedJson.map((c) => ({
+        url: c.url,
+        bodySample: JSON.stringify(c.body).slice(0, 5000),
+      })),
+    };
+
     if (DEBUG) {
       try {
         fs.writeFileSync(DEBUG_HTML_PATH, html);
@@ -132,6 +153,7 @@ async function fetchOpenFixtures() {
     rendered = await renderWithBrowser();
   } catch (err) {
     console.error('[singaporePools] browser render failed:', err.message);
+    lastCapture = { capturedAt: new Date().toISOString(), renderError: err.message };
     return [];
   }
 
@@ -201,4 +223,4 @@ function extractFixturesFromJson(data) {
   return results;
 }
 
-module.exports = { fetchOpenFixtures, extractFixturesFromJson, parseRenderedHtml, coerceSgTimeToISO };
+module.exports = { fetchOpenFixtures, extractFixturesFromJson, parseRenderedHtml, coerceSgTimeToISO, getLastCapture };

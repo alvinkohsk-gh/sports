@@ -3,6 +3,7 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const { refresh, getState } = require('./services/aggregator');
+const { getLastCapture } = require('./scrapers/singaporePools');
 
 const MOCK_MODE = String(process.env.MOCK_MODE || 'false').toLowerCase() === 'true';
 const ODDS_API_KEY = process.env.ODDS_API_KEY;
@@ -73,6 +74,21 @@ app.get('/api/debug', async (req, res) => {
       kickoffISO: e.kickoffISO,
     })),
   });
+});
+
+// Serves the last Singapore Pools page render this instance captured —
+// separate from /api/debug since it can be tens of KB — so real selectors
+// can be written from what the site actually returns, without needing
+// filesystem access to Vercel's /tmp (where the DEBUG-mode dump otherwise
+// goes and stays unreachable from outside the function).
+app.get('/api/debug/sgpools-raw', async (req, res) => {
+  await ensureFreshState();
+  const capture = getLastCapture();
+  if (!capture) {
+    res.status(404).json({ error: 'No capture yet — the SG Pools scraper has not run in this instance.' });
+    return;
+  }
+  res.json(capture);
 });
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
