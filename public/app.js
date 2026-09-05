@@ -58,6 +58,22 @@ function fmt(v) {
   return v == null ? '—' : Number(v).toFixed(2);
 }
 
+function pct(v) {
+  return v == null ? '—' : `${(v * 100).toFixed(0)}%`;
+}
+
+function renderPick(topPick) {
+  if (!topPick) return '';
+  return `
+    <div class="pick">
+      <div class="pick-label">Top pick: ${topPick.label}</div>
+      <div class="pick-meta">
+        ${pct(topPick.probability)} consensus probability · ${topPick.bookmakerCount} bookmaker${topPick.bookmakerCount === 1 ? '' : 's'}
+        · confidence ${pct(topPick.confidenceScore)}
+      </div>
+    </div>`;
+}
+
 function renderCard(match) {
   const div = document.createElement('div');
   div.className = 'card';
@@ -68,10 +84,29 @@ function renderCard(match) {
     <div class="teams">${match.homeTeam} vs ${match.awayTeam}</div>
     <div class="countdown" data-countdown></div>
     <div class="kickoff-time">Kickoff: ${new Date(match.kickoffISO).toLocaleString()}</div>
+    ${renderPick(match.topPick)}
     ${renderOneXTwo(match.oneXTwo)}
     ${renderTotals(match.totals)}
   `;
   return div;
+}
+
+function renderBestBet(bestBet) {
+  const el = document.getElementById('best-bet');
+  if (!bestBet) {
+    el.hidden = true;
+    return;
+  }
+  el.hidden = false;
+  el.innerHTML = `
+    <div class="kicker">Highest confidence bet on the board</div>
+    <div class="headline">${bestBet.label} — ${bestBet.homeTeam} vs ${bestBet.awayTeam}</div>
+    <div class="sub">
+      ${bestBet.league || ''} · ${pct(bestBet.probability)} consensus probability across
+      ${bestBet.bookmakerCount} bookmaker${bestBet.bookmakerCount === 1 ? '' : 's'} · confidence
+      ${pct(bestBet.confidenceScore)} · kickoff ${new Date(bestBet.kickoffISO).toLocaleString()}
+    </div>
+  `;
 }
 
 function renderMatches(matches) {
@@ -98,6 +133,7 @@ async function fetchMatches() {
     const data = await res.json();
     currentMatches = data.matches || [];
     renderMatches(currentMatches);
+    renderBestBet(data.bestBet);
 
     const updated = data.lastUpdated ? new Date(data.lastUpdated).toLocaleTimeString() : '—';
     const mockTag = data.mockMode ? ' [MOCK DATA]' : '';

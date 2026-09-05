@@ -25,6 +25,7 @@ app.get('/api/matches', (req, res) => {
   const state = getState();
   res.json({
     matches: state.matches,
+    bestBet: state.bestBet,
     lastUpdated: state.lastUpdated,
     lastError: state.lastError,
     mockMode: MOCK_MODE,

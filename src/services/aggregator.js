@@ -1,10 +1,12 @@
 const { fetchOpenFixtures } = require('../scrapers/singaporePools');
 const { fetchAllSoccerOdds } = require('./oddsApi');
 const { mergeFixturesWithOdds } = require('./matcher');
+const { attachConfidence, pickBestBetOverall } = require('./confidence');
 const { getMockSgpFixtures, getMockOddsEvents } = require('../mock/mockData');
 
 const state = {
   matches: [],
+  bestBet: null,
   lastUpdated: null,
   lastError: null,
 };
@@ -20,7 +22,9 @@ async function refresh({ mockMode, oddsApiKey }) {
       mockMode ? Promise.resolve(getMockOddsEvents()) : fetchAllSoccerOdds(oddsApiKey),
     ]);
 
-    state.matches = mergeFixturesWithOdds(sgpFixtures, oddsEvents);
+    const merged = mergeFixturesWithOdds(sgpFixtures, oddsEvents);
+    state.matches = attachConfidence(merged);
+    state.bestBet = pickBestBetOverall(state.matches);
     state.lastUpdated = new Date().toISOString();
     state.lastError = null;
     state.sgpFixtureCount = sgpFixtures.length;

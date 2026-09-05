@@ -61,6 +61,26 @@ The sandbox this was developed in has network egress locked to an allowlist
   `GET /v4/sports?apiKey=...` for the full list) — Singapore Pools also
   carries some Asian leagues and cups that may need extra sport keys.
 
+## Confidence / "best bet" analysis
+
+Rather than scraping tipster/prediction sites (more unverified scrapers,
+ToS risk, and the same egress problems as the Singapore Pools scrape), the
+"confidence" score is a **market-consensus estimate** computed from the
+bookmaker odds already fetched from The Odds API:
+
+1. For each bookmaker quoting a match, devig their 1X2 and totals prices
+   (strip the overround) to get that bookmaker's implied probability.
+2. Average those probabilities across bookmakers into a consensus
+   probability per candidate bet (home/draw/away, and over/under per line).
+3. Weight by **agreement** (how tightly bookmakers cluster — low spread =
+   higher confidence) and by **how many bookmakers** quoted it.
+4. Each match's highest-scoring candidate becomes its `topPick`; the single
+   highest-scoring pick across all matches is exposed as `bestBet`.
+
+See `src/services/confidence.js`. This is a standard "wisdom of the
+market" technique — it is not a guarantee of outcome, just what the
+market currently implies. Displayed with a disclaimer in the UI.
+
 ## Notes on matching
 
 - Kickoff times from Singapore Pools are assumed to be Singapore time
