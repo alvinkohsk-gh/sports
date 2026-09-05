@@ -11,13 +11,17 @@ const DEBUG_DIR = IS_SERVERLESS ? os.tmpdir() : path.join(__dirname, '..', '..')
 const DEBUG_HTML_PATH = path.join(DEBUG_DIR, 'debug-sgpools-raw.html');
 const DEBUG_SCREENSHOT_PATH = path.join(DEBUG_DIR, 'debug-sgpools-screenshot.png');
 
-// Corrected from an earlier wrong guess (www.singaporepools.com.sg, which is
-// a different, older domain). This is a modern single-page app — the
-// fixture list is not present in the initial HTML, it's rendered
-// client-side after data loads. A plain HTTP GET (what this file used to
-// do) only sees the empty app shell, so this renders the page with a
+// Corrected twice now: first from www.singaporepools.com.sg (a different,
+// older domain), then from /en/sports (confirmed 404 in production — a
+// captured render of that path showed the real site's own "Page Not
+// Found" page, title and all). The real route was found by pulling every
+// internal nav link out of that 404 page's shared header, which listed
+// /sports/football alongside /sports/motor-racing, /lottery/toto, etc.
+// This is a modern single-page app — the fixture list is not present in
+// the initial HTML, it's rendered client-side after data loads. A plain
+// HTTP GET only sees the empty app shell, so this renders the page with a
 // headless browser instead and reads the DOM after it settles.
-const SPORTS_URL = 'https://online.singaporepools.com/en/sports';
+const SPORTS_URL = 'https://online.singaporepools.com/sports/football';
 
 // Vercel's /tmp (where DEBUG_HTML_PATH/DEBUG_SCREENSHOT_PATH write to) isn't
 // reachable from outside the function, so the last render is also kept here
