@@ -4,5 +4,8 @@
     "api/index.js": {
       "maxDuration": 60
     }
+  },
+  "env": {
+    "MOCK_MODE": "true"
   }
 }
