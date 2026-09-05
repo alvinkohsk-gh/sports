@@ -79,6 +79,44 @@ function parseRenderedHtml(html) {
   return results;
 }
 
+/**
+ * Debug helper: finds objects that look like a fixture/event (an "id" key
+ * plus some "market"-ish key, matching the real /sports/football API shape
+ * discovered in production) and returns their own keys with nested
+ * arrays/objects collapsed to a short marker — enough to read off the real
+ * team-name/date field names without the multi-KB odds payload each event
+ * carries under "markets".
+ */
+function summarizeEventShapes(data, maxResults = 3) {
+  const results = [];
+  const seen = new Set();
+
+  function visit(node, depth) {
+    if (!node || typeof node !== 'object' || depth > 8 || results.length >= maxResults) return;
+    if (Array.isArray(node)) {
+      node.forEach((n) => visit(n, depth + 1));
+      return;
+    }
+    const keys = Object.keys(node);
+    if (keys.includes('id') && keys.some((k) => /market/i.test(k))) {
+      const shallow = {};
+      for (const k of keys) {
+        const v = node[k];
+        shallow[k] = Array.isArray(v) ? `[array len=${v.length}]` : v && typeof v === 'object' ? '[object]' : v;
+      }
+      const fingerprint = JSON.stringify(shallow);
+      if (!seen.has(fingerprint)) {
+        seen.add(fingerprint);
+        results.push(shallow);
+      }
+    }
+    Object.values(node).forEach((v) => visit(v, depth + 1));
+  }
+
+  visit(data, 0);
+  return results;
+}
+
 // Singapore Pools displays local (Asia/Singapore, UTC+8) times with no
 // timezone marker. This assumes UTC+8; adjust if the source format differs.
 function coerceSgTimeToISO(raw) {
@@ -163,7 +201,16 @@ async function renderWithBrowser() {
       navLinks,
       capturedJson: capturedJson.map((c) => ({
         url: c.url,
-        bodySample: JSON.stringify(c.body).slice(0, 5000),
+        bodySample: JSON.stringify(c.body).slice(0, 2000),
+        // The real fixture-events API found at /sports/football nests each
+        // event's team/participant fields alongside a large "markets" array
+        // of odds — JSON.stringify(body).slice(0, 5000) never reached them
+        // in a capture, since "markets" alone ran past that cutoff. This
+        // finds each object that looks like an event (has an id + a
+        // markets-like key) and dumps just its own keys with nested
+        // arrays/objects collapsed to a length/type marker, so the actual
+        // team-name field names are visible without the odds payload noise.
+        eventShapes: summarizeEventShapes(c.body),
       })),
     };
 
