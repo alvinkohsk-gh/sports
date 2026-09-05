@@ -1,0 +1,30 @@
+[
+  {
+    "sgpMatchId": "SGP-1001",
+    "homeTeam": "Manchester United",
+    "awayTeam": "Liverpool",
+    "league": "English Premier League",
+    "kickoffInMinutes": 12
+  },
+  {
+    "sgpMatchId": "SGP-1002",
+    "homeTeam": "Real Madrid",
+    "awayTeam": "Barcelona",
+    "league": "La Liga",
+    "kickoffInMinutes": 47
+  },
+  {
+    "sgpMatchId": "SGP-1003",
+    "homeTeam": "Bayern Munich",
+    "awayTeam": "Borussia Dortmund",
+    "league": "Bundesliga",
+    "kickoffInMinutes": 130
+  },
+  {
+    "sgpMatchId": "SGP-1004",
+    "homeTeam": "Paris Saint Germain",
+    "awayTeam": "Marseille",
+    "league": "Ligue 1",
+    "kickoffInMinutes": 5
+  }
+]
