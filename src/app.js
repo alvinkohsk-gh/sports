@@ -5,7 +5,14 @@ const cors = require('cors');
 const { refresh, getState } = require('./services/aggregator');
 const { getLastCapture } = require('./scrapers/singaporePools');
 
-const MOCK_MODE = String(process.env.MOCK_MODE || 'false').toLowerCase() === 'true';
+// Defaults to true (rather than 'false' like SGPOOLS_DEBUG etc.) because this
+// project has no ODDS_API_KEY configured on Vercel, so a real run would just
+// 401 on every odds fetch and show 0 merged matches. Setting an actual
+// MOCK_MODE project env var via vercel.json's `env` block didn't take effect
+// on this deployment (process.env.MOCK_MODE came back undefined even right
+// after a fresh build), so the default itself is flipped instead — set
+// MOCK_MODE=false explicitly once a real ODDS_API_KEY is added.
+const MOCK_MODE = String(process.env.MOCK_MODE || 'true').toLowerCase() === 'true';
 const ODDS_API_KEY = process.env.ODDS_API_KEY;
 // On a long-running process (npm start) a background loop keeps this fresh
 // proactively; on serverless (Vercel) there is no background loop between
