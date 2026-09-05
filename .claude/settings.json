@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.singaporepools.com.sg)",
+      "WebFetch(domain:*.singaporepools.com.sg)",
+      "WebFetch(domain:online.singaporepools.com)",
+      "WebFetch(domain:api.the-odds-api.com)"
+    ]
+  }
+}
