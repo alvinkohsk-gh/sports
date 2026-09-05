@@ -29,7 +29,11 @@ app.get('/api/matches', (req, res) => {
     lastUpdated: state.lastUpdated,
     lastError: state.lastError,
     mockMode: MOCK_MODE,
-    counts: { sgpFixtures: state.sgpFixtureCount, oddsEvents: state.oddsEventCount },
+    counts: {
+      sgpFixtures: state.sgpFixtureCount,
+      oddsEvents: state.oddsEventCount,
+      tipsterPicks: state.tipsterPickCount,
+    },
   });
 });
 
@@ -46,6 +50,7 @@ app.get('/api/debug', (req, res) => {
     stageCounts: {
       sgpFixturesFound: state.rawSgpFixtures?.length ?? 0,
       oddsEventsFound: state.rawOddsEvents?.length ?? 0,
+      tipsterPicksFound: state.tipsterPickCount ?? 0,
       mergedMatches: state.matches?.length ?? 0,
     },
     sampleSgpFixtures: (state.rawSgpFixtures || []).slice(0, 5),

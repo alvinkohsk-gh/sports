@@ -1,8 +1,9 @@
 # SG Pools Live Odds Board
 
 Shows live 1X2 and Over/Under (total goals) odds, filtered to only the
-matches currently open for betting on singaporepools.com.sg, with a live
-countdown to kickoff for each match.
+matches currently open for betting on singaporepools.com.sg, cross-checked
+against picks from five prediction/tipster sites, with a live countdown to
+kickoff for each match.
 
 ## How it works
 
@@ -10,15 +11,46 @@ countdown to kickoff for each match.
    fixtures (team names + kickoff time).
 2. `src/services/oddsApi.js` fetches 1X2 and totals odds from
    [The Odds API](https://the-odds-api.com/) across major soccer leagues.
-3. `src/services/matcher.js` joins the two by team name (fuzzy, with a small
-   alias table for common short names) and kickoff time (±90 min tolerance).
-   **Only fixtures present on both sides are shown** — this is what enforces
-   "must be open on Singapore Pools".
-4. `src/services/aggregator.js` refreshes both sources on a timer and caches
-   the merged result in memory.
-5. `src/server.js` serves the merged list at `GET /api/matches`.
-6. `public/` is a static page that polls that endpoint every 15s and runs a
+3. `src/scrapers/tipsters/` fetches picks from five prediction/tipster
+   sites in parallel (Forebet, PredictZ, WinDrawWin, WhoScored, Sports
+   Mole) — see "Tipster sources" below for per-site detail and how
+   verified each one is.
+4. `src/services/matcher.js` joins the SG Pools list and the odds list by
+   team name (fuzzy, with a small alias table for common short names) and
+   kickoff time (±90 min tolerance). **Only fixtures present on both sides
+   are shown** — this is what enforces "must be open on Singapore Pools".
+   `src/services/tipsterConsensus.js` then attaches each match's tipster
+   picks the same way (team-name fuzzy match, no kickoff-time needed).
+5. `src/services/confidence.js` computes the market-consensus "confidence"
+   score per candidate bet, then nudges the matching 1X2 candidate up when
+   tipsters agree with it (see "Confidence" below).
+6. `src/services/aggregator.js` refreshes all three sources on a timer and
+   caches the merged result in memory.
+7. `src/server.js` serves the merged list at `GET /api/matches`.
+8. `public/` is a static page that polls that endpoint every 15s and runs a
    client-side countdown clock per match, ticking every second.
+
+## Tipster sources
+
+| Site | Data shape | Verification |
+|---|---|---|
+| Forebet | Structured table | Selectors ported from a real, working open-source scraper ([999Samurai/predictions-scraper](https://github.com/999Samurai/predictions-scraper)) — not guessed |
+| PredictZ | Structured table | Same source as above |
+| WinDrawWin | Structured table | Same source as above |
+| WhoScored | Prose preview articles | No reference scraper found — generic heuristic extraction (regex for "Team A vs Team B" + a scoreline/"to draw" in nearby text) |
+| Sports Mole | Prose preview articles | Same heuristic approach as WhoScored |
+
+The first three give a clean discrete pick (home/draw/away) reliably; the
+last two are best-effort and may return `pick: null` for matches where no
+scoreline or clear phrase was found nearby — they're still shown as a
+preview link in that case, just without a vote counted.
+
+**None of the five have been run against their live sites from this
+environment** — build/mock-mode testing confirmed the pipeline mechanics
+(fetching, fuzzy-matching, tallying, boosting) work correctly, but the
+actual per-site selectors are only as good as the reference source above.
+Set `TIPSTERS_DEBUG=true` and check `debug-tipsters/<site>.html` if a
+site comes back with 0 picks.
 
 ## Setup
 
@@ -92,7 +124,14 @@ curl -sS http://localhost:3000/api/debug | python3 -m json.tool
   anything. Check `lastError` in the same response — a bad/missing
   `ODDS_API_KEY` or exhausted quota shows up there. Also try the raw curl
   from the setup section to see the actual API response.
-- Both counts are non-zero but `mergedMatches` is 0 → the two sources
+- `stageCounts.tipsterPicksFound === 0` (or low) → one or more tipster
+  scrapers came back empty. Set `TIPSTERS_DEBUG=true`, restart, and check
+  `debug-tipsters/<site>.html` for whichever site(s) return nothing —
+  most likely a selector needs updating (Forebet/PredictZ/WinDrawWin) or
+  the heuristic regex needs tuning to the actual article text
+  (WhoScored/Sports Mole). This doesn't block matches from showing — it
+  just means no tipster chips/boost for those matches.
+- Both `sgpFixturesFound` and `oddsEventsFound` are non-zero but `mergedMatches` is 0 → the two sources
   aren't matching. Compare `sampleSgpFixtures` and `sampleOddsEvents` in
   the debug response by eye — team names that don't share enough tokens
   (see `ALIASES` in `src/services/matcher.js`) or kickoff times more than
@@ -112,12 +151,19 @@ bookmaker odds already fetched from The Odds API:
    probability per candidate bet (home/draw/away, and over/under per line).
 3. Weight by **agreement** (how tightly bookmakers cluster — low spread =
    higher confidence) and by **how many bookmakers** quoted it.
-4. Each match's highest-scoring candidate becomes its `topPick`; the single
+4. If the tipster sites' majority pick (see above) agrees with a
+   candidate's 1X2 selection, that candidate's score gets a small boost
+   (up to +15%, scaled by how many of the tipsters agree) — recorded as
+   `tipsterBoost` so it's visible, not silently folded into one number.
+   Tipster picks are a discrete vote, not a probability, so they nudge
+   the market-derived score rather than being averaged into it.
+5. Each match's highest-scoring candidate becomes its `topPick`; the single
    highest-scoring pick across all matches is exposed as `bestBet`.
 
-See `src/services/confidence.js`. This is a standard "wisdom of the
-market" technique — it is not a guarantee of outcome, just what the
-market currently implies. Displayed with a disclaimer in the UI.
+See `src/services/confidence.js` and `src/services/tipsterConsensus.js`.
+This is a standard "wisdom of the market" technique — it is not a
+guarantee of outcome, just what the market and tipster sites currently
+imply. Displayed with a disclaimer in the UI.
 
 ## Notes on matching
 

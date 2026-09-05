@@ -1,8 +1,10 @@
 const { fetchOpenFixtures } = require('../scrapers/singaporePools');
 const { fetchAllSoccerOdds } = require('./oddsApi');
+const { fetchAllTipsterPicks } = require('../scrapers/tipsters');
 const { mergeFixturesWithOdds } = require('./matcher');
+const { attachTipsterConsensus } = require('./tipsterConsensus');
 const { attachConfidence, pickBestBetOverall } = require('./confidence');
-const { getMockSgpFixtures, getMockOddsEvents } = require('../mock/mockData');
+const { getMockSgpFixtures, getMockOddsEvents, getMockTipsterPicks } = require('../mock/mockData');
 
 const state = {
   matches: [],
@@ -17,18 +19,21 @@ function getState() {
 
 async function refresh({ mockMode, oddsApiKey }) {
   try {
-    const [sgpFixtures, oddsEvents] = await Promise.all([
+    const [sgpFixtures, oddsEvents, tipsterPicks] = await Promise.all([
       mockMode ? Promise.resolve(getMockSgpFixtures()) : fetchOpenFixtures(),
       mockMode ? Promise.resolve(getMockOddsEvents()) : fetchAllSoccerOdds(oddsApiKey),
+      mockMode ? Promise.resolve(getMockTipsterPicks()) : fetchAllTipsterPicks(),
     ]);
 
     const merged = mergeFixturesWithOdds(sgpFixtures, oddsEvents);
-    state.matches = attachConfidence(merged);
+    const withTipsters = attachTipsterConsensus(merged, tipsterPicks);
+    state.matches = attachConfidence(withTipsters);
     state.bestBet = pickBestBetOverall(state.matches);
     state.lastUpdated = new Date().toISOString();
     state.lastError = null;
     state.sgpFixtureCount = sgpFixtures.length;
     state.oddsEventCount = oddsEvents.length;
+    state.tipsterPickCount = tipsterPicks.length;
     // Kept for /api/debug so a merge-count of 0 can be diagnosed without
     // re-running anything: was it SG Pools, the odds fetch, or the join
     // between the two that came up empty?

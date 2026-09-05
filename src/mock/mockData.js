@@ -5,6 +5,9 @@ const sampleFixtures = JSON.parse(
   fs.readFileSync(path.join(__dirname, '..', '..', 'data', 'sample-fixtures.json'), 'utf8')
 );
 const sampleOdds = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'data', 'sample-odds.json'), 'utf8'));
+const sampleTipsters = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '..', '..', 'data', 'sample-tipsters.json'), 'utf8')
+);
 
 function inMinutes(mins) {
   return new Date(Date.now() + mins * 60 * 1000).toISOString();
@@ -58,4 +61,15 @@ function getMockOddsEvents() {
   });
 }
 
-module.exports = { getMockSgpFixtures, getMockOddsEvents };
+function getMockTipsterPicks() {
+  return sampleTipsters.map((t) => ({
+    site: t.site,
+    homeTeam: t.homeTeam,
+    awayTeam: t.awayTeam,
+    pick: t.pick,
+    rawText: t.rawText,
+    sourceUrl: `https://${t.site}.example (mock)`,
+  }));
+}
+
+module.exports = { getMockSgpFixtures, getMockOddsEvents, getMockTipsterPicks };

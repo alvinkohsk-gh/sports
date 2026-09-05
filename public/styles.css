@@ -124,6 +124,25 @@ table.odds td.price { color: var(--accent); font-weight: 600; }
 .best-bet .headline { font-size: 20px; font-weight: 700; margin: 6px 0 4px; }
 .best-bet .sub { font-size: 13px; color: var(--muted); }
 
+.tip-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+.tip-chip {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid var(--card-border);
+  cursor: default;
+}
+.tip-chip.tip-home { border-color: rgba(52, 211, 153, 0.5); color: var(--ok); }
+.tip-chip.tip-away { border-color: rgba(56, 189, 248, 0.5); color: var(--accent); }
+.tip-chip.tip-draw { border-color: rgba(251, 191, 36, 0.5); color: var(--soon); }
+.tip-chip.tip-unknown { color: var(--muted); }
+
 .disclaimer {
   margin-top: 28px;
   font-size: 12px;

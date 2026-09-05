@@ -64,14 +64,47 @@ function pct(v) {
 
 function renderPick(topPick) {
   if (!topPick) return '';
+  const boostNote =
+    topPick.tipsterBoost > 0 ? ` (+${(topPick.tipsterBoost * 100).toFixed(0)}% tipster boost)` : '';
   return `
     <div class="pick">
       <div class="pick-label">Top pick: ${topPick.label}</div>
       <div class="pick-meta">
         ${pct(topPick.probability)} consensus probability · ${topPick.bookmakerCount} bookmaker${topPick.bookmakerCount === 1 ? '' : 's'}
-        · confidence ${pct(topPick.confidenceScore)}
+        · confidence ${pct(topPick.confidenceScore)}${boostNote}
       </div>
     </div>`;
+}
+
+const SITE_LABELS = {
+  forebet: 'Forebet',
+  predictz: 'PredictZ',
+  windrawwin: 'WinDrawWin',
+  whoscored: 'WhoScored',
+  sportsmole: 'Sports Mole',
+};
+
+function renderTipsters(tipsterConsensus) {
+  if (!tipsterConsensus || tipsterConsensus.totalTipsters === 0) {
+    return '<div class="section-label">Tipster picks: none found</div>';
+  }
+  const chips = tipsterConsensus.picks
+    .map((p) => {
+      const label = SITE_LABELS[p.site] || p.site;
+      const pickText = p.pick ? p.pick.toUpperCase() : '?';
+      return `<span class="tip-chip tip-${p.pick || 'unknown'}" title="${escapeHtml(p.rawText || '')}">${label}: ${pickText}</span>`;
+    })
+    .join('');
+  const majority = tipsterConsensus.majorityPick
+    ? `${tipsterConsensus.majorityCount}/${tipsterConsensus.totalTipsters} tipsters pick ${tipsterConsensus.majorityPick.toUpperCase()}`
+    : 'no clear majority';
+  return `
+    <div class="section-label">Tipster picks (${majority})</div>
+    <div class="tip-chips">${chips}</div>`;
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 function renderCard(match) {
@@ -85,6 +118,7 @@ function renderCard(match) {
     <div class="countdown" data-countdown></div>
     <div class="kickoff-time">Kickoff: ${new Date(match.kickoffISO).toLocaleString()}</div>
     ${renderPick(match.topPick)}
+    ${renderTipsters(match.tipsterConsensus)}
     ${renderOneXTwo(match.oneXTwo)}
     ${renderTotals(match.totals)}
   `;

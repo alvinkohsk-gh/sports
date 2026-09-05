@@ -132,9 +132,28 @@ function rankCandidateBets(match) {
   for (const c of candidates) {
     const bookmakerBoost = Math.min(c.bookmakerCount / 5, 1); // saturates once 5+ books agree
     c.confidenceScore = c.probability * (0.7 + 0.3 * c.agreement) * (0.85 + 0.15 * bookmakerBoost);
+    c.tipsterBoost = 0;
   }
 
+  applyTipsterBoost(candidates, match.tipsterConsensus);
+
   return candidates.sort((a, b) => b.confidenceScore - a.confidenceScore);
+}
+
+// Tipster picks only cover 1X2 (no totals), and they're a discrete vote,
+// not a probability — so rather than mixing them into the market math,
+// this nudges the matching 1X2 candidate's score by a small, capped amount
+// proportional to how many of the tipster sites agree, and records exactly
+// how much of a boost was applied so the UI/API can show it plainly rather
+// than hiding it inside one opaque number.
+function applyTipsterBoost(candidates, tipsterConsensus) {
+  if (!tipsterConsensus || !tipsterConsensus.majorityPick || tipsterConsensus.totalTipsters === 0) return;
+  const candidate = candidates.find((c) => c.market === '1X2' && c.selection === tipsterConsensus.majorityPick);
+  if (!candidate) return;
+  const agreementRatio = tipsterConsensus.majorityCount / tipsterConsensus.totalTipsters;
+  const boost = 1 + 0.15 * agreementRatio; // up to +15% when tipsters unanimously agree
+  candidate.tipsterBoost = boost - 1;
+  candidate.confidenceScore *= boost;
 }
 
 function attachConfidence(matches) {
@@ -158,6 +177,7 @@ function pickBestBetOverall(matchesWithConfidence) {
     awayTeam: best.awayTeam,
     league: best.league,
     kickoffISO: best.kickoffISO,
+    tipsterConsensus: best.tipsterConsensus,
     ...best.topPick,
   };
 }

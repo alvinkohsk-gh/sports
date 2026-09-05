@@ -3,3 +3,4 @@ node_modules/
 *.log
 debug-sgpools-raw.html
 debug-sgpools-screenshot.png
+debug-tipsters/

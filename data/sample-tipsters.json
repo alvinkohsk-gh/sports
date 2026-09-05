@@ -1,0 +1,22 @@
+[
+  { "site": "forebet", "homeTeam": "Man Utd", "awayTeam": "Liverpool", "pick": "home", "rawText": "1 62%" },
+  { "site": "predictz", "homeTeam": "Man Utd", "awayTeam": "Liverpool", "pick": "home", "rawText": "Home 2-1" },
+  { "site": "windrawwin", "homeTeam": "Man Utd", "awayTeam": "Liverpool", "pick": "draw", "rawText": "Draw 1-1" },
+  { "site": "whoscored", "homeTeam": "Manchester United", "awayTeam": "Liverpool", "pick": "home", "rawText": "predict a 2-1 win" },
+  { "site": "sportsmole", "homeTeam": "Man Utd", "awayTeam": "Liverpool", "pick": "home", "rawText": "2-1" },
+
+  { "site": "forebet", "homeTeam": "Real Madrid", "awayTeam": "Barcelona", "pick": "away", "rawText": "2 55%" },
+  { "site": "predictz", "homeTeam": "Real Madrid", "awayTeam": "Barca", "pick": "draw", "rawText": "Draw 1-1" },
+  { "site": "windrawwin", "homeTeam": "Real Madrid", "awayTeam": "Barcelona", "pick": "away", "rawText": "Away 1-2" },
+  { "site": "sportsmole", "homeTeam": "Real Madrid", "awayTeam": "Barcelona", "pick": "away", "rawText": "1-2" },
+
+  { "site": "forebet", "homeTeam": "Bayern Munich", "awayTeam": "Borussia Dortmund", "pick": "home", "rawText": "1 71%" },
+  { "site": "predictz", "homeTeam": "Bayern Munich", "awayTeam": "Dortmund", "pick": "home", "rawText": "Home 3-1" },
+  { "site": "windrawwin", "homeTeam": "Bayern Munchen", "awayTeam": "Borussia Dortmund", "pick": "home", "rawText": "Home 2-0" },
+  { "site": "whoscored", "homeTeam": "Bayern Munich", "awayTeam": "Borussia Dortmund", "pick": "home", "rawText": "predict a 3-1 win" },
+  { "site": "sportsmole", "homeTeam": "Bayern Munich", "awayTeam": "Borussia Dortmund", "pick": "home", "rawText": "3-1" },
+
+  { "site": "forebet", "homeTeam": "Paris Saint Germain", "awayTeam": "Marseille", "pick": "home", "rawText": "1 68%" },
+  { "site": "predictz", "homeTeam": "PSG", "awayTeam": "Marseille", "pick": "home", "rawText": "Home 2-0" },
+  { "site": "whoscored", "homeTeam": "Paris Saint Germain", "awayTeam": "Marseille", "pick": "home", "rawText": "predict a 2-0 win" }
+]
