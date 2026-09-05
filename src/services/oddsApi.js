@@ -35,8 +35,16 @@ async function fetchOddsForSport(sportKey, apiKey) {
     return data;
   } catch (err) {
     const status = err.response?.status;
+    const body = err.response?.data;
+    const isEgressBlock = typeof body === 'string' && body.includes('no rule or allowlist entry allows host');
+    if (isEgressBlock) {
+      throw new Error(
+        'Blocked by the local network egress proxy before reaching The Odds API — not an API key problem. ' +
+          'Run this outside the sandboxed environment.'
+      );
+    }
     if (status === 401 || status === 403) {
-      throw new Error('The Odds API rejected the request — check ODDS_API_KEY');
+      throw new Error(`The Odds API rejected the request (HTTP ${status}) — check ODDS_API_KEY: ${JSON.stringify(body)}`);
     }
     console.error(`[oddsApi] ${sportKey} fetch failed:`, err.message);
     return [];

@@ -146,7 +146,16 @@ async function fetchOpenFixtures() {
     const { data: html } = await axios.get(FOOTBALL_PAGE_URL, { headers: HTTP_HEADERS, timeout: 15000 });
     return parseHtmlFallback(html);
   } catch (err) {
-    console.error('[singaporePools] live fetch failed:', err.message);
+    const body = err.response?.data;
+    const isEgressBlock = typeof body === 'string' && body.includes('no rule or allowlist entry allows host');
+    if (isEgressBlock) {
+      console.error(
+        '[singaporePools] blocked by the local network egress proxy before reaching the site — ' +
+          'not a real site error. Run this outside the sandboxed environment.'
+      );
+    } else {
+      console.error('[singaporePools] live fetch failed:', err.message);
+    }
     return [];
   }
 }
