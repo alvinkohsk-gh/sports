@@ -18,11 +18,15 @@ const REMOTE_CHROMIUM_PACK = `https://github.com/Sparticuz/chromium/releases/dow
 
 async function launchBrowser(launchOptions = {}) {
   if (IS_SERVERLESS) {
-    // @sparticuz/chromium-min ships as an ESM module with CJS interop —
-    // depending on the exact version, the real object with args/
-    // executablePath can land on the module itself or under `.default`.
-    // Verified in development: v149.0.0 puts it under `.default`.
-    const chromiumModule = require('@sparticuz/chromium-min');
+    // @sparticuz/chromium-min's build/index.js is a genuine ES Module —
+    // require() throws "require() of ES Module ... not supported" on
+    // Vercel's Node runtime (confirmed via its actual runtime error logs
+    // after deploying; a local sandbox test with an older/looser Node
+    // setup didn't catch this). Dynamic import() works in both CJS and
+    // ESM contexts, which is Node's own recommended fix for this error.
+    // The real object with args/executablePath lands under `.default`
+    // once awaited (also confirmed against the real package contents).
+    const chromiumModule = await import('@sparticuz/chromium-min');
     const chromium =
       typeof chromiumModule.executablePath === 'function' ? chromiumModule : chromiumModule.default;
     const { chromium: playwrightChromium } = require('playwright-core');

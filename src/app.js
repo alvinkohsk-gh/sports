@@ -77,4 +77,18 @@ app.get('/api/debug', async (req, res) => {
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
-module.exports = { app, ensureFreshState, MOCK_MODE, ODDS_API_KEY, CACHE_TTL_MS };
+// Export `app` itself as the module's value (an Express app is callable,
+// i.e. a valid Vercel Function export), with the extra bits attached as
+// properties — not a plain { app, ... } object. Vercel's zero-config
+// "Express" framework detection scans for and independently wraps files
+// like this one as their own function; a plain object export fails that
+// wrapping with "the default export must be a function or server" (seen
+// in production runtime logs). Attaching properties to the function
+// keeps `require('./app').app` working for existing callers (api/index.js,
+// server.js) either way.
+app.ensureFreshState = ensureFreshState;
+app.MOCK_MODE = MOCK_MODE;
+app.ODDS_API_KEY = ODDS_API_KEY;
+app.CACHE_TTL_MS = CACHE_TTL_MS;
+module.exports = app;
+module.exports.app = app;
