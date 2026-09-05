@@ -33,6 +33,31 @@ app.get('/api/matches', (req, res) => {
   });
 });
 
+// Diagnostic view for "why are there no matches": shows each stage of the
+// pipeline separately (SG Pools fixtures found, odds events found, final
+// merged count) so a 0 can be traced to the right stage without re-running
+// anything or reading server logs.
+app.get('/api/debug', (req, res) => {
+  const state = getState();
+  res.json({
+    mockMode: MOCK_MODE,
+    lastUpdated: state.lastUpdated,
+    lastError: state.lastError,
+    stageCounts: {
+      sgpFixturesFound: state.rawSgpFixtures?.length ?? 0,
+      oddsEventsFound: state.rawOddsEvents?.length ?? 0,
+      mergedMatches: state.matches?.length ?? 0,
+    },
+    sampleSgpFixtures: (state.rawSgpFixtures || []).slice(0, 5),
+    sampleOddsEvents: (state.rawOddsEvents || []).slice(0, 5).map((e) => ({
+      homeTeam: e.homeTeam,
+      awayTeam: e.awayTeam,
+      league: e.league,
+      kickoffISO: e.kickoffISO,
+    })),
+  });
+});
+
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 async function refreshLoop() {

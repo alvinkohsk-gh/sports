@@ -1,5 +1,10 @@
+const fs = require('fs');
+const path = require('path');
 const axios = require('axios');
 const cheerio = require('cheerio');
+
+const DEBUG = String(process.env.SGPOOLS_DEBUG || 'false').toLowerCase() === 'true';
+const DEBUG_DUMP_PATH = path.join(__dirname, '..', '..', 'debug-sgpools-raw.html');
 
 const FOOTBALL_PAGE_URL = 'https://www.singaporepools.com.sg/en/product/pages/football_home.aspx';
 
@@ -140,11 +145,30 @@ function coerceSgTimeToISO(raw) {
 
 async function fetchOpenFixtures() {
   const viaJson = await tryJsonFeeds();
-  if (viaJson.length) return viaJson;
+  if (viaJson.length) {
+    if (DEBUG) console.log(`[singaporePools] got ${viaJson.length} fixtures from a JSON feed`);
+    return viaJson;
+  }
+  if (DEBUG) console.log('[singaporePools] no JSON feed candidate worked, falling back to HTML scrape');
 
   try {
     const { data: html } = await axios.get(FOOTBALL_PAGE_URL, { headers: HTTP_HEADERS, timeout: 15000 });
-    return parseHtmlFallback(html);
+    if (DEBUG) {
+      fs.writeFileSync(DEBUG_DUMP_PATH, html);
+      console.log(
+        `[singaporePools] fetched ${html.length} bytes of HTML, saved to ${DEBUG_DUMP_PATH} for inspection`
+      );
+    }
+    const fixtures = parseHtmlFallback(html);
+    if (DEBUG) console.log(`[singaporePools] HTML regex fallback extracted ${fixtures.length} fixtures`);
+    if (fixtures.length === 0 && html.length < 20000) {
+      console.warn(
+        '[singaporePools] fetched page is small and likely just a JS app shell with no fixture data in it — ' +
+          'the real fixtures are probably loaded client-side after page load, which this scraper cannot see. ' +
+          'Inspect debug-sgpools-raw.html and your browser\'s Network tab to find the actual data endpoint.'
+      );
+    }
+    return fixtures;
   } catch (err) {
     const body = err.response?.data;
     const isEgressBlock = typeof body === 'string' && body.includes('no rule or allowlist entry allows host');

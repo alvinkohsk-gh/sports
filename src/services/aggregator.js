@@ -29,6 +29,11 @@ async function refresh({ mockMode, oddsApiKey }) {
     state.lastError = null;
     state.sgpFixtureCount = sgpFixtures.length;
     state.oddsEventCount = oddsEvents.length;
+    // Kept for /api/debug so a merge-count of 0 can be diagnosed without
+    // re-running anything: was it SG Pools, the odds fetch, or the join
+    // between the two that came up empty?
+    state.rawSgpFixtures = sgpFixtures;
+    state.rawOddsEvents = oddsEvents;
   } catch (err) {
     state.lastError = err.message;
     console.error('[aggregator] refresh failed:', err.message);

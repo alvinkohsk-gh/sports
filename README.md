@@ -61,6 +61,38 @@ The sandbox this was developed in has network egress locked to an allowlist
   `GET /v4/sports?apiKey=...` for the full list) — Singapore Pools also
   carries some Asian leagues and cups that may need extra sport keys.
 
+## Debugging "no matches show up"
+
+Matches require three things to all succeed: SG Pools fixtures found, odds
+events found, and a successful join between them. Check `GET /api/debug`
+first — it reports each stage separately:
+
+```bash
+curl -sS http://localhost:3000/api/debug | python3 -m json.tool
+```
+
+- `stageCounts.sgpFixturesFound === 0` → the Singapore Pools scraper isn't
+  finding fixtures. Set `SGPOOLS_DEBUG=true` in `.env` and restart; it will
+  log each step and save the raw HTML it fetched to
+  `debug-sgpools-raw.html`. Open that file: if it's small and doesn't
+  contain real fixture text, the page is a JS app that loads fixtures
+  client-side after load, and this scraper (plain HTTP GET) cannot see
+  that — you'll need to find the actual data endpoint via your browser's
+  DevTools → Network tab (filter by "json" or "xhr") while the football
+  odds page loads, and add it to `CANDIDATE_JSON_FEEDS` in
+  `src/scrapers/singaporePools.js`, or scrape with a headless browser
+  (e.g. Playwright) instead of `axios.get`.
+- `stageCounts.oddsEventsFound === 0` → The Odds API isn't returning
+  anything. Check `lastError` in the same response — a bad/missing
+  `ODDS_API_KEY` or exhausted quota shows up there. Also try the raw curl
+  from the setup section to see the actual API response.
+- Both counts are non-zero but `mergedMatches` is 0 → the two sources
+  aren't matching. Compare `sampleSgpFixtures` and `sampleOddsEvents` in
+  the debug response by eye — team names that don't share enough tokens
+  (see `ALIASES` in `src/services/matcher.js`) or kickoff times more than
+  90 minutes apart won't join. Add the missing alias or relax
+  `KICKOFF_TOLERANCE_MS` as needed.
+
 ## Confidence / "best bet" analysis
 
 Rather than scraping tipster/prediction sites (more unverified scrapers,
