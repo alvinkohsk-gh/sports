@@ -24,6 +24,7 @@ countdown to kickoff for each match.
 
 ```bash
 npm install
+npx playwright install chromium   # one-time browser download for the SG Pools scraper
 cp .env.example .env
 # edit .env and set ODDS_API_KEY (free tier at https://the-odds-api.com/)
 npm start
@@ -46,15 +47,20 @@ The sandbox this was developed in has network egress locked to an allowlist
 (npm, GitHub, etc.) and could not reach `singaporepools.com.sg` or
 `api.the-odds-api.com` to inspect them live. Concretely, that means:
 
-- **Singapore Pools scraper** (`src/scrapers/singaporePools.js`): built from
-  general knowledge of how the site has worked, not a verified live capture.
-  It tries a couple of candidate JSON feed URLs first, then falls back to a
-  generic regex-based HTML scrape ("Team A v Team B" + a nearby date/time).
-  **Before relying on this**, open the football odds page in a browser,
-  check DevTools → Network for the actual JSON endpoint it loads odds from,
-  and update `CANDIDATE_JSON_FEEDS` — that will be far more robust than the
-  HTML fallback. If you only get the HTML fallback, sanity check a few
-  scraped fixtures against the page.
+- **Singapore Pools scraper** (`src/scrapers/singaporePools.js`): points at
+  `https://online.singaporepools.com/en/sports` (corrected from an earlier
+  wrong domain guess — thanks to real user feedback for that). This is a
+  modern single-page app, so the scraper renders it with a headless
+  browser (Playwright) rather than a plain HTTP GET, and opportunistically
+  captures any JSON responses the page's own network calls make while it
+  loads (a real fixture feed, if the page calls one, beats scraped text).
+  If nothing useful comes back from captured JSON, it falls back to a
+  generic regex scan of the rendered page's text ("Team A v Team B" + a
+  nearby date/time). **None of this has been run against the live site**
+  — this sandbox's network policy blocks `singaporepools.com` entirely, so
+  it's unverified. Run it yourself with `SGPOOLS_DEBUG=true` (see
+  "Debugging" below) and adjust `parseRenderedHtml` / the JSON extraction
+  to match what you actually see.
 - **The Odds API service**: this one's contract is documented and stable, so
   it should work as-is once you supply a real key. Double check the
   `SOCCER_SPORT_KEYS` list covers the leagues you care about (see
@@ -72,16 +78,16 @@ curl -sS http://localhost:3000/api/debug | python3 -m json.tool
 ```
 
 - `stageCounts.sgpFixturesFound === 0` → the Singapore Pools scraper isn't
-  finding fixtures. Set `SGPOOLS_DEBUG=true` in `.env` and restart; it will
-  log each step and save the raw HTML it fetched to
-  `debug-sgpools-raw.html`. Open that file: if it's small and doesn't
-  contain real fixture text, the page is a JS app that loads fixtures
-  client-side after load, and this scraper (plain HTTP GET) cannot see
-  that — you'll need to find the actual data endpoint via your browser's
-  DevTools → Network tab (filter by "json" or "xhr") while the football
-  odds page loads, and add it to `CANDIDATE_JSON_FEEDS` in
-  `src/scrapers/singaporePools.js`, or scrape with a headless browser
-  (e.g. Playwright) instead of `axios.get`.
+  finding fixtures. Set `SGPOOLS_DEBUG=true` in `.env` and restart; it
+  renders the page with a headless browser and logs each JSON response the
+  page itself loads, then saves `debug-sgpools-raw.html` (the rendered DOM)
+  and `debug-sgpools-screenshot.png` (what it actually looked like) for you
+  to inspect. If a captured JSON response looks like real fixture data,
+  point `extractFixturesFromJson` at it directly instead of relying on the
+  text-pattern fallback; if the screenshot shows the real match list but
+  `parseRenderedHtml`'s regex isn't picking it up, adjust that pattern to
+  match the actual text (e.g. if it says "vs." differently, or the date
+  format differs from `d/m h:mm`).
 - `stageCounts.oddsEventsFound === 0` → The Odds API isn't returning
   anything. Check `lastError` in the same response — a bad/missing
   `ODDS_API_KEY` or exhausted quota shows up there. Also try the raw curl
