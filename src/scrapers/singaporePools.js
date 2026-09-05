@@ -112,8 +112,24 @@ async function renderWithBrowser() {
       }
     });
 
-    await page.goto(SPORTS_URL, { waitUntil: 'networkidle', timeout: 30000 });
-    await page.waitForTimeout(3000); // let any client-side rendering settle
+    // 'networkidle' is unreliable here and was confirmed to fail two ways in
+    // production: it can time out entirely (this app appears to keep some
+    // background connection open, so "idle" never arrives) or resolve the
+    // instant the initial HTML/JS/CSS finish downloading — before the
+    // just-loaded bundle has even started executing, let alone fetching
+    // match data. A captured render at that point showed only the app's own
+    // loading spinner (`#general_loader_indicator`) with zero JSON responses
+    // observed. 'domcontentloaded' is fast and reliable for getting past the
+    // initial page load; waiting for that spinner to detach is then the real
+    // signal that client-side data-fetching has finished, rather than a
+    // fixed delay that's a guess at how long that takes on a cold instance.
+    await page.goto(SPORTS_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page
+      .waitForSelector('[data-testid="general_loader_indicator"]', { state: 'detached', timeout: 20000 })
+      .catch(() => {
+        if (DEBUG) console.log('[singaporePools] loader indicator never appeared/detached within 20s');
+      });
+    await page.waitForTimeout(2000); // brief settle after the loader clears
 
     const html = await page.content();
 
