@@ -1,5 +1,6 @@
 const cheerio = require('cheerio');
 const { fetchHtml } = require('./fetchHtml');
+const { inferTotalsPick } = require('./totalsHeuristics');
 
 const URL = 'https://www.whoscored.com/previews';
 
@@ -31,6 +32,7 @@ async function fetchWhoScoredTips() {
       homeTeam: teamsMatch[1].trim(),
       awayTeam: teamsMatch[2].trim(),
       pick: inferPickFromProse(contextText),
+      totalsPick: inferTotalsPickFromProse(contextText),
       rawText: contextText.slice(0, 200),
       sourceUrl: href ? new URL(href, URL).toString() : URL,
     });
@@ -51,6 +53,19 @@ function inferPickFromProse(text) {
   return null;
 }
 
+// A predicted scoreline implies a total-goals pick directly (e.g. "2-1"
+// sums to 3, i.e. over 2.5) — more reliable for prose text than hoping the
+// article explicitly says "over"/"under", so try that first and fall back
+// to the shared word-based heuristic.
+function inferTotalsPickFromProse(text) {
+  const scoreline = text.match(/\b(\d)\s*-\s*(\d)\b/);
+  if (scoreline) {
+    const total = Number(scoreline[1]) + Number(scoreline[2]);
+    return { selection: total > 2.5 ? 'over' : 'under', point: 2.5 };
+  }
+  return inferTotalsPick(text);
+}
+
 function dedupeByTeams(tips) {
   const seen = new Set();
   return tips.filter((t) => {
@@ -61,4 +76,4 @@ function dedupeByTeams(tips) {
   });
 }
 
-module.exports = { fetchWhoScoredTips, inferPickFromProse };
+module.exports = { fetchWhoScoredTips, inferPickFromProse, inferTotalsPickFromProse };

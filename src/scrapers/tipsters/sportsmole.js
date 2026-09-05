@@ -1,6 +1,6 @@
 const cheerio = require('cheerio');
 const { fetchHtml } = require('./fetchHtml');
-const { inferPickFromProse } = require('./whoscored');
+const { inferPickFromProse, inferTotalsPickFromProse } = require('./whoscored');
 
 const URL = 'https://www.sportsmole.co.uk/football/preview/';
 
@@ -35,6 +35,7 @@ async function fetchSportsMoleTips() {
       homeTeam: home,
       awayTeam: away,
       pick: inferPickFromProse(contextText),
+      totalsPick: inferTotalsPickFromProse(contextText),
       rawText: contextText.slice(0, 200),
       sourceUrl: href ? new URL(href, URL).toString() : URL,
     });

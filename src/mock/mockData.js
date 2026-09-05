@@ -67,6 +67,7 @@ function getMockTipsterPicks() {
     homeTeam: t.homeTeam,
     awayTeam: t.awayTeam,
     pick: t.pick,
+    totalsPick: t.totalsPick || null,
     rawText: t.rawText,
     sourceUrl: `https://${t.site}.example (mock)`,
   }));

@@ -1,18 +1,41 @@
 const cheerio = require('cheerio');
 const { fetchHtml } = require('./fetchHtml');
+const { inferTotalsPick } = require('./totalsHeuristics');
 
 const URL = 'https://www.forebet.com/en/football-tips-and-predictions-for-today';
+const OU_URL = 'https://www.forebet.com/en/football-tips-and-predictions-for-today/predictions-under-over-goals';
 
 // Selectors ported from a verified real-world scraper for this exact site
 // (github.com/999Samurai/predictions-scraper), not guessed from scratch:
 // each match row carries class "rcnt tr_1", team names live in a
 // <meta itemprop="name"> tag, and the predicted outcome/percentage is in
 // a span.forepr. Matched loosely on "rcnt" in case the site alternates a
-// tr_2 class for other rows the reference scraper didn't need.
+// tr_2 class for other rows the reference scraper didn't need (a second,
+// independently-found Forebet scraper confirms this site alternates row
+// classes, e.g. tr_0/tr_1, on its other list pages).
 async function fetchForebetTips() {
   const html = await fetchHtml('forebet', URL);
+  const oneXTwoTips = extractRows(html, (predictionText) => ({ pick: inferPick(predictionText) }));
+
+  // The Over/Under page reuses the same site template/row structure, just
+  // filtered to O/U matches — team-name extraction is the same verified
+  // pattern; the O/U pick itself is unverified (no reference scraper for
+  // this specific page), so it's inferred from the same span's text via a
+  // generic over/under heuristic instead of a confirmed selector.
+  let totalsTips = [];
+  try {
+    const ouHtml = await fetchHtml('forebet-overunder', OU_URL);
+    totalsTips = extractRows(ouHtml, (predictionText) => ({ totalsPick: inferTotalsPick(predictionText) }));
+  } catch (err) {
+    console.error('[tipsters:forebet] Over/Under page fetch failed:', err.message);
+  }
+
+  return mergeByTeams(oneXTwoTips, totalsTips);
+}
+
+function extractRows(html, extraFields) {
   const $ = cheerio.load(html);
-  const tips = [];
+  const rows = [];
 
   $('[class*="rcnt"]').each((_, el) => {
     const row = $(el);
@@ -24,17 +47,17 @@ async function fetchForebetTips() {
 
     const predictionText = row.find('span.forepr').first().text().trim();
 
-    tips.push({
+    rows.push({
       site: 'forebet',
       homeTeam: teams[0].trim(),
       awayTeam: teams[1].trim(),
-      pick: inferPick(predictionText),
       rawText: predictionText,
       sourceUrl: URL,
+      ...extraFields(predictionText),
     });
   });
 
-  return tips;
+  return rows;
 }
 
 // Forebet's forepr span typically shows the predicted outcome as a
@@ -49,4 +72,13 @@ function inferPick(text) {
   return null;
 }
 
-module.exports = { fetchForebetTips };
+function mergeByTeams(oneXTwoTips, totalsTips) {
+  return oneXTwoTips.map((tip) => {
+    const match = totalsTips.find(
+      (t) => t.homeTeam.toLowerCase() === tip.homeTeam.toLowerCase() && t.awayTeam.toLowerCase() === tip.awayTeam.toLowerCase()
+    );
+    return { ...tip, totalsPick: match?.totalsPick || null };
+  });
+}
+
+module.exports = { fetchForebetTips, inferPick };

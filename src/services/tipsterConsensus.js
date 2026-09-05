@@ -4,9 +4,10 @@ const { teamsMatch } = require('./matcher');
  * Attaches tipster picks to each match by fuzzy team-name matching (same
  * technique as the SG Pools <-> odds join). This is a separate, plainly
  * labeled signal from the market-consensus "confidence" score: tipster
- * sites give a discrete pick (home/draw/away), not a probability, so
- * tallying "how many tipsters agree" rather than blending it into one
- * number keeps the two kinds of evidence honest and distinguishable.
+ * sites give a discrete pick (home/draw/away, and separately over/under),
+ * not a probability, so tallying "how many tipsters agree" rather than
+ * blending it into one number keeps the two kinds of evidence honest and
+ * distinguishable.
  */
 function attachTipsterConsensus(matches, tips) {
   return matches.map((match) => {
@@ -16,35 +17,84 @@ function attachTipsterConsensus(matches, tips) {
         (teamsMatch(t.homeTeam, match.awayTeam) && teamsMatch(t.awayTeam, match.homeTeam))
     );
 
-    const tally = { home: 0, draw: 0, away: 0, unclassified: 0 };
-    for (const p of picksForMatch) {
-      if (p.pick === 'home') tally.home += 1;
-      else if (p.pick === 'draw') tally.draw += 1;
-      else if (p.pick === 'away') tally.away += 1;
-      else tally.unclassified += 1;
-    }
-
-    const classifiedTotal = tally.home + tally.draw + tally.away;
-    let majorityPick = null;
-    let majorityCount = 0;
-    for (const key of ['home', 'draw', 'away']) {
-      if (tally[key] > majorityCount) {
-        majorityCount = tally[key];
-        majorityPick = key;
-      }
-    }
-
     return {
       ...match,
       tipsterConsensus: {
-        picks: picksForMatch.map(({ site, pick, rawText, sourceUrl }) => ({ site, pick, rawText, sourceUrl })),
-        tally,
-        majorityPick: classifiedTotal > 0 ? majorityPick : null,
-        majorityCount,
-        totalTipsters: picksForMatch.length,
+        picks: picksForMatch.map(({ site, pick, totalsPick, rawText, sourceUrl }) => ({
+          site,
+          pick,
+          totalsPick,
+          rawText,
+          sourceUrl,
+        })),
+        ...tallyOneXTwo(picksForMatch),
+        ...tallyTotals(picksForMatch),
       },
     };
   });
+}
+
+function tallyOneXTwo(picksForMatch) {
+  const tally = { home: 0, draw: 0, away: 0, unclassified: 0 };
+  for (const p of picksForMatch) {
+    if (p.pick === 'home') tally.home += 1;
+    else if (p.pick === 'draw') tally.draw += 1;
+    else if (p.pick === 'away') tally.away += 1;
+    else tally.unclassified += 1;
+  }
+
+  const classifiedTotal = tally.home + tally.draw + tally.away;
+  const [majorityPick, majorityCount] = topOf(tally, ['home', 'draw', 'away']);
+
+  return {
+    tally,
+    majorityPick: classifiedTotal > 0 ? majorityPick : null,
+    majorityCount,
+    totalTipsters: picksForMatch.length,
+  };
+}
+
+function tallyTotals(picksForMatch) {
+  const withTotals = picksForMatch.filter((p) => p.totalsPick);
+  const totalsTally = { over: 0, under: 0 };
+  for (const p of withTotals) {
+    if (p.totalsPick.selection === 'over') totalsTally.over += 1;
+    else if (p.totalsPick.selection === 'under') totalsTally.under += 1;
+  }
+
+  const [totalsMajorityPick, totalsMajorityCount] = topOf(totalsTally, ['over', 'under']);
+  // Most tipster O/U content is about the 2.5 line; use whichever point
+  // shows up most often among the picks that agreed with the majority.
+  const majorityPoint = mostCommonPoint(withTotals, totalsMajorityPick);
+
+  return {
+    totalsTally,
+    totalsMajorityPick: withTotals.length > 0 ? totalsMajorityPick : null,
+    totalsMajorityCount,
+    totalsMajorityPoint: majorityPoint,
+    totalTotalsTipsters: withTotals.length,
+  };
+}
+
+function topOf(tally, keys) {
+  let bestKey = null;
+  let bestCount = 0;
+  for (const key of keys) {
+    if (tally[key] > bestCount) {
+      bestCount = tally[key];
+      bestKey = key;
+    }
+  }
+  return [bestKey, bestCount];
+}
+
+function mostCommonPoint(picksWithTotals, selection) {
+  if (!selection) return null;
+  const points = picksWithTotals.filter((p) => p.totalsPick.selection === selection).map((p) => p.totalsPick.point);
+  if (!points.length) return null;
+  const counts = new Map();
+  for (const pt of points) counts.set(pt, (counts.get(pt) || 0) + 1);
+  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
 }
 
 module.exports = { attachTipsterConsensus };

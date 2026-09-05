@@ -45,6 +45,16 @@ last two are best-effort and may return `pick: null` for matches where no
 scoreline or clear phrase was found nearby — they're still shown as a
 preview link in that case, just without a vote counted.
 
+**Over/Under picks**: all five sites also contribute a `totalsPick`
+(`{ selection: 'over'|'under', point }`). Forebet/PredictZ/WinDrawWin each
+have a dedicated O/U page — team-name extraction there reuses the same
+verified row/team selectors as their 1X2 page, but **the O/U pick text
+itself is unverified** (no reference scraper covers those pages), so it's
+inferred with a generic "over"/"under" word/prefix heuristic
+(`src/scrapers/tipsters/totalsHeuristics.js`). WhoScored/Sports Mole infer
+it from their predicted scoreline directly (e.g. "2-1" → over 2.5) when
+one is found, falling back to the same word heuristic otherwise.
+
 **None of the five have been run against their live sites from this
 environment** — build/mock-mode testing confirmed the pipeline mechanics
 (fetching, fuzzy-matching, tallying, boosting) work correctly, but the
@@ -151,12 +161,14 @@ bookmaker odds already fetched from The Odds API:
    probability per candidate bet (home/draw/away, and over/under per line).
 3. Weight by **agreement** (how tightly bookmakers cluster — low spread =
    higher confidence) and by **how many bookmakers** quoted it.
-4. If the tipster sites' majority pick (see above) agrees with a
-   candidate's 1X2 selection, that candidate's score gets a small boost
-   (up to +15%, scaled by how many of the tipsters agree) — recorded as
-   `tipsterBoost` so it's visible, not silently folded into one number.
-   Tipster picks are a discrete vote, not a probability, so they nudge
-   the market-derived score rather than being averaged into it.
+4. If the tipster sites' majority pick agrees with a candidate's
+   selection — either the 1X2 winner, or an over/under pick at the same
+   goal line the tipsters were talking about — that candidate's score
+   gets a small boost (up to +15%, scaled by how many of the tipsters
+   agree) — recorded as `tipsterBoost` so it's visible, not silently
+   folded into one number. Tipster picks are a discrete vote, not a
+   probability, so they nudge the market-derived score rather than being
+   averaged into it.
 5. Each match's highest-scoring candidate becomes its `topPick`; the single
    highest-scoring pick across all matches is exposed as `bestBet`.
 

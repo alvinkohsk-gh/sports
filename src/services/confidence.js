@@ -140,17 +140,33 @@ function rankCandidateBets(match) {
   return candidates.sort((a, b) => b.confidenceScore - a.confidenceScore);
 }
 
-// Tipster picks only cover 1X2 (no totals), and they're a discrete vote,
-// not a probability — so rather than mixing them into the market math,
-// this nudges the matching 1X2 candidate's score by a small, capped amount
-// proportional to how many of the tipster sites agree, and records exactly
-// how much of a boost was applied so the UI/API can show it plainly rather
-// than hiding it inside one opaque number.
+// Tipster picks are a discrete vote, not a probability — so rather than
+// mixing them into the market math, this nudges the matching candidate's
+// score (1X2 from the majority pick, totals from the majority O/U pick)
+// by a small, capped amount proportional to how many tipster sites agree,
+// and records exactly how much boost was applied so the UI/API can show
+// it plainly rather than hiding it inside one opaque number.
 function applyTipsterBoost(candidates, tipsterConsensus) {
-  if (!tipsterConsensus || !tipsterConsensus.majorityPick || tipsterConsensus.totalTipsters === 0) return;
-  const candidate = candidates.find((c) => c.market === '1X2' && c.selection === tipsterConsensus.majorityPick);
+  if (!tipsterConsensus) return;
+
+  if (tipsterConsensus.majorityPick && tipsterConsensus.totalTipsters > 0) {
+    const candidate = candidates.find((c) => c.market === '1X2' && c.selection === tipsterConsensus.majorityPick);
+    boostCandidate(candidate, tipsterConsensus.majorityCount / tipsterConsensus.totalTipsters);
+  }
+
+  if (tipsterConsensus.totalsMajorityPick && tipsterConsensus.totalTotalsTipsters > 0) {
+    const candidate = candidates.find(
+      (c) =>
+        c.market === 'totals' &&
+        c.selection === tipsterConsensus.totalsMajorityPick &&
+        (tipsterConsensus.totalsMajorityPoint == null || c.point === tipsterConsensus.totalsMajorityPoint)
+    );
+    boostCandidate(candidate, tipsterConsensus.totalsMajorityCount / tipsterConsensus.totalTotalsTipsters);
+  }
+}
+
+function boostCandidate(candidate, agreementRatio) {
   if (!candidate) return;
-  const agreementRatio = tipsterConsensus.majorityCount / tipsterConsensus.totalTipsters;
   const boost = 1 + 0.15 * agreementRatio; // up to +15% when tipsters unanimously agree
   candidate.tipsterBoost = boost - 1;
   candidate.confidenceScore *= boost;

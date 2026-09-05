@@ -98,9 +98,26 @@ function renderTipsters(tipsterConsensus) {
   const majority = tipsterConsensus.majorityPick
     ? `${tipsterConsensus.majorityCount}/${tipsterConsensus.totalTipsters} tipsters pick ${tipsterConsensus.majorityPick.toUpperCase()}`
     : 'no clear majority';
+
+  const ouChips = tipsterConsensus.picks
+    .filter((p) => p.totalsPick)
+    .map((p) => {
+      const label = SITE_LABELS[p.site] || p.site;
+      const sel = p.totalsPick.selection.toUpperCase();
+      return `<span class="tip-chip tip-${p.totalsPick.selection}" title="${escapeHtml(p.rawText || '')}">${label}: ${sel} ${p.totalsPick.point}</span>`;
+    })
+    .join('');
+  const ouMajority = tipsterConsensus.totalsMajorityPick
+    ? `${tipsterConsensus.totalsMajorityCount}/${tipsterConsensus.totalTotalsTipsters} tipsters pick ${tipsterConsensus.totalsMajorityPick.toUpperCase()} ${tipsterConsensus.totalsMajorityPoint}`
+    : 'no clear majority';
+  const ouSection = tipsterConsensus.totalTotalsTipsters
+    ? `<div class="section-label">Tipster O/U picks (${ouMajority})</div><div class="tip-chips">${ouChips}</div>`
+    : '';
+
   return `
     <div class="section-label">Tipster picks (${majority})</div>
-    <div class="tip-chips">${chips}</div>`;
+    <div class="tip-chips">${chips}</div>
+    ${ouSection}`;
 }
 
 function escapeHtml(s) {
