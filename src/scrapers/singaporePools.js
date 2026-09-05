@@ -50,6 +50,36 @@ function toFixture({ homeTeam, awayTeam, kickoffISO, league, sgpMatchId }) {
 }
 
 /**
+ * Parses the real fixture-events API confirmed via production capture:
+ * api.singaporepools.com/football/events/v1/{upcoming-event,live}. Unlike
+ * what extractFixturesFromJson assumes, there's no separate home/away
+ * field — each event's teams are combined into one "name" string like
+ * "Ascoli vs Benevento SRL" (or "... (Live)" for in-play events), with
+ * startTime already a clean ISO 8601 UTC string and type.name giving the
+ * competition/league.
+ */
+function extractFixturesFromEventsApi(data) {
+  if (!data || !Array.isArray(data.events)) return [];
+  const results = [];
+  for (const event of data.events) {
+    if (!event || typeof event.name !== 'string' || !event.startTime) continue;
+    const cleanName = event.name.replace(/\s*\(live\)\s*$/i, '').trim();
+    const parts = cleanName.split(/\s+vs\s+/i);
+    if (parts.length !== 2) continue;
+    const [homeTeam, awayTeam] = parts;
+    const fixture = toFixture({
+      homeTeam,
+      awayTeam,
+      kickoffISO: new Date(event.startTime).toISOString(),
+      league: event.type?.name || null,
+      sgpMatchId: event.id != null ? String(event.id) : null,
+    });
+    if (fixture) results.push(fixture);
+  }
+  return results;
+}
+
+/**
  * Best-effort parser for the rendered page. Real markup/selectors are not
  * yet verified against the live site (see README "Debugging" section), so
  * this looks for generic "Team A v Team B" (or "vs") text patterns plus a
@@ -246,6 +276,16 @@ async function fetchOpenFixtures() {
 
   // If the page's own JSON calls look like fixture data, prefer that —
   // it's the real source of truth rather than scraped/rendered text.
+  // Try the verified real API shape first (api.singaporepools.com/football/
+  // events/v1/{upcoming-event,live} — confirmed via production capture),
+  // then fall back to the generic key-matching walk for any other shape.
+  for (const { body } of rendered.capturedJson) {
+    const fixtures = extractFixturesFromEventsApi(body);
+    if (fixtures.length) {
+      if (DEBUG) console.log(`[singaporePools] extracted ${fixtures.length} fixtures from the events API`);
+      return fixtures;
+    }
+  }
   for (const { body } of rendered.capturedJson) {
     const fixtures = extractFixturesFromJson(body);
     if (fixtures.length) {
@@ -310,4 +350,11 @@ function extractFixturesFromJson(data) {
   return results;
 }
 
-module.exports = { fetchOpenFixtures, extractFixturesFromJson, parseRenderedHtml, coerceSgTimeToISO, getLastCapture };
+module.exports = {
+  fetchOpenFixtures,
+  extractFixturesFromJson,
+  extractFixturesFromEventsApi,
+  parseRenderedHtml,
+  coerceSgTimeToISO,
+  getLastCapture,
+};
