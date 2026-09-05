@@ -2,7 +2,11 @@ const cheerio = require('cheerio');
 const { fetchHtml } = require('./fetchHtml');
 const { inferTotalsPick } = require('./totalsHeuristics');
 
-const URL = 'https://www.whoscored.com/previews';
+// Named PAGE_URL, not URL — a module-level `const URL = '...'` would shadow
+// the global URL constructor, breaking `new URL(href, ...)` below (this
+// exact bug hit sportsmole.js's copy of this pattern in production:
+// "URL is not a constructor").
+const PAGE_URL = 'https://www.whoscored.com/previews';
 
 // Unlike Forebet/PredictZ/WinDrawWin, WhoScored doesn't publish predictions
 // as a structured table — its "previews" page is a list of prose preview
@@ -14,7 +18,7 @@ const URL = 'https://www.whoscored.com/previews';
 // found, the tip is still returned with pick: null (still shown as a
 // preview link) rather than dropped.
 async function fetchWhoScoredTips() {
-  const html = await fetchHtml('whoscored', URL);
+  const html = await fetchHtml('whoscored', PAGE_URL);
   const $ = cheerio.load(html);
   const tips = [];
 
@@ -34,7 +38,7 @@ async function fetchWhoScoredTips() {
       pick: inferPickFromProse(contextText),
       totalsPick: inferTotalsPickFromProse(contextText),
       rawText: contextText.slice(0, 200),
-      sourceUrl: href ? new URL(href, URL).toString() : URL,
+      sourceUrl: href ? new URL(href, PAGE_URL).toString() : PAGE_URL,
     });
   });
 
