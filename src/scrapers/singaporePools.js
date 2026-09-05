@@ -133,10 +133,30 @@ async function renderWithBrowser() {
 
     const html = await page.content();
 
+    // A capture against the wrong URL rendered the site's own 404 page
+    // (title "Page Not Found | Singapore Pools") — confirmed SPORTS_URL is
+    // wrong. The 404 page still carries the site's real shared nav/header,
+    // so pulling every internal link out of it (rather than dumping more
+    // raw HTML, which is mostly SVG icon paths before any nav text) is the
+    // fastest way to find the actual sports/football route without
+    // guessing at one.
+    const $ = cheerio.load(html);
+    const title = $('title').text();
+    const navLinks = [
+      ...new Set(
+        $('a[href]')
+          .map((_, el) => $(el).attr('href'))
+          .get()
+          .filter((href) => href && (href.startsWith('/') || href.includes('singaporepools')))
+      ),
+    ].sort();
+
     lastCapture = {
       capturedAt: new Date().toISOString(),
+      pageTitle: title,
       htmlLength: html.length,
       htmlSample: html.slice(0, 20000),
+      navLinks,
       capturedJson: capturedJson.map((c) => ({
         url: c.url,
         bodySample: JSON.stringify(c.body).slice(0, 5000),
