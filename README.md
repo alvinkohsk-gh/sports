@@ -74,6 +74,51 @@ npm start
 
 Open http://localhost:3000.
 
+## Deploying to Vercel
+
+`src/app.js` holds the Express app (routes + static file serving);
+`api/index.js` re-exports it as a single Vercel serverless function, and
+`vercel.json` rewrites every request to it (the function serves static
+assets itself via `express.static`, same as local dev).
+
+Two things had to change for serverless specifically:
+
+- **No persistent background loop.** Locally, `src/server.js` proactively
+  refreshes on a timer (`SGPOOLS_POLL_MS`/`ODDS_POLL_MS`) so requests are
+  always instant. Serverless functions don't keep a process running
+  between invocations, so `src/app.js` instead refreshes on-demand: each
+  request checks if the cached data (which persists only as long as that
+  particular function instance stays warm) is older than `CACHE_TTL_MS`
+  (default 60s) and re-fetches if so. Worst case is one slow request per
+  cold start / cache expiry, not a correctness issue.
+- **Playwright's bundled Chromium doesn't fit serverless.** Locally (and
+  via `npx playwright install chromium`), Playwright downloads and drives
+  its own full Chromium build — too large for Vercel's function size
+  limits. `src/scrapers/browser.js` detects `process.env.VERCEL` and
+  switches to `@sparticuz/chromium-min` (a Chromium build made for
+  serverless, fetched at cold start from a hosted release archive) driven
+  via `playwright-core`. **This exact combination was verified working in
+  this environment**: the launch, the remote binary fetch, and the
+  ESM/CJS export-shape handling (`chromium-min`'s `.default` export) were
+  all confirmed by actually launching a browser instance with
+  `VERCEL=1` set locally — not just written and hoped to work.
+
+If you ever bump `@sparticuz/chromium-min` in `package.json`, update the
+matching `CHROMIUM_MIN_VERSION` constant in `src/scrapers/browser.js` to
+the same version — they must stay in lockstep, since that constant builds
+the download URL for that exact release's binary.
+
+**Environment variables to set in the Vercel project** (Project Settings →
+Environment Variables): `ODDS_API_KEY` (required unless `MOCK_MODE=true`),
+and optionally `MOCK_MODE`, `CACHE_TTL_MS`, `SGPOOLS_DEBUG`,
+`TIPSTERS_DEBUG` — same meanings as in `.env.example`.
+
+Deploy with `vercel --prod`, or connect the GitHub repo in the Vercel
+dashboard for automatic deploys on push. `vercel.json` sets
+`maxDuration: 60` on the function since a cold-start browser render (SG
+Pools, plus PredictZ/WinDrawWin's Cloudflare fallback) can take a while;
+raise it further if you see timeouts in the function logs.
+
 ## Try it without an API key or network access
 
 ```bash

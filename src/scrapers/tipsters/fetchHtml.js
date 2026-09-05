@@ -1,9 +1,17 @@
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const axios = require('axios');
+const { launchBrowser, IS_SERVERLESS } = require('../browser');
 
 const DEBUG = String(process.env.TIPSTERS_DEBUG || 'false').toLowerCase() === 'true';
-const DEBUG_DIR = path.join(__dirname, '..', '..', '..', 'debug-tipsters');
+// Vercel's filesystem is read-only outside /tmp, so debug dumps go there
+// when running serverless (won't be visible without a way to read /tmp —
+// fine, this is a local-development debugging aid) instead of the project
+// directory used for local runs.
+const DEBUG_DIR = IS_SERVERLESS
+  ? path.join(os.tmpdir(), 'debug-tipsters')
+  : path.join(__dirname, '..', '..', '..', 'debug-tipsters');
 
 const HTTP_HEADERS = {
   'User-Agent':
@@ -16,8 +24,12 @@ function looksLikeChallengePage(html) {
 
 function dumpDebug(site, html) {
   if (!DEBUG) return;
-  fs.mkdirSync(DEBUG_DIR, { recursive: true });
-  fs.writeFileSync(path.join(DEBUG_DIR, `${site}.html`), html);
+  try {
+    fs.mkdirSync(DEBUG_DIR, { recursive: true });
+    fs.writeFileSync(path.join(DEBUG_DIR, `${site}.html`), html);
+  } catch (err) {
+    console.error(`[tipsters:${site}] could not write debug dump:`, err.message);
+  }
 }
 
 /**
@@ -38,8 +50,7 @@ async function fetchHtml(site, url) {
     if (DEBUG) console.log(`[tipsters:${site}] plain fetch failed (${err.message}), trying browser render`);
   }
 
-  const { chromium } = require('playwright');
-  const browser = await chromium.launch();
+  const browser = await launchBrowser();
   try {
     const page = await browser.newPage({ userAgent: HTTP_HEADERS['User-Agent'] });
     await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });

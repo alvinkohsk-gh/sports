@@ -1,10 +1,15 @@
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const cheerio = require('cheerio');
+const { launchBrowser, IS_SERVERLESS } = require('./browser');
 
 const DEBUG = String(process.env.SGPOOLS_DEBUG || 'false').toLowerCase() === 'true';
-const DEBUG_HTML_PATH = path.join(__dirname, '..', '..', 'debug-sgpools-raw.html');
-const DEBUG_SCREENSHOT_PATH = path.join(__dirname, '..', '..', 'debug-sgpools-screenshot.png');
+// Vercel's filesystem is read-only outside /tmp, so debug dumps go there
+// when running serverless instead of the project directory used locally.
+const DEBUG_DIR = IS_SERVERLESS ? os.tmpdir() : path.join(__dirname, '..', '..');
+const DEBUG_HTML_PATH = path.join(DEBUG_DIR, 'debug-sgpools-raw.html');
+const DEBUG_SCREENSHOT_PATH = path.join(DEBUG_DIR, 'debug-sgpools-screenshot.png');
 
 // Corrected from an earlier wrong guess (www.singaporepools.com.sg, which is
 // a different, older domain). This is a modern single-page app — the
@@ -80,12 +85,7 @@ function coerceSgTimeToISO(raw) {
  * we grab it opportunistically instead of guessing endpoint URLs upfront.
  */
 async function renderWithBrowser() {
-  const { chromium } = require('playwright');
-  const launchOptions = process.env.PLAYWRIGHT_BROWSERS_PATH
-    ? { executablePath: `${process.env.PLAYWRIGHT_BROWSERS_PATH}/chromium`.replace(/\/+/g, '/') }
-    : {};
-
-  const browser = await chromium.launch(launchOptions).catch(() => chromium.launch());
+  const browser = await launchBrowser();
   const capturedJson = [];
 
   try {
@@ -107,8 +107,12 @@ async function renderWithBrowser() {
     const html = await page.content();
 
     if (DEBUG) {
-      fs.writeFileSync(DEBUG_HTML_PATH, html);
-      await page.screenshot({ path: DEBUG_SCREENSHOT_PATH, fullPage: true }).catch(() => {});
+      try {
+        fs.writeFileSync(DEBUG_HTML_PATH, html);
+        await page.screenshot({ path: DEBUG_SCREENSHOT_PATH, fullPage: true });
+      } catch (err) {
+        console.error('[singaporePools] could not write debug dump:', err.message);
+      }
       console.log(
         `[singaporePools] rendered page: ${html.length} bytes of HTML -> ${DEBUG_HTML_PATH}, ` +
           `screenshot -> ${DEBUG_SCREENSHOT_PATH}, captured ${capturedJson.length} JSON responses`

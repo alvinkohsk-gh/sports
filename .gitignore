@@ -4,3 +4,4 @@ node_modules/
 debug-sgpools-raw.html
 debug-sgpools-screenshot.png
 debug-tipsters/
+.vercel
