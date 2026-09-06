@@ -57,8 +57,12 @@ async function fetchHtml(site, url) {
       // tables this scraper reads are server-rendered, so 'domcontentloaded'
       // plus a brief settle (same approach used for singaporePools.js) is
       // both faster and more reliable.
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
-      await page.waitForTimeout(2000);
+      // With only one shared page allowed at a time (see browser.js), every
+      // page in the refresh's serial queue eats into the same 60s function
+      // budget — shortened from 2000ms now that image/media/font/ad
+      // requests are blocked and there's much less left to settle.
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      await page.waitForTimeout(500);
       const html = await page.content();
       dumpDebug(site, html);
       return html;

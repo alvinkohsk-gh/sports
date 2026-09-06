@@ -193,13 +193,21 @@ async function renderWithBrowser() {
     // initial page load; waiting for that spinner to detach is then the real
     // signal that client-side data-fetching has finished, rather than a
     // fixed delay that's a guess at how long that takes on a cold instance.
-    await page.goto(SPORTS_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto(SPORTS_URL, { waitUntil: 'domcontentloaded', timeout: 20000 });
+    // Runtime timing logs showed this consistently burning its entire
+    // timeout (the loader indicator never detaches within it, at least from
+    // this environment) rather than resolving early — shortened from 20000ms
+    // since every page in the refresh's serial queue (see browser.js: only
+    // one shared page is allowed at a time) eats into the same 60s function
+    // budget, and paying the full wait for a selector that never clears here
+    // was consuming over a third of it for nothing.
     await page
-      .waitForSelector('[data-testid="general_loader_indicator"]', { state: 'detached', timeout: 20000 })
+      .waitForSelector('[data-testid="general_loader_indicator"]', { state: 'detached', timeout: 8000 })
       .catch(() => {
-        if (DEBUG) console.log('[singaporePools] loader indicator never appeared/detached within 20s');
+        if (DEBUG) console.log('[singaporePools] loader indicator never appeared/detached within 8s');
       });
-    await page.waitForTimeout(2000); // brief settle after the loader clears
+    // Shortened from 2000ms — same reasoning as the timeout above.
+    await page.waitForTimeout(500);
 
     const html = await page.content();
 

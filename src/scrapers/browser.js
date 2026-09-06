@@ -63,40 +63,35 @@ async function launchBrowser(launchOptions = {}) {
 // past the function's resources ("net::ERR_INSUFFICIENT_RESOURCES", then
 // "Target page, context or browser has been closed" as processes got
 // killed), which left /api/matches returning 0 matches or timing out.
-// Sharing one browser process across a whole refresh — and across warm
-// invocations, same idea as the executablePath cache above — fixes the
-// process-count problem.
-let cachedBrowserPromise = null;
-
-async function getSharedBrowser() {
-  if (cachedBrowserPromise) {
-    const browser = await cachedBrowserPromise.catch(() => null);
-    if (browser && browser.isConnected()) return browser;
-    cachedBrowserPromise = null;
-  }
-  cachedBrowserPromise = launchBrowser();
-  return cachedBrowserPromise;
-}
-
-// Sharing the browser process alone wasn't enough: @sparticuz/chromium-min
-// launches with --single-process (visible in the actual launch args in
-// production logs), meaning every tab runs inside one OS process with no
-// per-tab isolation. With up to ~11 tabs opened concurrently, one tab
-// crashing (or the process hitting a resource ceiling) took the whole
-// browser down mid-navigation for every other concurrent caller too —
-// confirmed via runtime logs showing "Target page, context or browser has
-// been closed" simultaneously across SG Pools and multiple tipster sites
-// in the same request.
 //
-// Fully serializing (one page at a time) was tried first and made things
-// worse: confirmed via runtime logs to turn every single request into a
-// guaranteed "Task timed out after 60 seconds", since summing ~9 pages'
-// worst-case navigation timeouts one after another blows past
-// maxDuration even though each page alone fits comfortably. A small
-// concurrency cap keeps enough tabs open at once to fit the whole refresh
-// in maxDuration, while staying far enough below the ~9-11 that actually
-// triggered the single-process crash.
-const MAX_CONCURRENT_PAGES = 3;
+// Giving each page its own dedicated browser process (not shared) was
+// tried and made memory pressure worse, not better: confirmed via runtime
+// logs that running even 3 concurrent full --single-process Chromium
+// instances (each a whole browser, not just a tab) hits
+// net::ERR_INSUFFICIENT_RESOURCES at launch time faster than one shared
+// instance with 3 tabs did — a full browser process costs more than a tab.
+//
+// Sharing one browser process across the whole refresh (with a concurrency
+// cap on tabs) was tried too and failed a different way: @sparticuz/
+// chromium-min launches with --single-process (visible in the actual
+// launch args in production logs), so every tab runs inside one OS process
+// with no per-tab isolation. Confirmed via runtime logs — even after
+// raising function memory to 3009MB and blocking images/media/fonts/ad
+// hosts to cut each tab's footprint — that 3 concurrent tabs still took
+// the single process down outright ("Target page, context or browser has
+// been closed" across SG Pools and multiple tipster sites simultaneously
+// in the same request). A single --single-process instance is too fragile
+// to hold up more than one tab at a time here.
+//
+// So this keeps one shared browser (least total memory) but serializes
+// tab usage down to exactly 1 at a time — the only concurrency level that
+// doesn't crash the shared single process. A fully-serial run without any
+// resource blocking was tried earlier and blew past maxDuration (summing
+// ~9 pages' worst-case navigation timeouts guarantees "Task timed out
+// after 60 seconds" even though each page alone fits comfortably); the
+// image/media/font/ad blocking below cuts enough per-page load time to
+// bring the serialized total back under maxDuration.
+const MAX_CONCURRENT_PAGES = 1;
 let activePages = 0;
 const pageWaiters = [];
 
@@ -171,6 +166,18 @@ async function blockHeavyRequests(page) {
   });
 }
 
+let cachedBrowserPromise = null;
+
+async function getSharedBrowser() {
+  if (cachedBrowserPromise) {
+    const browser = await cachedBrowserPromise.catch(() => null);
+    if (browser && browser.isConnected()) return browser;
+    cachedBrowserPromise = null;
+  }
+  cachedBrowserPromise = launchBrowser();
+  return cachedBrowserPromise;
+}
+
 async function withSharedPage(fn, pageOptions = {}) {
   await acquirePageSlot();
   try {
@@ -187,4 +194,4 @@ async function withSharedPage(fn, pageOptions = {}) {
   }
 }
 
-module.exports = { launchBrowser, getSharedBrowser, withSharedPage, IS_SERVERLESS };
+module.exports = { launchBrowser, withSharedPage, IS_SERVERLESS };
