@@ -2,7 +2,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const cheerio = require('cheerio');
-const { launchBrowser, IS_SERVERLESS } = require('./browser');
+const { getSharedBrowser, IS_SERVERLESS } = require('./browser');
 
 const DEBUG = String(process.env.SGPOOLS_DEBUG || 'false').toLowerCase() === 'true';
 // Vercel's filesystem is read-only outside /tmp, so debug dumps go there
@@ -168,11 +168,11 @@ function coerceSgTimeToISO(raw) {
  * we grab it opportunistically instead of guessing endpoint URLs upfront.
  */
 async function renderWithBrowser() {
-  const browser = await launchBrowser();
+  const browser = await getSharedBrowser();
   const capturedJson = [];
+  const page = await browser.newPage();
 
   try {
-    const page = await browser.newPage();
     page.on('response', async (response) => {
       const contentType = response.headers()['content-type'] || '';
       if (!contentType.includes('json')) return;
@@ -260,7 +260,7 @@ async function renderWithBrowser() {
 
     return { html, capturedJson };
   } finally {
-    await browser.close();
+    await page.close();
   }
 }
 
