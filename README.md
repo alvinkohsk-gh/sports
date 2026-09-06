@@ -85,7 +85,11 @@ Two things had to change for serverless specifically:
   limits. `src/scrapers/browser.js` detects `process.env.VERCEL` and
   switches to `@sparticuz/chromium-min` (a Chromium build made for
   serverless, fetched at cold start from a hosted release archive) driven
-  via `playwright-core`.
+  via `playwright-core`. That build launches with `--single-process`, so
+  it can't safely hold more than one page open at a time — `browser.js`
+  shares one browser instance across the whole refresh and serializes page
+  usage down to exactly one page at once (see the comments there for the
+  crash/timeout tradeoffs that landed on that number).
 
 If you ever bump `@sparticuz/chromium-min` in `package.json`, update the
 matching `CHROMIUM_MIN_VERSION` constant in `src/scrapers/browser.js` to
@@ -98,10 +102,14 @@ Environment Variables): optionally `MOCK_MODE`, `CACHE_TTL_MS`,
 required; the app works out of the box against the live sites.
 
 Deploy with `vercel --prod`, or connect the GitHub repo in the Vercel
-dashboard for automatic deploys on push. `vercel.json` sets
-`maxDuration: 60` on the function since a cold-start browser render (SG
-Pools, plus PredictZ/WinDrawWin's Cloudflare fallback) can take a while;
-raise it further if you see timeouts in the function logs.
+dashboard for automatic deploys on push. `vercel.json` sets `maxDuration:
+60` (Vercel Hobby's ceiling for this runtime — it can't be raised further
+on that plan) and `memory: 3009` on the function, since fitting Singapore
+Pools' render plus all 5 tipster fetches through the single shared page
+above needs both the time and the memory headroom. `src/scrapers/tipsters/
+index.js` also caps the whole tipster-fetching phase at a 25s deadline, so
+one slow/hanging site can't push the response past `maxDuration` — it just
+returns whichever picks finished in time.
 
 ## Try it without network access
 
