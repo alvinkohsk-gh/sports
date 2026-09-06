@@ -63,9 +63,109 @@ async function launchBrowser(launchOptions = {}) {
 // past the function's resources ("net::ERR_INSUFFICIENT_RESOURCES", then
 // "Target page, context or browser has been closed" as processes got
 // killed), which left /api/matches returning 0 matches or timing out.
-// Sharing one browser process across a whole refresh — and across warm
-// invocations, same idea as the executablePath cache above — fixes the
-// process-count problem.
+//
+// Giving each page its own dedicated browser process (not shared) was
+// tried and made memory pressure worse, not better: confirmed via runtime
+// logs that running even 3 concurrent full --single-process Chromium
+// instances (each a whole browser, not just a tab) hits
+// net::ERR_INSUFFICIENT_RESOURCES at launch time faster than one shared
+// instance with 3 tabs did — a full browser process costs more than a tab.
+//
+// Sharing one browser process across the whole refresh (with a concurrency
+// cap on tabs) was tried too and failed a different way: @sparticuz/
+// chromium-min launches with --single-process (visible in the actual
+// launch args in production logs), so every tab runs inside one OS process
+// with no per-tab isolation. Confirmed via runtime logs — even after
+// raising function memory to 3009MB and blocking images/media/fonts/ad
+// hosts to cut each tab's footprint — that 3 concurrent tabs still took
+// the single process down outright ("Target page, context or browser has
+// been closed" across SG Pools and multiple tipster sites simultaneously
+// in the same request). A single --single-process instance is too fragile
+// to hold up more than one tab at a time here.
+//
+// So this keeps one shared browser (least total memory) but serializes
+// tab usage down to exactly 1 at a time — the only concurrency level that
+// doesn't crash the shared single process. A fully-serial run without any
+// resource blocking was tried earlier and blew past maxDuration (summing
+// ~9 pages' worst-case navigation timeouts guarantees "Task timed out
+// after 60 seconds" even though each page alone fits comfortably); the
+// image/media/font/ad blocking below cuts enough per-page load time to
+// bring the serialized total back under maxDuration.
+const MAX_CONCURRENT_PAGES = 1;
+let activePages = 0;
+const pageWaiters = [];
+
+function acquirePageSlot() {
+  if (activePages < MAX_CONCURRENT_PAGES) {
+    activePages += 1;
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => pageWaiters.push(resolve));
+}
+
+function releasePageSlot() {
+  const next = pageWaiters.shift();
+  if (next) {
+    next();
+  } else {
+    activePages -= 1;
+  }
+}
+
+// Raising the function's memory to 3009MB (Vercel's practical ceiling for
+// this runtime) on top of the concurrency-3 cap still wasn't enough —
+// confirmed via runtime logs to keep producing the same
+// net::ERR_INSUFFICIENT_RESOURCES / "Target page, context or browser has
+// been closed" failures. These are ad/tracker-heavy tipster sites (see
+// fetchHtml.js/singaporePools.js comments), so the actual fix is cutting
+// what each tab costs rather than raising the ceiling further: block image/
+// media/font loads and known ad-serving hosts, since none of the scrapers
+// read images, play media, or need ad content — they only read text/DOM
+// (fetchHtml.js) or JSON XHR responses (singaporePools.js).
+const BLOCKED_RESOURCE_TYPES = new Set(['image', 'media', 'font']);
+const BLOCKED_HOSTNAME_PATTERNS = [
+  /(^|\.)doubleclick\.net$/,
+  /(^|\.)googlesyndication\.com$/,
+  /(^|\.)google-analytics\.com$/,
+  /(^|\.)googletagmanager\.com$/,
+  /(^|\.)googletagservices\.com$/,
+  /(^|\.)adservice\.google\.com$/,
+  /(^|\.)facebook\.net$/,
+  /(^|\.)connect\.facebook\.com$/,
+  /(^|\.)amazon-adsystem\.com$/,
+  /(^|\.)taboola\.com$/,
+  /(^|\.)outbrain\.com$/,
+  /(^|\.)criteo\.com$/,
+  /(^|\.)adnxs\.com$/,
+  /(^|\.)pubmatic\.com$/,
+  /(^|\.)rubiconproject\.com$/,
+  /(^|\.)moatads\.com$/,
+  /(^|\.)scorecardresearch\.com$/,
+  /(^|\.)quantserve\.com$/,
+  /(^|\.)hotjar\.com$/,
+];
+
+function isBlockedHostname(hostname) {
+  return BLOCKED_HOSTNAME_PATTERNS.some((pattern) => pattern.test(hostname));
+}
+
+async function blockHeavyRequests(page) {
+  await page.route('**/*', (route) => {
+    const request = route.request();
+    if (BLOCKED_RESOURCE_TYPES.has(request.resourceType())) {
+      return route.abort();
+    }
+    try {
+      if (isBlockedHostname(new URL(request.url()).hostname)) {
+        return route.abort();
+      }
+    } catch {
+      // unparseable URL — let it through rather than risk blocking something needed
+    }
+    return route.continue();
+  });
+}
+
 let cachedBrowserPromise = null;
 
 async function getSharedBrowser() {
@@ -78,36 +178,20 @@ async function getSharedBrowser() {
   return cachedBrowserPromise;
 }
 
-// Sharing the browser process alone wasn't enough: @sparticuz/chromium-min
-// launches with --single-process (visible in the actual launch args in
-// production logs), meaning every tab runs inside one OS process with no
-// per-tab isolation. With up to ~11 tabs opened concurrently, one tab
-// crashing (or the process hitting a resource ceiling) took the whole
-// browser down mid-navigation for every other concurrent caller too —
-// confirmed via runtime logs showing "Target page, context or browser has
-// been closed" simultaneously across SG Pools and multiple tipster sites
-// in the same request. Serializing page usage through a single queue (only
-// one page open/navigating at a time against the shared browser) avoids
-// that correlated crash, at the cost of scraping sequentially instead of
-// concurrently — still well within maxDuration: 60s for ~11 page loads.
-let pageQueue = Promise.resolve();
-
 async function withSharedPage(fn, pageOptions = {}) {
-  const run = async () => {
+  await acquirePageSlot();
+  try {
     const browser = await getSharedBrowser();
     const page = await browser.newPage(pageOptions);
     try {
+      await blockHeavyRequests(page);
       return await fn(page);
     } finally {
       await page.close().catch(() => {});
     }
-  };
-  const result = pageQueue.then(run, run);
-  pageQueue = result.then(
-    () => {},
-    () => {}
-  );
-  return result;
+  } finally {
+    releasePageSlot();
+  }
 }
 
-module.exports = { launchBrowser, getSharedBrowser, withSharedPage, IS_SERVERLESS };
+module.exports = { launchBrowser, withSharedPage, IS_SERVERLESS };
