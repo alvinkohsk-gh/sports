@@ -39,15 +39,15 @@ last two are best-effort and may return `pick: null` for matches where no
 scoreline or clear phrase was found nearby — they're still shown as a
 preview link in that case, just without a vote counted.
 
-**Over/Under picks**: all five sites also contribute a `totalsPick`
-(`{ selection: 'over'|'under', point }`). Forebet/PredictZ/WinDrawWin each
-have a dedicated O/U page — team-name extraction there reuses the same
-verified row/team selectors as their 1X2 page, but **the O/U pick text
-itself is unverified** (no reference scraper covers those pages), so it's
-inferred with a generic "over"/"under" word/prefix heuristic
-(`src/scrapers/tipsters/totalsHeuristics.js`). WhoScored/Sports Mole infer
-it from their predicted scoreline directly (e.g. "2-1" → over 2.5) when
-one is found, falling back to the same word heuristic otherwise.
+**Over/Under picks**: only WhoScored and Sports Mole currently contribute a
+`totalsPick` (`{ selection: 'over'|'under', point }`), inferred from their
+predicted scoreline directly (e.g. "2-1" → over 2.5) when one is found,
+falling back to a generic "over"/"under" word/prefix heuristic
+(`src/scrapers/tipsters/totalsHeuristics.js`) otherwise. Forebet/PredictZ/
+WinDrawWin each used to also fetch a dedicated O/U page, but with only one
+shared headless-browser page allowed at a time (see "Deploying to Vercel"
+below), every extra page tightened the whole refresh's time budget — those
+three sites' `totalsPick` is now always `null`.
 
 Set `TIPSTERS_DEBUG=true` and check `debug-tipsters/<site>.html` if a site
 comes back with 0 picks.
