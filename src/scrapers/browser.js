@@ -63,9 +63,9 @@ async function launchBrowser(launchOptions = {}) {
 // past the function's resources ("net::ERR_INSUFFICIENT_RESOURCES", then
 // "Target page, context or browser has been closed" as processes got
 // killed), which left /api/matches returning 0 matches or timing out.
-// Sharing one browser process (with a page per scrape) across a whole
-// refresh — and across warm invocations, same idea as the executablePath
-// cache above — fixes that; only page count grows, not process count.
+// Sharing one browser process across a whole refresh — and across warm
+// invocations, same idea as the executablePath cache above — fixes the
+// process-count problem.
 let cachedBrowserPromise = null;
 
 async function getSharedBrowser() {
@@ -78,4 +78,36 @@ async function getSharedBrowser() {
   return cachedBrowserPromise;
 }
 
-module.exports = { launchBrowser, getSharedBrowser, IS_SERVERLESS };
+// Sharing the browser process alone wasn't enough: @sparticuz/chromium-min
+// launches with --single-process (visible in the actual launch args in
+// production logs), meaning every tab runs inside one OS process with no
+// per-tab isolation. With up to ~11 tabs opened concurrently, one tab
+// crashing (or the process hitting a resource ceiling) took the whole
+// browser down mid-navigation for every other concurrent caller too —
+// confirmed via runtime logs showing "Target page, context or browser has
+// been closed" simultaneously across SG Pools and multiple tipster sites
+// in the same request. Serializing page usage through a single queue (only
+// one page open/navigating at a time against the shared browser) avoids
+// that correlated crash, at the cost of scraping sequentially instead of
+// concurrently — still well within maxDuration: 60s for ~11 page loads.
+let pageQueue = Promise.resolve();
+
+async function withSharedPage(fn, pageOptions = {}) {
+  const run = async () => {
+    const browser = await getSharedBrowser();
+    const page = await browser.newPage(pageOptions);
+    try {
+      return await fn(page);
+    } finally {
+      await page.close().catch(() => {});
+    }
+  };
+  const result = pageQueue.then(run, run);
+  pageQueue = result.then(
+    () => {},
+    () => {}
+  );
+  return result;
+}
+
+module.exports = { launchBrowser, getSharedBrowser, withSharedPage, IS_SERVERLESS };
