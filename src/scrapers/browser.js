@@ -86,14 +86,40 @@ async function getSharedBrowser() {
 // browser down mid-navigation for every other concurrent caller too —
 // confirmed via runtime logs showing "Target page, context or browser has
 // been closed" simultaneously across SG Pools and multiple tipster sites
-// in the same request. Serializing page usage through a single queue (only
-// one page open/navigating at a time against the shared browser) avoids
-// that correlated crash, at the cost of scraping sequentially instead of
-// concurrently — still well within maxDuration: 60s for ~11 page loads.
-let pageQueue = Promise.resolve();
+// in the same request.
+//
+// Fully serializing (one page at a time) was tried first and made things
+// worse: confirmed via runtime logs to turn every single request into a
+// guaranteed "Task timed out after 60 seconds", since summing ~9 pages'
+// worst-case navigation timeouts one after another blows past
+// maxDuration even though each page alone fits comfortably. A small
+// concurrency cap keeps enough tabs open at once to fit the whole refresh
+// in maxDuration, while staying far enough below the ~9-11 that actually
+// triggered the single-process crash.
+const MAX_CONCURRENT_PAGES = 3;
+let activePages = 0;
+const pageWaiters = [];
+
+function acquirePageSlot() {
+  if (activePages < MAX_CONCURRENT_PAGES) {
+    activePages += 1;
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => pageWaiters.push(resolve));
+}
+
+function releasePageSlot() {
+  const next = pageWaiters.shift();
+  if (next) {
+    next();
+  } else {
+    activePages -= 1;
+  }
+}
 
 async function withSharedPage(fn, pageOptions = {}) {
-  const run = async () => {
+  await acquirePageSlot();
+  try {
     const browser = await getSharedBrowser();
     const page = await browser.newPage(pageOptions);
     try {
@@ -101,13 +127,9 @@ async function withSharedPage(fn, pageOptions = {}) {
     } finally {
       await page.close().catch(() => {});
     }
-  };
-  const result = pageQueue.then(run, run);
-  pageQueue = result.then(
-    () => {},
-    () => {}
-  );
-  return result;
+  } finally {
+    releasePageSlot();
+  }
 }
 
 module.exports = { launchBrowser, getSharedBrowser, withSharedPage, IS_SERVERLESS };
