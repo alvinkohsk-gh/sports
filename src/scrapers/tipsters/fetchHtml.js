@@ -2,7 +2,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const axios = require('axios');
-const { launchBrowser, IS_SERVERLESS } = require('../browser');
+const { getSharedBrowser, IS_SERVERLESS } = require('../browser');
 
 const DEBUG = String(process.env.TIPSTERS_DEBUG || 'false').toLowerCase() === 'true';
 // Vercel's filesystem is read-only outside /tmp, so debug dumps go there
@@ -50,16 +50,21 @@ async function fetchHtml(site, url) {
     if (DEBUG) console.log(`[tipsters:${site}] plain fetch failed (${err.message}), trying browser render`);
   }
 
-  const browser = await launchBrowser();
+  const browser = await getSharedBrowser();
+  const page = await browser.newPage({ userAgent: HTTP_HEADERS['User-Agent'] });
   try {
-    const page = await browser.newPage({ userAgent: HTTP_HEADERS['User-Agent'] });
-    await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
+    // 'networkidle' reliably timed out here in production (30s exceeded)
+    // since these are ad/tracker-heavy pages that never go fully idle; the
+    // tables this scraper reads are server-rendered, so 'domcontentloaded'
+    // plus a brief settle (same approach used for singaporePools.js) is
+    // both faster and more reliable.
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
     await page.waitForTimeout(2000);
     const html = await page.content();
     dumpDebug(site, html);
     return html;
   } finally {
-    await browser.close();
+    await page.close();
   }
 }
 

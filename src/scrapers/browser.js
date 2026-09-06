@@ -56,4 +56,26 @@ async function launchBrowser(launchOptions = {}) {
   return playwrightChromium.launch(launchOptions);
 }
 
-module.exports = { launchBrowser, IS_SERVERLESS };
+// aggregator.js fires the SG Pools scraper and all 5 tipster scrapers (each
+// of which fetches up to 2 pages) concurrently. Each used to call
+// launchBrowser() independently, meaning up to ~11 separate Chromium
+// processes running at once on Vercel — confirmed via runtime logs to blow
+// past the function's resources ("net::ERR_INSUFFICIENT_RESOURCES", then
+// "Target page, context or browser has been closed" as processes got
+// killed), which left /api/matches returning 0 matches or timing out.
+// Sharing one browser process (with a page per scrape) across a whole
+// refresh — and across warm invocations, same idea as the executablePath
+// cache above — fixes that; only page count grows, not process count.
+let cachedBrowserPromise = null;
+
+async function getSharedBrowser() {
+  if (cachedBrowserPromise) {
+    const browser = await cachedBrowserPromise.catch(() => null);
+    if (browser && browser.isConnected()) return browser;
+    cachedBrowserPromise = null;
+  }
+  cachedBrowserPromise = launchBrowser();
+  return cachedBrowserPromise;
+}
+
+module.exports = { launchBrowser, getSharedBrowser, IS_SERVERLESS };
