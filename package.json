@@ -1,7 +1,7 @@
 {
   "name": "sg-pools-live-odds",
   "version": "1.0.0",
-  "description": "Live 1X2 / Over-Under odds board, filtered to matches open on Singapore Pools",
+  "description": "Tipster site predictions (1X2 and Over/Under), filtered to matches open on Singapore Pools",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {

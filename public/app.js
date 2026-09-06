@@ -19,59 +19,17 @@ function formatCountdown(ms) {
   return { text, cls };
 }
 
-function renderOneXTwo(oneXTwo) {
-  if (!oneXTwo || (oneXTwo.home == null && oneXTwo.draw == null && oneXTwo.away == null)) {
-    return '<div class="section-label">1X2: no odds available</div>';
-  }
-  return `
-    <div class="section-label">1X2 (best price)</div>
-    <table class="odds">
-      <thead><tr><th>Home</th><th>Draw</th><th>Away</th></tr></thead>
-      <tbody>
-        <tr>
-          <td class="price">${fmt(oneXTwo.home)}</td>
-          <td class="price">${fmt(oneXTwo.draw)}</td>
-          <td class="price">${fmt(oneXTwo.away)}</td>
-        </tr>
-      </tbody>
-    </table>`;
-}
-
-function renderTotals(totals) {
-  if (!totals || totals.length === 0) {
-    return '<div class="section-label">Over/Under: no odds available</div>';
-  }
-  const rows = totals
-    .map(
-      (t) => `<tr><td>${t.point}</td><td class="price">${fmt(t.over)}</td><td class="price">${fmt(t.under)}</td></tr>`
-    )
-    .join('');
-  return `
-    <div class="section-label">Total Goals — Over/Under (best price)</div>
-    <table class="odds">
-      <thead><tr><th>Line</th><th>Over</th><th>Under</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>`;
-}
-
-function fmt(v) {
-  return v == null ? '—' : Number(v).toFixed(2);
-}
-
 function pct(v) {
   return v == null ? '—' : `${(v * 100).toFixed(0)}%`;
 }
 
 function renderPick(topPick) {
   if (!topPick) return '';
-  const boostNote =
-    topPick.tipsterBoost > 0 ? ` (+${(topPick.tipsterBoost * 100).toFixed(0)}% tipster boost)` : '';
   return `
     <div class="pick">
       <div class="pick-label">Top pick: ${topPick.label}</div>
       <div class="pick-meta">
-        ${pct(topPick.probability)} consensus probability · ${topPick.bookmakerCount} bookmaker${topPick.bookmakerCount === 1 ? '' : 's'}
-        · confidence ${pct(topPick.confidenceScore)}${boostNote}
+        ${topPick.tipsterCount}/${topPick.totalTipsters} tipsters agree (${pct(topPick.agreement)})
       </div>
     </div>`;
 }
@@ -136,8 +94,6 @@ function renderCard(match) {
     <div class="kickoff-time">Kickoff: ${new Date(match.kickoffISO).toLocaleString()}</div>
     ${renderPick(match.topPick)}
     ${renderTipsters(match.tipsterConsensus)}
-    ${renderOneXTwo(match.oneXTwo)}
-    ${renderTotals(match.totals)}
   `;
   return div;
 }
@@ -150,12 +106,11 @@ function renderBestBet(bestBet) {
   }
   el.hidden = false;
   el.innerHTML = `
-    <div class="kicker">Highest confidence bet on the board</div>
+    <div class="kicker">Strongest tipster consensus on the board</div>
     <div class="headline">${bestBet.label} — ${bestBet.homeTeam} vs ${bestBet.awayTeam}</div>
     <div class="sub">
-      ${bestBet.league || ''} · ${pct(bestBet.probability)} consensus probability across
-      ${bestBet.bookmakerCount} bookmaker${bestBet.bookmakerCount === 1 ? '' : 's'} · confidence
-      ${pct(bestBet.confidenceScore)} · kickoff ${new Date(bestBet.kickoffISO).toLocaleString()}
+      ${bestBet.league || ''} · ${bestBet.tipsterCount}/${bestBet.totalTipsters} tipsters agree (${pct(bestBet.agreement)})
+      · kickoff ${new Date(bestBet.kickoffISO).toLocaleString()}
     </div>
   `;
 }
