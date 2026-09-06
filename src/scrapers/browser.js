@@ -16,6 +16,17 @@ const IS_SERVERLESS = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCT
 const CHROMIUM_MIN_VERSION = '149.0.0';
 const REMOTE_CHROMIUM_PACK = `https://github.com/Sparticuz/chromium/releases/download/v${CHROMIUM_MIN_VERSION}/chromium-v${CHROMIUM_MIN_VERSION}-pack.x64.tar`;
 
+// aggregator.js fires the SG Pools scraper and all 5 tipster scrapers
+// concurrently, and each independently calls launchBrowser() — on Vercel
+// that means several concurrent calls to chromium.executablePath(), which
+// extracts the binary to /tmp/chromium. Racing that extraction produced
+// "spawn ETXTBSY" in production (confirmed via runtime logs): one call
+// execs the file while another is still mid-write to it. Caching the
+// promise means the extraction happens once per warm instance and every
+// caller (concurrent or not) awaits the same result before launching its
+// own browser process against the now-stable binary.
+let cachedExecutablePathPromise = null;
+
 async function launchBrowser(launchOptions = {}) {
   if (IS_SERVERLESS) {
     // @sparticuz/chromium-min's build/index.js is a genuine ES Module —
@@ -30,10 +41,13 @@ async function launchBrowser(launchOptions = {}) {
     const chromium =
       typeof chromiumModule.executablePath === 'function' ? chromiumModule : chromiumModule.default;
     const { chromium: playwrightChromium } = require('playwright-core');
+    if (!cachedExecutablePathPromise) {
+      cachedExecutablePathPromise = chromium.executablePath(REMOTE_CHROMIUM_PACK);
+    }
     return playwrightChromium.launch({
       ...launchOptions,
       args: chromium.args,
-      executablePath: await chromium.executablePath(REMOTE_CHROMIUM_PACK),
+      executablePath: await cachedExecutablePathPromise,
       headless: true,
     });
   }

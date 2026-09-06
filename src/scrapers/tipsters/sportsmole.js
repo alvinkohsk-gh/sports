@@ -2,7 +2,10 @@ const cheerio = require('cheerio');
 const { fetchHtml } = require('./fetchHtml');
 const { inferPickFromProse, inferTotalsPickFromProse } = require('./whoscored');
 
-const URL = 'https://www.sportsmole.co.uk/football/preview/';
+// Named PAGE_URL, not URL — a module-level `const URL = '...'` shadows the
+// global URL constructor, breaking `new URL(href, ...)` below (confirmed
+// in production runtime logs: "URL is not a constructor").
+const PAGE_URL = 'https://www.sportsmole.co.uk/football/preview/';
 
 // Same situation as WhoScored: Sports Mole's preview hub is prose articles
 // ("Preview: Team A vs Team B - prediction, team news, lineups"), not a
@@ -10,7 +13,7 @@ const URL = 'https://www.sportsmole.co.uk/football/preview/';
 // (see whoscored.js for the same approach and its caveats) rather than a
 // verified selector.
 async function fetchSportsMoleTips() {
-  const html = await fetchHtml('sportsmole', URL);
+  const html = await fetchHtml('sportsmole', PAGE_URL);
   const $ = cheerio.load(html);
   const tips = [];
   const seen = new Set();
@@ -37,7 +40,7 @@ async function fetchSportsMoleTips() {
       pick: inferPickFromProse(contextText),
       totalsPick: inferTotalsPickFromProse(contextText),
       rawText: contextText.slice(0, 200),
-      sourceUrl: href ? new URL(href, URL).toString() : URL,
+      sourceUrl: href ? new URL(href, PAGE_URL).toString() : PAGE_URL,
     });
   });
 

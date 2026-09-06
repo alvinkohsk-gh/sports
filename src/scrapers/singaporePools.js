@@ -11,13 +11,28 @@ const DEBUG_DIR = IS_SERVERLESS ? os.tmpdir() : path.join(__dirname, '..', '..')
 const DEBUG_HTML_PATH = path.join(DEBUG_DIR, 'debug-sgpools-raw.html');
 const DEBUG_SCREENSHOT_PATH = path.join(DEBUG_DIR, 'debug-sgpools-screenshot.png');
 
-// Corrected from an earlier wrong guess (www.singaporepools.com.sg, which is
-// a different, older domain). This is a modern single-page app — the
-// fixture list is not present in the initial HTML, it's rendered
-// client-side after data loads. A plain HTTP GET (what this file used to
-// do) only sees the empty app shell, so this renders the page with a
+// Corrected twice now: first from www.singaporepools.com.sg (a different,
+// older domain), then from /en/sports (confirmed 404 in production — a
+// captured render of that path showed the real site's own "Page Not
+// Found" page, title and all). The real route was found by pulling every
+// internal nav link out of that 404 page's shared header, which listed
+// /sports/football alongside /sports/motor-racing, /lottery/toto, etc.
+// This is a modern single-page app — the fixture list is not present in
+// the initial HTML, it's rendered client-side after data loads. A plain
+// HTTP GET only sees the empty app shell, so this renders the page with a
 // headless browser instead and reads the DOM after it settles.
-const SPORTS_URL = 'https://online.singaporepools.com/en/sports';
+const SPORTS_URL = 'https://online.singaporepools.com/sports/football';
+
+// Vercel's /tmp (where DEBUG_HTML_PATH/DEBUG_SCREENSHOT_PATH write to) isn't
+// reachable from outside the function, so the last render is also kept here
+// in memory — /api/debug reads it via getLastCapture() to expose a real
+// sample of the page for building actual selectors, without needing
+// filesystem access to the serverless instance.
+let lastCapture = null;
+
+function getLastCapture() {
+  return lastCapture;
+}
 
 /**
  * Normalizes one fixture into the shape the rest of the app expects.
@@ -32,6 +47,36 @@ function toFixture({ homeTeam, awayTeam, kickoffISO, league, sgpMatchId }) {
     league: league || null,
     source: 'online.singaporepools.com',
   };
+}
+
+/**
+ * Parses the real fixture-events API confirmed via production capture:
+ * api.singaporepools.com/football/events/v1/{upcoming-event,live}. Unlike
+ * what extractFixturesFromJson assumes, there's no separate home/away
+ * field — each event's teams are combined into one "name" string like
+ * "Ascoli vs Benevento SRL" (or "... (Live)" for in-play events), with
+ * startTime already a clean ISO 8601 UTC string and type.name giving the
+ * competition/league.
+ */
+function extractFixturesFromEventsApi(data) {
+  if (!data || !Array.isArray(data.events)) return [];
+  const results = [];
+  for (const event of data.events) {
+    if (!event || typeof event.name !== 'string' || !event.startTime) continue;
+    const cleanName = event.name.replace(/\s*\(live\)\s*$/i, '').trim();
+    const parts = cleanName.split(/\s+vs\s+/i);
+    if (parts.length !== 2) continue;
+    const [homeTeam, awayTeam] = parts;
+    const fixture = toFixture({
+      homeTeam,
+      awayTeam,
+      kickoffISO: new Date(event.startTime).toISOString(),
+      league: event.type?.name || null,
+      sgpMatchId: event.id != null ? String(event.id) : null,
+    });
+    if (fixture) results.push(fixture);
+  }
+  return results;
 }
 
 /**
@@ -61,6 +106,44 @@ function parseRenderedHtml(html) {
     const fixture = toFixture({ homeTeam, awayTeam, kickoffISO });
     if (fixture) results.push(fixture);
   }
+  return results;
+}
+
+/**
+ * Debug helper: finds objects that look like a fixture/event (an "id" key
+ * plus some "market"-ish key, matching the real /sports/football API shape
+ * discovered in production) and returns their own keys with nested
+ * arrays/objects collapsed to a short marker — enough to read off the real
+ * team-name/date field names without the multi-KB odds payload each event
+ * carries under "markets".
+ */
+function summarizeEventShapes(data, maxResults = 3) {
+  const results = [];
+  const seen = new Set();
+
+  function visit(node, depth) {
+    if (!node || typeof node !== 'object' || depth > 8 || results.length >= maxResults) return;
+    if (Array.isArray(node)) {
+      node.forEach((n) => visit(n, depth + 1));
+      return;
+    }
+    const keys = Object.keys(node);
+    if (keys.includes('id') && keys.some((k) => /market/i.test(k))) {
+      const shallow = {};
+      for (const k of keys) {
+        const v = node[k];
+        shallow[k] = Array.isArray(v) ? `[array len=${v.length}]` : v && typeof v === 'object' ? '[object]' : v;
+      }
+      const fingerprint = JSON.stringify(shallow);
+      if (!seen.has(fingerprint)) {
+        seen.add(fingerprint);
+        results.push(shallow);
+      }
+    }
+    Object.values(node).forEach((v) => visit(v, depth + 1));
+  }
+
+  visit(data, 0);
   return results;
 }
 
@@ -101,10 +184,65 @@ async function renderWithBrowser() {
       }
     });
 
-    await page.goto(SPORTS_URL, { waitUntil: 'networkidle', timeout: 30000 });
-    await page.waitForTimeout(3000); // let any client-side rendering settle
+    // 'networkidle' is unreliable here and was confirmed to fail two ways in
+    // production: it can time out entirely (this app appears to keep some
+    // background connection open, so "idle" never arrives) or resolve the
+    // instant the initial HTML/JS/CSS finish downloading — before the
+    // just-loaded bundle has even started executing, let alone fetching
+    // match data. A captured render at that point showed only the app's own
+    // loading spinner (`#general_loader_indicator`) with zero JSON responses
+    // observed. 'domcontentloaded' is fast and reliable for getting past the
+    // initial page load; waiting for that spinner to detach is then the real
+    // signal that client-side data-fetching has finished, rather than a
+    // fixed delay that's a guess at how long that takes on a cold instance.
+    await page.goto(SPORTS_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page
+      .waitForSelector('[data-testid="general_loader_indicator"]', { state: 'detached', timeout: 20000 })
+      .catch(() => {
+        if (DEBUG) console.log('[singaporePools] loader indicator never appeared/detached within 20s');
+      });
+    await page.waitForTimeout(2000); // brief settle after the loader clears
 
     const html = await page.content();
+
+    // A capture against the wrong URL rendered the site's own 404 page
+    // (title "Page Not Found | Singapore Pools") — confirmed SPORTS_URL is
+    // wrong. The 404 page still carries the site's real shared nav/header,
+    // so pulling every internal link out of it (rather than dumping more
+    // raw HTML, which is mostly SVG icon paths before any nav text) is the
+    // fastest way to find the actual sports/football route without
+    // guessing at one.
+    const $ = cheerio.load(html);
+    const title = $('title').text();
+    const navLinks = [
+      ...new Set(
+        $('a[href]')
+          .map((_, el) => $(el).attr('href'))
+          .get()
+          .filter((href) => href && (href.startsWith('/') || href.includes('singaporepools')))
+      ),
+    ].sort();
+
+    lastCapture = {
+      capturedAt: new Date().toISOString(),
+      pageTitle: title,
+      htmlLength: html.length,
+      htmlSample: html.slice(0, 20000),
+      navLinks,
+      capturedJson: capturedJson.map((c) => ({
+        url: c.url,
+        bodySample: JSON.stringify(c.body).slice(0, 2000),
+        // The real fixture-events API found at /sports/football nests each
+        // event's team/participant fields alongside a large "markets" array
+        // of odds — JSON.stringify(body).slice(0, 5000) never reached them
+        // in a capture, since "markets" alone ran past that cutoff. This
+        // finds each object that looks like an event (has an id + a
+        // markets-like key) and dumps just its own keys with nested
+        // arrays/objects collapsed to a length/type marker, so the actual
+        // team-name field names are visible without the odds payload noise.
+        eventShapes: summarizeEventShapes(c.body),
+      })),
+    };
 
     if (DEBUG) {
       try {
@@ -132,11 +270,22 @@ async function fetchOpenFixtures() {
     rendered = await renderWithBrowser();
   } catch (err) {
     console.error('[singaporePools] browser render failed:', err.message);
+    lastCapture = { capturedAt: new Date().toISOString(), renderError: err.message };
     return [];
   }
 
   // If the page's own JSON calls look like fixture data, prefer that —
   // it's the real source of truth rather than scraped/rendered text.
+  // Try the verified real API shape first (api.singaporepools.com/football/
+  // events/v1/{upcoming-event,live} — confirmed via production capture),
+  // then fall back to the generic key-matching walk for any other shape.
+  for (const { body } of rendered.capturedJson) {
+    const fixtures = extractFixturesFromEventsApi(body);
+    if (fixtures.length) {
+      if (DEBUG) console.log(`[singaporePools] extracted ${fixtures.length} fixtures from the events API`);
+      return fixtures;
+    }
+  }
   for (const { body } of rendered.capturedJson) {
     const fixtures = extractFixturesFromJson(body);
     if (fixtures.length) {
@@ -201,4 +350,11 @@ function extractFixturesFromJson(data) {
   return results;
 }
 
-module.exports = { fetchOpenFixtures, extractFixturesFromJson, parseRenderedHtml, coerceSgTimeToISO };
+module.exports = {
+  fetchOpenFixtures,
+  extractFixturesFromJson,
+  extractFixturesFromEventsApi,
+  parseRenderedHtml,
+  coerceSgTimeToISO,
+  getLastCapture,
+};

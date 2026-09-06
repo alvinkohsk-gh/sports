@@ -1,13 +1,11 @@
 const { teamsMatch } = require('./matcher');
 
 /**
- * Attaches tipster picks to each match by fuzzy team-name matching (same
- * technique as the SG Pools <-> odds join). This is a separate, plainly
- * labeled signal from the market-consensus "confidence" score: tipster
- * sites give a discrete pick (home/draw/away, and separately over/under),
- * not a probability, so tallying "how many tipsters agree" rather than
- * blending it into one number keeps the two kinds of evidence honest and
- * distinguishable.
+ * Attaches tipster picks to each match by fuzzy team-name matching
+ * (`teamsMatch`). Tipster sites give a discrete pick (home/draw/away, and
+ * separately over/under), not a probability, so this tallies "how many
+ * tipsters agree" per match rather than blending picks into one number —
+ * `tipsterRanking.js` then turns that tally into each match's top pick.
  */
 function attachTipsterConsensus(matches, tips) {
   return matches.map((match) => {

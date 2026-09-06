@@ -49,46 +49,4 @@ function teamsMatch(a, b) {
   return jaccard(a, b) >= 0.5;
 }
 
-const KICKOFF_TOLERANCE_MS = 90 * 60 * 1000; // 90 minutes, guards against feed clock/timezone drift
-
-/**
- * Joins Singapore Pools fixtures with Odds API events on team names and
- * (loosely) kickoff time. Only fixtures present on both sides are kept —
- * this is what enforces "only show matches open on Singapore Pools".
- */
-function mergeFixturesWithOdds(sgpFixtures, oddsEvents) {
-  const merged = [];
-
-  for (const fixture of sgpFixtures) {
-    const fixtureKickoff = new Date(fixture.kickoffISO).getTime();
-
-    const candidate = oddsEvents.find((event) => {
-      const eventKickoff = new Date(event.kickoffISO).getTime();
-      const withinTime = Math.abs(eventKickoff - fixtureKickoff) <= KICKOFF_TOLERANCE_MS;
-      if (!withinTime) return false;
-      const homeAwayMatch =
-        teamsMatch(fixture.homeTeam, event.homeTeam) && teamsMatch(fixture.awayTeam, event.awayTeam);
-      const swappedMatch =
-        teamsMatch(fixture.homeTeam, event.awayTeam) && teamsMatch(fixture.awayTeam, event.homeTeam);
-      return homeAwayMatch || swappedMatch;
-    });
-
-    if (!candidate) continue;
-
-    merged.push({
-      id: fixture.sgpMatchId,
-      homeTeam: fixture.homeTeam,
-      awayTeam: fixture.awayTeam,
-      league: fixture.league || candidate.league,
-      kickoffISO: fixture.kickoffISO,
-      oneXTwo: candidate.bestOneXTwo,
-      totals: candidate.bestTotals,
-      bookmakers: candidate.bookmakers,
-      sgPoolsOpen: true,
-    });
-  }
-
-  return merged.sort((a, b) => new Date(a.kickoffISO) - new Date(b.kickoffISO));
-}
-
-module.exports = { normalizeTeamName, teamsMatch, mergeFixturesWithOdds };
+module.exports = { normalizeTeamName, teamsMatch };

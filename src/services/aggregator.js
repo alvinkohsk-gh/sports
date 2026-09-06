@@ -1,10 +1,8 @@
 const { fetchOpenFixtures } = require('../scrapers/singaporePools');
-const { fetchAllSoccerOdds } = require('./oddsApi');
 const { fetchAllTipsterPicks } = require('../scrapers/tipsters');
-const { mergeFixturesWithOdds } = require('./matcher');
 const { attachTipsterConsensus } = require('./tipsterConsensus');
-const { attachConfidence, pickBestBetOverall } = require('./confidence');
-const { getMockSgpFixtures, getMockOddsEvents, getMockTipsterPicks } = require('../mock/mockData');
+const { attachTopPick, pickBestBetOverall } = require('./tipsterRanking');
+const { getMockSgpFixtures, getMockTipsterPicks } = require('../mock/mockData');
 
 const state = {
   matches: [],
@@ -17,32 +15,45 @@ function getState() {
   return state;
 }
 
-async function refresh({ mockMode, oddsApiKey }) {
-  try {
-    const [sgpFixtures, oddsEvents, tipsterPicks] = await Promise.all([
-      mockMode ? Promise.resolve(getMockSgpFixtures()) : fetchOpenFixtures(),
-      mockMode ? Promise.resolve(getMockOddsEvents()) : fetchAllSoccerOdds(oddsApiKey),
-      mockMode ? Promise.resolve(getMockTipsterPicks()) : fetchAllTipsterPicks(),
-    ]);
+function toMatch(fixture) {
+  return {
+    id: fixture.sgpMatchId,
+    homeTeam: fixture.homeTeam,
+    awayTeam: fixture.awayTeam,
+    league: fixture.league,
+    kickoffISO: fixture.kickoffISO,
+    sgPoolsOpen: true,
+  };
+}
 
-    const merged = mergeFixturesWithOdds(sgpFixtures, oddsEvents);
-    const withTipsters = attachTipsterConsensus(merged, tipsterPicks);
-    state.matches = attachConfidence(withTipsters);
-    state.bestBet = pickBestBetOverall(state.matches);
-    state.lastUpdated = new Date().toISOString();
-    state.lastError = null;
-    state.sgpFixtureCount = sgpFixtures.length;
-    state.oddsEventCount = oddsEvents.length;
-    state.tipsterPickCount = tipsterPicks.length;
-    // Kept for /api/debug so a merge-count of 0 can be diagnosed without
-    // re-running anything: was it SG Pools, the odds fetch, or the join
-    // between the two that came up empty?
-    state.rawSgpFixtures = sgpFixtures;
-    state.rawOddsEvents = oddsEvents;
-  } catch (err) {
-    state.lastError = err.message;
-    console.error('[aggregator] refresh failed:', err.message);
+// Each source is fetched independently (allSettled, not all) so that one
+// source failing can't blank out the other's results.
+async function refresh({ mockMode }) {
+  const [sgpResult, tipsterResult] = await Promise.allSettled([
+    mockMode ? Promise.resolve(getMockSgpFixtures()) : fetchOpenFixtures(),
+    mockMode ? Promise.resolve(getMockTipsterPicks()) : fetchAllTipsterPicks(),
+  ]);
+
+  const sgpFixtures = sgpResult.status === 'fulfilled' ? sgpResult.value : [];
+  const tipsterPicks = tipsterResult.status === 'fulfilled' ? tipsterResult.value : [];
+
+  const errors = [sgpResult, tipsterResult]
+    .filter((r) => r.status === 'rejected')
+    .map((r) => r.reason?.message || String(r.reason));
+  if (errors.length) {
+    console.error('[aggregator] refresh had errors:', errors.join(' | '));
   }
+
+  const matches = sgpFixtures.map(toMatch).sort((a, b) => new Date(a.kickoffISO) - new Date(b.kickoffISO));
+  const withTipsters = attachTipsterConsensus(matches, tipsterPicks);
+  state.matches = attachTopPick(withTipsters);
+  state.bestBet = pickBestBetOverall(state.matches);
+  state.lastUpdated = new Date().toISOString();
+  state.lastError = errors.length ? errors.join(' | ') : null;
+  state.sgpFixtureCount = sgpFixtures.length;
+  state.tipsterPickCount = tipsterPicks.length;
+  // Kept for /api/debug so a stage can be diagnosed without re-running anything.
+  state.rawSgpFixtures = sgpFixtures;
   return state;
 }
 
