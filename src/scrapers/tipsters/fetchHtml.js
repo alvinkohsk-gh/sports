@@ -2,6 +2,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const axios = require('axios');
+const cheerio = require('cheerio');
 const { withSharedPage, IS_SERVERLESS } = require('../browser');
 
 // Forebet / PredictZ / WinDrawWin / WhoScored (and Sports Mole's individual
@@ -167,4 +168,65 @@ async function fetchHtml(site, url) {
   );
 }
 
-module.exports = { fetchHtml, DEBUG };
+/**
+ * Like fetchHtml, but for pages that lazy-load the bulk of their rows on
+ * scroll (Forebet's predictions list ships ~44 of 130+ rows in the initial
+ * HTML, the rest arrive via a "More" XHR fired on scroll). Primes a
+ * Cloudflare clearance via fetchHtml, then re-opens the page in the shared
+ * headless browser carrying that clearance and scrolls to the bottom
+ * repeatedly until the row count stops growing.
+ *
+ * Needs FLARESOLVERR_URL + a non-serverless env (the scroll loop would
+ * blow Vercel's function budget); otherwise it just returns the initial,
+ * partial HTML from fetchHtml.
+ *
+ * @param rowSelector  CSS for a repeated row element, used to detect "no
+ *                     more loaded"
+ */
+async function fetchHtmlScrolled(site, url, { rowSelector = '[class*="rcnt"]', rounds = 8 } = {}) {
+  const initial = await fetchHtml(site, url);
+  const held = clearanceByHost.get(hostOf(url));
+  if (!FLARESOLVERR_URL || IS_SERVERLESS || !held || !held.Cookie) return initial;
+
+  const initialRows = (() => {
+    try {
+      return cheerio.load(initial)(rowSelector).length;
+    } catch {
+      return 0;
+    }
+  })();
+
+  try {
+    const html = await withSharedPage(
+      async (page) => {
+        await page.setExtraHTTPHeaders({ Cookie: held.Cookie });
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 25000 });
+        await page.waitForTimeout(800);
+
+        let last = -1;
+        for (let i = 0; i < rounds; i += 1) {
+          const count = await page.evaluate((sel) => document.querySelectorAll(sel).length, rowSelector);
+          if (count === last) break; // nothing new loaded this round
+          last = count;
+          await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+          await page.waitForTimeout(1600);
+        }
+        return page.content();
+      },
+      { userAgent: held['User-Agent'] || HTTP_HEADERS['User-Agent'] }
+    );
+
+    const scrolledRows = cheerio.load(html)(rowSelector).length;
+    if (DEBUG) console.log(`[tipsters:${site}] scrolled load: ${scrolledRows} rows (initial ${initialRows})`);
+    // If the re-render got fewer rows (cookie rejected -> challenge page, or
+    // a transient), keep the initial partial HTML.
+    if (scrolledRows < initialRows) return initial;
+    dumpDebug(site, html);
+    return html;
+  } catch (err) {
+    if (DEBUG) console.log(`[tipsters:${site}] scrolled load failed (${err.message}) — using initial HTML`);
+    return initial;
+  }
+}
+
+module.exports = { fetchHtml, fetchHtmlScrolled, DEBUG };

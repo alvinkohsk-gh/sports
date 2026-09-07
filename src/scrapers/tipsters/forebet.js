@@ -1,8 +1,17 @@
 const cheerio = require('cheerio');
-const { fetchHtml } = require('./fetchHtml');
+const { fetchHtmlScrolled } = require('./fetchHtml');
 const { totalsFromScoreline } = require('./totalsHeuristics');
 
-const URL = 'https://www.forebet.com/en/football-tips-and-predictions-for-today';
+// Forebet's today page lists ~130 matches but ships only the first ~44
+// (earliest kickoffs — obscure leagues) in the initial HTML; the rest,
+// including the big European fixtures that overlap the Singapore Pools
+// board, load on scroll. fetchHtmlScrolled re-renders past the lazy load.
+// The "tomorrow" page is fetched too since SG Pools lists multi-day
+// fixtures and Forebet files anything after ~midnight UTC under tomorrow.
+const URLS = [
+  'https://www.forebet.com/en/football-tips-and-predictions-for-today',
+  'https://www.forebet.com/en/football-tips-and-predictions-for-tomorrow',
+];
 
 // Selectors ported from a verified real-world scraper for this exact site
 // (github.com/999Samurai/predictions-scraper), not guessed from scratch:
@@ -13,19 +22,31 @@ const URL = 'https://www.forebet.com/en/football-tips-and-predictions-for-today'
 // independently-found Forebet scraper confirms this site alternates row
 // classes, e.g. tr_0/tr_1, on its other list pages).
 //
-// No longer also fetches Forebet's separate Over/Under page: with the
-// shared headless browser only able to hold one page at a time (see
-// browser.js), every extra page fetched by any scraper adds to the same
-// serial queue that the whole refresh has to fit inside Vercel's 60s
-// function limit. Dropping this second, lower-value page (1X2 picks are
-// the primary signal) buys back budget for the other tipster sites and
-// Singapore Pools itself.
+// Over/Under 2.5 is derived from each row's predicted correct score
+// (.ex_sc), so Forebet's separate Over/Under page isn't fetched.
 async function fetchForebetTips() {
-  const html = await fetchHtml('forebet', URL);
-  return extractRows(html);
+  const all = [];
+  const seen = new Set();
+  for (const url of URLS) {
+    const site = url.endsWith('tomorrow') ? 'forebet-tomorrow' : 'forebet';
+    let html;
+    try {
+      html = await fetchHtmlScrolled(site, url);
+    } catch (err) {
+      console.error(`[tipsters:forebet] ${url} failed:`, err.message || err);
+      continue;
+    }
+    for (const r of extractRows(html, url)) {
+      const key = `${r.homeTeam.toLowerCase()}|${r.awayTeam.toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      all.push(r);
+    }
+  }
+  return all;
 }
 
-function extractRows(html) {
+function extractRows(html, sourceUrl) {
   const $ = cheerio.load(html);
   const rows = [];
 
@@ -47,7 +68,7 @@ function extractRows(html) {
       homeTeam: teams[0].trim(),
       awayTeam: teams[1].trim(),
       rawText: [predictionText, exScore].filter(Boolean).join(' | '),
-      sourceUrl: URL,
+      sourceUrl,
       pick: inferPick(predictionText),
       totalsPick: totalsFromScoreline(exScore),
     });
