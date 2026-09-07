@@ -1,5 +1,6 @@
 const cheerio = require('cheerio');
 const { fetchHtml } = require('./fetchHtml');
+const { totalsFromScoreline } = require('./totalsHeuristics');
 
 const URL = 'https://www.predictz.com/predictions';
 
@@ -10,9 +11,9 @@ const URL = 'https://www.predictz.com/predictions';
 // That reference scraper used cloudscraper for Cloudflare; here fetchHtml
 // falls back to a headless browser render for the same purpose.
 //
-// No longer also fetches PredictZ's separate Over/Under page — see
-// forebet.js for why (the shared headless browser can only hold one page
-// at a time, so every extra page tightens the whole refresh's 60s budget).
+// The .ptpredboxsml box carries the predicted score too ("Draw 1-1",
+// "Away 0-1"), so Over/Under 2.5 comes straight off that — no separate O/U
+// page needed.
 async function fetchPredictzTips() {
   const html = await fetchHtml('predictz', URL);
   const rows = extractRows(html);
@@ -22,7 +23,7 @@ async function fetchPredictzTips() {
     homeTeam: tip.home,
     awayTeam: tip.away,
     pick: /home/i.test(tip.predictionText) ? 'home' : /away/i.test(tip.predictionText) ? 'away' : 'draw',
-    totalsPick: null,
+    totalsPick: totalsFromScoreline(tip.predictionText),
     rawText: tip.predictionText,
     sourceUrl: URL,
   }));

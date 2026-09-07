@@ -1,5 +1,6 @@
 const cheerio = require('cheerio');
 const { fetchHtml } = require('./fetchHtml');
+const { totalsFromScoreline } = require('./totalsHeuristics');
 
 const URL = 'https://www.forebet.com/en/football-tips-and-predictions-for-today';
 
@@ -37,15 +38,18 @@ function extractRows(html) {
     if (teams.length < 2) return;
 
     const predictionText = row.find('span.forepr').first().text().trim();
+    // Forebet shows a predicted correct score per row in ".ex_sc", e.g.
+    // "3 - 2  3.50" (score + its odds). Over/Under 2.5 is derived from it.
+    const exScore = row.find('.ex_sc').first().text().replace(/\s+/g, ' ').trim();
 
     rows.push({
       site: 'forebet',
       homeTeam: teams[0].trim(),
       awayTeam: teams[1].trim(),
-      rawText: predictionText,
+      rawText: [predictionText, exScore].filter(Boolean).join(' | '),
       sourceUrl: URL,
       pick: inferPick(predictionText),
-      totalsPick: null,
+      totalsPick: totalsFromScoreline(exScore),
     });
   });
 

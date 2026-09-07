@@ -38,15 +38,18 @@ const OUT = process.argv[2] || 'snapshot.json';
 
   const bySite = {};
   for (const p of snapshot.rawTipsterPicks) {
-    const b = (bySite[p.site] = bySite[p.site] || { picks: 0, classified: 0 });
+    const b = (bySite[p.site] = bySite[p.site] || { picks: 0, classified: 0, totals: 0 });
     b.picks += 1;
     if (p.pick) b.classified += 1;
+    if (p.totalsPick) b.totals += 1;
   }
   const withMajority = snapshot.matches.filter((m) => m.tipsterConsensus?.majorityPick).length;
+  const withOU = snapshot.matches.filter((m) => m.tipsterConsensus?.totalsMajorityPick).length;
   console.error(
     `[scrape-snapshot] ${snapshot.matches.length} matches, ` +
       `${snapshot.counts.tipsterPicks} tipster picks ${JSON.stringify(bySite)}, ` +
-      `${withMajority} matches with a majority, err=${snapshot.lastError || 'none'}`
+      `${withMajority} with a 1X2 majority, ${withOU} with an O/U majority, ` +
+      `err=${snapshot.lastError || 'none'}`
   );
 
   // Total failure (both stages empty) — don't write, so the workflow's

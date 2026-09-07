@@ -64,15 +64,16 @@ pick when exactly one side is implicated; contradictory or absent
 phrasing leaves `pick: null` and the preview link is still shown, just
 without a vote counted.
 
-**Over/Under picks**: only WhoScored and Sports Mole currently contribute a
-`totalsPick` (`{ selection: 'over'|'under', point }`), inferred from their
-predicted scoreline directly (e.g. "2-1" → over 2.5) when one is found,
-falling back to a generic "over"/"under" word/prefix heuristic
-(`src/scrapers/tipsters/totalsHeuristics.js`) otherwise. Forebet/PredictZ/
-WinDrawWin each used to also fetch a dedicated O/U page, but with only one
-shared headless-browser page allowed at a time (see "Deploying to Vercel"
-below), every extra page tightened the whole refresh's time budget — those
-three sites' `totalsPick` is now always `null`.
+**Over/Under (2.5 goals) picks**: every site contributes a `totalsPick`
+(`{ selection: 'over'|'under', point: 2.5 }`), derived from the predicted
+correct score it already shows on the same page — Forebet `.ex_sc`
+("3 - 2"), PredictZ `.ptpredboxsml` ("Draw 1-1"), WinDrawWin `.predscore`
+("2-0"), and WhoScored / Sports Mole from the prose scoreline. Sum the two
+goals, compare to 2.5. `src/scrapers/tipsters/totalsHeuristics.js` holds
+`totalsFromScoreline` plus a fallback that reads an explicit
+"over"/"under" word when no scoreline is present. (No separate O/U page is
+fetched — that was dropped when scraping had to fit Vercel's 60s function
+limit, and isn't needed since the score is on the main page.)
 
 Set `TIPSTERS_DEBUG=true` and check `debug-tipsters/<site>.html` if a site
 comes back with 0 picks.

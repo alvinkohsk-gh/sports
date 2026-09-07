@@ -1,5 +1,6 @@
 const cheerio = require('cheerio');
 const { fetchHtml } = require('./fetchHtml');
+const { totalsFromScoreline } = require('./totalsHeuristics');
 
 const URL = 'https://www.windrawwin.com/predictions/today';
 
@@ -8,9 +9,8 @@ const URL = 'https://www.windrawwin.com/predictions/today';
 // with two .wtmoblnk divs (home, away in order) and the pick in a .wtprd
 // box whose text says "Home"/"Away"/(implicitly draw), e.g. "Home 2-0".
 //
-// No longer also fetches WinDrawWin's separate Over/Under page — see
-// forebet.js for why (the shared headless browser can only hold one page
-// at a time, so every extra page tightens the whole refresh's 60s budget).
+// Each row has a ".predscore" span with the predicted score ("2-0"), so
+// Over/Under 2.5 comes off that — no separate O/U page needed.
 async function fetchWinDrawWinTips() {
   const html = await fetchHtml('windrawwin', URL);
   const rows = extractRows(html);
@@ -20,8 +20,8 @@ async function fetchWinDrawWinTips() {
     homeTeam: tip.home,
     awayTeam: tip.away,
     pick: /home/i.test(tip.predictionText) ? 'home' : /away/i.test(tip.predictionText) ? 'away' : 'draw',
-    totalsPick: null,
-    rawText: tip.predictionText,
+    totalsPick: totalsFromScoreline(tip.predScore) || totalsFromScoreline(tip.predictionText),
+    rawText: [tip.predictionText, tip.predScore].filter(Boolean).join(' '),
     sourceUrl: URL,
   }));
 }
@@ -40,7 +40,8 @@ function extractRows(html) {
     if (!home || !away) return;
 
     const predictionText = row.find('.wtprd').first().text().trim();
-    rows.push({ home, away, predictionText });
+    const predScore = row.find('.predscore').first().text().trim();
+    rows.push({ home, away, predictionText, predScore });
   });
 
   return rows;
