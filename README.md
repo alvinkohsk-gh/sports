@@ -11,8 +11,8 @@ each match.
    fixtures (team names + kickoff time).
 2. `src/scrapers/tipsters/` fetches picks from the prediction/tipster
    sites in parallel (Forebet, PredictZ, WinDrawWin, WhoScored, Sports
-   Mole, MatchOutlook, EaglePredict, FootyStats) — see "Tipster sources" below for
-   per-site detail and how verified each one is.
+   Mole, MatchOutlook, EaglePredict, FootyStats, Statarea) — see "Tipster sources"
+   below for per-site detail and how verified each one is.
 3. `src/services/tipsterConsensus.js` attaches each match's tipster picks
    by fuzzy team-name matching (`src/services/matcher.js`).
 4. `src/services/tipsterRanking.js` picks each match's strongest tipster
@@ -69,6 +69,7 @@ shared headless browser.
 | MatchOutlook | Structured `.match-section` list | One "Best Bet" per match — a 1X2 outcome (→ pick) or an over/under line (→ totalsPick); double chances (1X/X2/12) give neither. Plain HTTP, no FlareSolverr needed. |
 | EaglePredict | Tailwind card grid | Cloudflare-gated (FlareSolverr clears it). Per-match card: teams from `img[alt="X logo"]`, one prediction pill — "Home/Away Win"/"Draw" → `pick`, "Over/Under N Goals" → `totalsPick`, double-chance/BTTS/correct-score ignored. |
 | FootyStats | `.betWrapper` tip list | One market per block ("Home Win", "Over 2.5 Goals", "BTTS Yes", …); 1X2 outcomes → `pick`, over/under lines → `totalsPick`, everything else ignored. A fixture can appear in several blocks. Plain HTTP. |
+| Statarea | `div.match` blocks, per-day `/predictions/date/<YYYY-MM-DD>/starttime` | Mathematical model. Reads the `.inforow .coefrow` probability row (`1 X 2 … 1.5 2.5 3.5 BTS OTS`): headline `.tip` text "1"/"X"/"2" → `pick` (double chances "1X"/"X2"/"12" and no-tip fall back to the most likely of P1/PX/P2); P(over 2.5) > 50 → `totalsPick` over/under 2.5. Fetches `STATAREA_DAYS` days (default 3). Plain HTTP, no Cloudflare. Wide lower-league coverage. |
 
 The first three give a clean discrete pick (home/draw/away) reliably; the
 last two are best-effort. `inferPickFromProse` (`src/scrapers/tipsters/
@@ -224,6 +225,7 @@ outcome. Displayed with a disclaimer in the UI.
 | `FLARESOLVERR_URL` | If set (e.g. `http://localhost:8191/v1`), route Cloudflare-blocked tipster pages through FlareSolverr instead of the headless browser. Set by the snapshot workflow. |
 | `TIPSTERS_DEADLINE_MS` | Overall cap on the tipster-fetch phase (default 25 s; the snapshot job raises it since FlareSolverr solves take longer) |
 | `SPORTSMOLE_MAX_ARTICLES` | Max Sports Mole preview articles to fetch per run (default 40) |
+| `STATAREA_DAYS` | How many days of Statarea predictions to fetch, starting today (default 3) |
 | `MOCK_MODE` | `true` to run entirely on bundled sample data |
 | `SGPOOLS_DEBUG` | `true` for verbose SG Pools scraper logs + HTML/screenshot dump |
 | `TIPSTERS_DEBUG` | `true` to save each tipster site's fetched HTML for inspection |
