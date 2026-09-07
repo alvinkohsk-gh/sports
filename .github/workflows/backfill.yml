@@ -1,0 +1,74 @@
+name: Backfill accuracy from archives
+
+# Manual one-off: grade the last ~48h of predictions from the sites that
+# keep a dated archive (Forebet / WinDrawWin / PredictZ / MatchOutlook),
+# merge into accuracy.json on the data-snapshot branch. The normal
+# snapshot job then carries these samples forward.
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: tipster-snapshot # share with snapshot.yml so they don't race the branch
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      flaresolverr:
+        image: ghcr.io/flaresolverr/flaresolverr:latest
+        ports:
+          - 8191:8191
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      - name: Wait for FlareSolverr
+        run: |
+          for i in $(seq 1 45); do
+            curl -sf http://localhost:8191/ >/dev/null && exit 0
+            sleep 2
+          done
+          echo "FlareSolverr never became ready" >&2; exit 1
+
+      - name: Backfill
+        env:
+          TIPSTERS_DEBUG: 'true'
+          FLARESOLVERR_URL: 'http://localhost:8191/v1'
+        run: node scripts/backfill.js .
+
+      - name: Upload debug dumps
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backfill-debug
+          path: debug-tipsters/
+          if-no-files-found: warn
+          retention-days: 3
+
+      - name: Publish updated accuracy.json
+        run: |
+          set -euo pipefail
+          test -s accuracy.json
+          tok="${{ secrets.GITHUB_TOKEN }}"
+          repo="${{ github.repository }}"
+          work="$(mktemp -d)"
+          git clone -q --depth 1 --branch data-snapshot \
+            "https://x-access-token:${tok}@github.com/${repo}.git" "$work" || {
+              echo "data-snapshot branch not found — run the snapshot workflow first" >&2; exit 1; }
+          cp accuracy.json "$work/accuracy.json"
+          cd "$work"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add accuracy.json
+          git commit -q -m "backfill accuracy $(date -u +%Y-%m-%dT%H:%M:%SZ)" || { echo "no change"; exit 0; }
+          git push -q "https://x-access-token:${tok}@github.com/${repo}.git" HEAD:data-snapshot
