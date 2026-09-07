@@ -60,11 +60,6 @@ app.get('/api/debug', async (req, res) => {
   });
 });
 
-// Serves the last Singapore Pools page render this instance captured —
-// separate from /api/debug since it can be tens of KB — so real selectors
-// can be written from what the site actually returns, without needing
-// filesystem access to Vercel's /tmp (where the DEBUG-mode dump otherwise
-// goes and stays unreachable from outside the function).
 // Shows the tipster-matching stage directly: every raw pick each site
 // returned, and for each Singapore Pools fixture which of those picks got
 // attached. Use this to tell "no consensus" caused by a name-matching
@@ -92,6 +87,11 @@ app.get('/api/debug/tipsters', async (req, res) => {
   });
 });
 
+// Serves the last Singapore Pools page render this instance captured —
+// separate from /api/debug since it can be tens of KB — so real selectors
+// can be written from what the site actually returns, without needing
+// filesystem access to Vercel's /tmp (where the DEBUG-mode dump otherwise
+// goes and stays unreachable from outside the function).
 app.get('/api/debug/sgpools-raw', async (req, res) => {
   await ensureFreshState();
   const capture = getLastCapture();
