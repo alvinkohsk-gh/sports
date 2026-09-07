@@ -54,9 +54,15 @@
     table.recent th, table.recent td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--card-border); }
     table.recent th { color: var(--muted); font-weight: 600; }
     .tick { color: var(--ok); } .cross { color: var(--urgent); } .dash { color: var(--muted); }
-    .pillrow { display: flex; flex-wrap: wrap; gap: 4px; }
-    .pill { font-size: 11px; padding: 2px 6px; border-radius: 5px; border: 1px solid var(--card-border); }
+    .pillrow { display: flex; flex-wrap: wrap; gap: 6px; }
+    .pill {
+      font-size: 12px; padding: 4px 9px; border-radius: 6px; border: 1px solid var(--card-border);
+      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+    }
     .pill[class*="site-"] { border-color: color-mix(in srgb, var(--site-color) 55%, transparent); color: var(--site-color); }
+    .pill .res { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; }
+    .pill .res .sel { font-size: 12px; }
+    .pill .tick, .pill .cross { font-size: 17px; font-weight: 700; line-height: 1; }
     .pill .tick { color: var(--ok); } .pill .cross { color: var(--urgent); }
   </style>
 </head>
@@ -95,7 +101,7 @@
 
     <table class="recent" id="recent" hidden>
       <thead>
-        <tr><th>Kickoff</th><th>Fixture</th><th>Score</th><th>Per-site picks (✓/✗)</th></tr>
+        <tr><th>Kickoff</th><th>Fixture</th><th>Score</th><th>Per-site picks — pick + result (✔ hit / ✘ miss)</th></tr>
       </thead>
       <tbody></tbody>
     </table>
@@ -145,13 +151,14 @@
     }
 
     function pillFor(s) {
-      const mark = (ok) => (ok ? '<span class="tick">✓</span>' : '<span class="cross">✗</span>');
+      const mark = (ok) => (ok ? '<span class="tick">✔</span>' : '<span class="cross">✘</span>');
+      const bit = (sel, ok) => `<span class="res"><span class="sel">${sel}</span>${mark(ok)}</span>`;
       const bits = [];
       if (s.oneX2Correct !== null && s.oneX2Correct !== undefined)
-        bits.push(`${s.pick ? s.pick[0].toUpperCase() : '?'}${mark(s.oneX2Correct)}`);
+        bits.push(bit(s.pick ? s.pick[0].toUpperCase() : '?', s.oneX2Correct));
       if (s.ouCorrect !== null && s.ouCorrect !== undefined)
-        bits.push(`${(s.ou || '').split(' ')[0][0].toUpperCase()}${mark(s.ouCorrect)}`);
-      return `<span class="pill site-${s.site}">${label(s.site)}: ${bits.join(' ')}</span>`;
+        bits.push(bit((s.ou || '').split(' ')[0][0].toUpperCase(), s.ouCorrect));
+      return `<span class="pill site-${s.site}">${label(s.site)}${bits.join('')}</span>`;
     }
 
     let allSamples = [];
