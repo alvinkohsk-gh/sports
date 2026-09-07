@@ -31,7 +31,14 @@
     .acccard.best { box-shadow: 0 0 0 1px var(--site-color, var(--ok)); }
     @media (max-width: 620px) { .range-note { margin-left: 0; width: 100%; } }
     .accgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
-    .acccard { background: var(--card); border: 1px solid var(--card-border); border-radius: 10px; padding: 16px; }
+    .acccard { background: var(--card); border: 1px solid var(--card-border); border-radius: 10px; padding: 16px; cursor: pointer; transition: opacity .12s, box-shadow .12s; }
+    .acccard:hover { box-shadow: 0 0 0 1px var(--card-border); }
+    .acccard.selected { box-shadow: 0 0 0 2px var(--site-color, var(--accent)); }
+    .accgrid.has-selection .acccard:not(.selected) { opacity: .45; }
+    .clear-site {
+      background: rgba(148,163,184,0.12); color: var(--text); border: 1px solid var(--card-border);
+      border-radius: 6px; padding: 3px 9px; font-size: 12px; cursor: pointer;
+    }
     .acccard[class*="site-"] { border-left: 3px solid var(--site-color); }
     .acccard h3 { margin: 0 0 12px; font-size: 15px; }
     .acccard[class*="site-"] h3 { color: var(--site-color); }
@@ -149,6 +156,7 @@
 
     let allSamples = [];
     let lastUpdated = null;
+    let selectedSite = null; // click a card to show only that site's picks
 
     function computePerSite(samples) {
       const per = {};
@@ -190,10 +198,13 @@
       emptyEl.hidden = true;
 
       const bestSite = sites.find(([, b]) => b.graded >= MIN_BEST)?.[0] || null;
+      gridEl.classList.toggle('has-selection', !!selectedSite);
       gridEl.innerHTML = sites
         .map(
           ([site, b]) => `
-        <div class="acccard site-${site}${site === bestSite ? ' best' : ''}">
+        <div class="acccard site-${site}${site === bestSite ? ' best' : ''}${site === selectedSite ? ' selected' : ''}"
+             data-site="${site}" role="button" tabindex="0"
+             aria-pressed="${site === selectedSite}" title="Show only ${label(site)}'s picks">
           <h3>${site === bestSite ? '<span class="crown">🏆 most accurate</span>' : ''}${label(site)}</h3>
           ${metric('1X2 (home/draw/away)', b.oneX2Correct, b.oneX2Total, b.oneX2Pct, 'x12')}
           ${metric('Over / Under goals', b.ouCorrect, b.ouTotal, b.ouPct, 'ou')}
@@ -204,6 +215,7 @@
 
       const byMatch = new Map();
       for (const s of samples) {
+        if (selectedSite && s.site !== selectedSite) continue;
         if (!byMatch.has(s.matchKey))
           byMatch.set(s.matchKey, { fixture: s.fixture, score: s.score, kickoffISO: s.kickoffISO, picks: [] });
         byMatch.get(s.matchKey).picks.push(s);
@@ -211,7 +223,7 @@
       const matchRows = [...byMatch.values()].sort((a, b) => new Date(b.kickoffISO) - new Date(a.kickoffISO));
       recentEl.hidden = matchRows.length === 0;
       recentEl.querySelector('tbody').innerHTML = matchRows
-        .slice(0, 60)
+        .slice(0, 80)
         .map(
           (m) => `
           <tr>
@@ -222,7 +234,10 @@
           </tr>`
         )
         .join('');
-      noteEl.textContent = matchRows.length > 60 ? `Showing the 60 most recent of ${matchRows.length} matches.` : '';
+      const extra = matchRows.length > 80 ? `Showing the 80 most recent of ${matchRows.length} matches. ` : '';
+      noteEl.textContent = selectedSite
+        ? `${extra}Filtered to ${label(selectedSite)} — click its card again (or "show all") to clear.`
+        : `${extra}Click a site card to filter the table to just that site's picks.`;
     }
 
     function apply() {
@@ -234,6 +249,7 @@
       });
       const singleDay = fromEl.value && fromEl.value === toEl.value;
       const perSite = computePerSite(samples);
+      if (selectedSite && !perSite[selectedSite]) selectedSite = null; // nothing for it in this range
       render(perSite, samples, singleDay);
 
       const rangeLabel = fromEl.value && toEl.value
@@ -242,11 +258,28 @@
       const best = Object.entries(perSite)
         .filter(([, b]) => b.graded >= MIN_BEST)
         .sort((a, b) => (b[1].overall ?? -1) - (a[1].overall ?? -1))[0];
-      rangeNoteEl.textContent =
+      rangeNoteEl.innerHTML =
         `${rangeLabel} · ${samples.length} graded pick${samples.length === 1 ? '' : 's'}` +
-        (best ? ` · best: ${label(best[0])} ${Math.round(best[1].overall * 100)}%` : '');
+        (best ? ` · best: ${label(best[0])} ${Math.round(best[1].overall * 100)}%` : '') +
+        (selectedSite ? ` · <b>${label(selectedSite)} only</b> <button class="clear-site" id="clear-site">show all</button>` : '');
+      const clearBtn = document.getElementById('clear-site');
+      if (clearBtn) clearBtn.addEventListener('click', () => { selectedSite = null; apply(); });
       statusEl.textContent = lastUpdated ? `updated ${new Date(lastUpdated).toLocaleString()}` : '';
     }
+
+    function pickSite(site) {
+      selectedSite = selectedSite === site ? null : site;
+      apply();
+    }
+    gridEl.addEventListener('click', (e) => {
+      const card = e.target.closest('.acccard');
+      if (card && card.dataset.site) pickSite(card.dataset.site);
+    });
+    gridEl.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const card = e.target.closest('.acccard');
+      if (card && card.dataset.site) { e.preventDefault(); pickSite(card.dataset.site); }
+    });
 
     function setPreset(name) {
       [...presetsEl.children].forEach((b) => b.classList.toggle('active', b.dataset.preset === name));
