@@ -31,13 +31,18 @@ singaporepools.com.sg, with a live countdown to kickoff for each match.
 | Forebet | Structured table | Selectors ported from a real, working open-source scraper ([999Samurai/predictions-scraper](https://github.com/999Samurai/predictions-scraper)) — not guessed |
 | PredictZ | Structured table | Same source as above |
 | WinDrawWin | Structured table | Same source as above |
-| WhoScored | Prose preview articles | No reference scraper found — generic heuristic extraction (regex for "Team A vs Team B" + a scoreline/"to draw" in nearby text) |
+| WhoScored | Prose preview articles | No reference scraper found — generic heuristic extraction (regex for "Team A vs Team B" + a scoreline, a draw phrase, or win/lose phrasing tied to one of the two team names in nearby text) |
 | Sports Mole | Prose preview articles | Same heuristic approach as WhoScored |
 
 The first three give a clean discrete pick (home/draw/away) reliably; the
-last two are best-effort and may return `pick: null` for matches where no
-scoreline or clear phrase was found nearby — they're still shown as a
-preview link in that case, just without a vote counted.
+last two are best-effort. `inferPickFromProse` (`src/scrapers/tipsters/
+whoscored.js`) tries, in order: an explicit scoreline ("2-1" → home),
+draw phrasing ("honours even", "share the spoils"), then win/lose
+phrasing anchored to a team name ("Getafe to edge past…", "comfortable
+win for Getafe", "too strong for Elche" → Elche loses). It only returns a
+pick when exactly one side is implicated; contradictory or absent
+phrasing leaves `pick: null` and the preview link is still shown, just
+without a vote counted.
 
 **Over/Under picks**: only WhoScored and Sports Mole currently contribute a
 `totalsPick` (`{ selection: 'over'|'under', point }`), inferred from their

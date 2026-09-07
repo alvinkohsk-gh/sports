@@ -37,7 +37,7 @@ async function fetchSportsMoleTips() {
       site: 'sportsmole',
       homeTeam: home,
       awayTeam: away,
-      pick: inferPickFromProse(contextText),
+      pick: inferPickFromProse(contextText, home, away),
       totalsPick: inferTotalsPickFromProse(contextText),
       rawText: contextText.slice(0, 200),
       sourceUrl: href ? new URL(href, PAGE_URL).toString() : PAGE_URL,
