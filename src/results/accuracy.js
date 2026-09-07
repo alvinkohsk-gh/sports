@@ -2,7 +2,7 @@ const { teamsMatch } = require('../services/matcher');
 
 const GRADE_MIN_AGE_MS = 2 * 60 * 60 * 1000; // kicked off >2h ago (finished)
 const GRADE_MAX_AGE_MS = 60 * 60 * 60 * 1000; // but not more than 60h ago
-const SAMPLE_KEEP_MS = 5 * 24 * 60 * 60 * 1000; // keep graded samples ~5 days
+const SAMPLE_KEEP_MS = 35 * 24 * 60 * 60 * 1000; // keep graded samples ~5 weeks (Results page date ranges)
 
 function outcome1x2(h, a) {
   if (h > a) return 'home';

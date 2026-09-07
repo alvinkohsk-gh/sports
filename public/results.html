@@ -9,12 +9,27 @@
     .subnav { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
     .subnav a { color: var(--accent); text-decoration: none; font-size: 13px; }
     .subnav a.current { color: var(--text); font-weight: 700; }
-    .windowsel { display: flex; gap: 6px; }
-    .windowsel button {
+
+    .rangebar {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
+      padding: 12px 14px; margin-bottom: 16px;
+      border: 1px solid var(--card-border); border-radius: 12px; background: var(--card);
+    }
+    .rangebar label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .rangebar input[type="date"] {
+      background: rgba(148,163,184,0.12); color: var(--text);
+      border: 1px solid var(--card-border); border-radius: 6px; padding: 4px 8px; font-size: 12px; color-scheme: dark;
+    }
+    .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+    .presets button {
       background: rgba(148,163,184,0.12); color: var(--text); border: 1px solid var(--card-border);
       border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer;
     }
-    .windowsel button.active { background: rgba(56,189,248,0.18); color: var(--accent); border-color: rgba(56,189,248,0.5); }
+    .presets button.active { background: rgba(56,189,248,0.18); color: var(--accent); border-color: rgba(56,189,248,0.5); }
+    .range-note { font-size: 12px; color: var(--muted); margin-left: auto; }
+    .acccard .crown { float: right; font-size: 13px; }
+    .acccard.best { box-shadow: 0 0 0 1px var(--site-color, var(--ok)); }
+    @media (max-width: 620px) { .range-note { margin-left: 0; width: 100%; } }
     .accgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
     .acccard { background: var(--card); border: 1px solid var(--card-border); border-radius: 10px; padding: 16px; }
     .acccard[class*="site-"] { border-left: 3px solid var(--site-color); }
@@ -43,10 +58,6 @@
     <h1>Results</h1>
     <div class="subnav">
       <span class="status" id="status">Loading…</span>
-      <div class="windowsel" id="windowsel">
-        <button data-h="48" class="active">48h</button>
-        <button data-h="168">7d</button>
-      </div>
       <a href="index.html">&larr; Board</a>
       <a href="value-picks.html">Value Picks</a>
       <a href="results.html" class="current">Results</a>
@@ -54,10 +65,23 @@
   </header>
 
   <main>
+    <div class="rangebar">
+      <label>From <input type="date" id="from" /></label>
+      <label>To <input type="date" id="to" /></label>
+      <div class="presets" id="presets">
+        <button data-preset="today">Today</button>
+        <button data-preset="yesterday">Yesterday</button>
+        <button data-preset="7">Last 7d</button>
+        <button data-preset="30">Last 30d</button>
+        <button data-preset="all" class="active">All</button>
+      </div>
+      <span class="range-note" id="range-note"></span>
+    </div>
+
     <div id="empty" class="empty" hidden>
       No graded predictions yet for fixtures on the Singapore Pools board. This dashboard only
-      counts matches SG Pools offers, and fills in as those fixtures finish — it needs roughly
-      48 hours of prediction history and completed matches before the numbers mean anything.
+      counts matches SG Pools offers, and fills in as those fixtures finish — it needs completed
+      matches before the numbers mean anything.
     </div>
 
     <div id="accgrid" class="accgrid"></div>
@@ -74,8 +98,10 @@
     <p class="disclaimer">
       "Accuracy" here is simply: of the predictions a site made for matches that have since finished,
       how many were right — 1X2 (home/draw/away) and Over/Under total goals, scored separately.
-      Only fixtures on the Singapore Pools board are counted. Results come from Forebet; matches it
-      doesn't cover aren't graded. Past performance says nothing about future results. Gamble responsibly.
+      Only fixtures on the Singapore Pools board are counted, filtered by kickoff date in your local
+      time. 🏆 marks the most accurate site over the selected range (min 10 graded picks). Results
+      come from Forebet; matches it doesn't cover aren't graded. Past performance says nothing about
+      future results. Gamble responsibly.
     </p>
   </main>
 
@@ -85,15 +111,21 @@
       sportsmole: 'Sports Mole', matchoutlook: 'MatchOutlook', eaglepredict: 'EaglePredict', footystats: 'FootyStats',
       statarea: 'Statarea', footballpredictions: 'FootballPredictions',
     };
+    const MIN_BEST = 10; // graded picks needed before a site can get the 🏆
     const statusEl = document.getElementById('status');
     const gridEl = document.getElementById('accgrid');
     const emptyEl = document.getElementById('empty');
     const recentEl = document.getElementById('recent');
     const noteEl = document.getElementById('note');
-    let hours = 48;
+    const fromEl = document.getElementById('from');
+    const toEl = document.getElementById('to');
+    const presetsEl = document.getElementById('presets');
+    const rangeNoteEl = document.getElementById('range-note');
 
     function label(s) { return SITE_LABELS[s] || s; }
     function pct(n) { return n == null ? '—' : n + '%'; }
+    const localDay = (x) => new Date(x).toLocaleDateString('en-CA');
+    const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
 
     function metric(name, correct, total, pctVal, cls) {
       const w = total ? Math.round((100 * correct) / total) : 0;
@@ -103,54 +135,6 @@
           <div class="bar ${cls}"><span style="width:${w}%"></span></div>
           <div class="metric-top"><span></span><span>${correct}/${total}</span></div>
         </div>`;
-    }
-
-    function render(data) {
-      const sites = Object.entries(data.perSite || {})
-        .sort((a, b) => (b[1].oneX2Pct ?? -1) - (a[1].oneX2Pct ?? -1) || (b[1].ouPct ?? -1) - (a[1].ouPct ?? -1));
-
-      statusEl.textContent = `${data.gradedSamples} graded prediction${data.gradedSamples === 1 ? '' : 's'} · ${hours >= 168 ? '7 days' : hours + 'h'}` +
-        (data.updatedAt ? ` · updated ${new Date(data.updatedAt).toLocaleString()}` : '');
-
-      if (!sites.length) {
-        gridEl.innerHTML = '';
-        emptyEl.hidden = false;
-        recentEl.hidden = true;
-        noteEl.textContent = '';
-        return;
-      }
-      emptyEl.hidden = true;
-
-      gridEl.innerHTML = sites.map(([site, b]) => `
-        <div class="acccard site-${site}">
-          <h3>${label(site)}</h3>
-          ${metric('1X2 (home/draw/away)', b.oneX2Correct, b.oneX2Total, b.oneX2Pct, 'x12')}
-          ${metric('Over / Under goals', b.ouCorrect, b.ouTotal, b.ouPct, 'ou')}
-        </div>`).join('');
-
-      const rows = (data.recent || []);
-      if (rows.length) {
-        recentEl.hidden = false;
-        const byMatch = new Map();
-        for (const s of rows) {
-          const k = s.matchKey;
-          if (!byMatch.has(k)) byMatch.set(k, { fixture: s.fixture, score: s.score, kickoffISO: s.kickoffISO, picks: [] });
-          byMatch.get(k).picks.push(s);
-        }
-        recentEl.querySelector('tbody').innerHTML = [...byMatch.values()]
-          .sort((a, b) => new Date(b.kickoffISO) - new Date(a.kickoffISO))
-          .slice(0, 30)
-          .map((m) => `
-            <tr>
-              <td>${new Date(m.kickoffISO).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
-              <td>${m.fixture}</td>
-              <td>${m.score}</td>
-              <td><div class="pillrow">${m.picks.map(pillFor).join('')}</div></td>
-            </tr>`).join('');
-      } else {
-        recentEl.hidden = true;
-      }
-      noteEl.textContent = `Results source: Forebet. Ungraded picks are for matches Forebet didn't cover, or that finished more than 60h ago.`;
     }
 
     function pillFor(s) {
@@ -163,28 +147,147 @@
       return `<span class="pill site-${s.site}">${label(s.site)}: ${bits.join(' ')}</span>`;
     }
 
+    let allSamples = [];
+    let lastUpdated = null;
+
+    function computePerSite(samples) {
+      const per = {};
+      for (const s of samples) {
+        const b = (per[s.site] = per[s.site] || { oneX2Correct: 0, oneX2Total: 0, ouCorrect: 0, ouTotal: 0 });
+        if (s.oneX2Correct !== null && s.oneX2Correct !== undefined) {
+          b.oneX2Total += 1;
+          if (s.oneX2Correct) b.oneX2Correct += 1;
+        }
+        if (s.ouCorrect !== null && s.ouCorrect !== undefined) {
+          b.ouTotal += 1;
+          if (s.ouCorrect) b.ouCorrect += 1;
+        }
+      }
+      for (const b of Object.values(per)) {
+        b.oneX2Pct = b.oneX2Total ? Math.round((100 * b.oneX2Correct) / b.oneX2Total) : null;
+        b.ouPct = b.ouTotal ? Math.round((100 * b.ouCorrect) / b.ouTotal) : null;
+        b.graded = b.oneX2Total + b.ouTotal;
+        b.overall = b.graded ? (b.oneX2Correct + b.ouCorrect) / b.graded : null;
+      }
+      return per;
+    }
+
+    function render(perSite, samples, singleDay) {
+      const sites = Object.entries(perSite).sort(
+        (a, b) => (b[1].overall ?? -1) - (a[1].overall ?? -1) || b[1].graded - a[1].graded
+      );
+
+      if (!sites.length) {
+        gridEl.innerHTML = '';
+        recentEl.hidden = true;
+        noteEl.textContent = '';
+        emptyEl.hidden = false;
+        emptyEl.textContent = allSamples.length
+          ? 'No graded predictions for fixtures on the Singapore Pools board in this date range.'
+          : 'No graded predictions yet — this fills in as SG Pools fixtures finish.';
+        return;
+      }
+      emptyEl.hidden = true;
+
+      const bestSite = sites.find(([, b]) => b.graded >= MIN_BEST)?.[0] || null;
+      gridEl.innerHTML = sites
+        .map(
+          ([site, b]) => `
+        <div class="acccard site-${site}${site === bestSite ? ' best' : ''}">
+          <h3>${site === bestSite ? '<span class="crown">🏆 most accurate</span>' : ''}${label(site)}</h3>
+          ${metric('1X2 (home/draw/away)', b.oneX2Correct, b.oneX2Total, b.oneX2Pct, 'x12')}
+          ${metric('Over / Under goals', b.ouCorrect, b.ouTotal, b.ouPct, 'ou')}
+          <div class="metric-top"><span>Overall</span><span>${b.overall == null ? '—' : Math.round(b.overall * 100) + '%'} · ${b.oneX2Correct + b.ouCorrect}/${b.graded}</span></div>
+        </div>`
+        )
+        .join('');
+
+      const byMatch = new Map();
+      for (const s of samples) {
+        if (!byMatch.has(s.matchKey))
+          byMatch.set(s.matchKey, { fixture: s.fixture, score: s.score, kickoffISO: s.kickoffISO, picks: [] });
+        byMatch.get(s.matchKey).picks.push(s);
+      }
+      const matchRows = [...byMatch.values()].sort((a, b) => new Date(b.kickoffISO) - new Date(a.kickoffISO));
+      recentEl.hidden = matchRows.length === 0;
+      recentEl.querySelector('tbody').innerHTML = matchRows
+        .slice(0, 60)
+        .map(
+          (m) => `
+          <tr>
+            <td>${new Date(m.kickoffISO).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+            <td>${m.fixture}</td>
+            <td>${m.score}</td>
+            <td><div class="pillrow">${m.picks.map(pillFor).join('')}</div></td>
+          </tr>`
+        )
+        .join('');
+      noteEl.textContent = matchRows.length > 60 ? `Showing the 60 most recent of ${matchRows.length} matches.` : '';
+    }
+
+    function apply() {
+      const from = fromEl.value || '0000-01-01';
+      const to = toEl.value || '9999-12-31';
+      const samples = allSamples.filter((s) => {
+        const d = localDay(s.kickoffISO);
+        return d >= from && d <= to;
+      });
+      const singleDay = fromEl.value && fromEl.value === toEl.value;
+      const perSite = computePerSite(samples);
+      render(perSite, samples, singleDay);
+
+      const rangeLabel = fromEl.value && toEl.value
+        ? (singleDay ? fromEl.value : `${fromEl.value} → ${toEl.value}`)
+        : 'all dates';
+      const best = Object.entries(perSite)
+        .filter(([, b]) => b.graded >= MIN_BEST)
+        .sort((a, b) => (b[1].overall ?? -1) - (a[1].overall ?? -1))[0];
+      rangeNoteEl.textContent =
+        `${rangeLabel} · ${samples.length} graded pick${samples.length === 1 ? '' : 's'}` +
+        (best ? ` · best: ${label(best[0])} ${Math.round(best[1].overall * 100)}%` : '');
+      statusEl.textContent = lastUpdated ? `updated ${new Date(lastUpdated).toLocaleString()}` : '';
+    }
+
+    function setPreset(name) {
+      [...presetsEl.children].forEach((b) => b.classList.toggle('active', b.dataset.preset === name));
+      const today = new Date();
+      if (name === 'all') { fromEl.value = ''; toEl.value = ''; }
+      else if (name === 'today') { fromEl.value = toEl.value = localDay(today); }
+      else if (name === 'yesterday') { fromEl.value = toEl.value = localDay(addDays(today, -1)); }
+      else if (name === '7') { fromEl.value = localDay(addDays(today, -6)); toEl.value = localDay(today); }
+      else if (name === '30') { fromEl.value = localDay(addDays(today, -29)); toEl.value = localDay(today); }
+      apply();
+    }
+
+    presetsEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (btn) setPreset(btn.dataset.preset);
+    });
+    [fromEl, toEl].forEach((el) =>
+      el.addEventListener('change', () => {
+        [...presetsEl.children].forEach((b) => b.classList.remove('active'));
+        apply();
+      })
+    );
+
     async function load() {
       try {
-        const res = await fetch(`/api/accuracy?hours=${hours}`);
+        const res = await fetch('/api/accuracy');
         if (res.status === 503) {
           statusEl.textContent = 'No accuracy data yet';
           emptyEl.hidden = false;
           gridEl.innerHTML = '';
           return;
         }
-        render(await res.json());
+        const data = await res.json();
+        allSamples = data.samples || [];
+        lastUpdated = data.updatedAt || null;
+        if (data.availableDates) fromEl.min = toEl.min = data.availableDates.min;
+        apply();
       } catch (err) {
         statusEl.textContent = `Failed to load: ${err.message}`;
       }
     }
-
-    document.getElementById('windowsel').addEventListener('click', (e) => {
-      const btn = e.target.closest('button');
-      if (!btn) return;
-      hours = Number(btn.dataset.h);
-      document.querySelectorAll('#windowsel button').forEach((b) => b.classList.toggle('active', b === btn));
-      load();
-    });
 
     load();
     setInterval(load, 60000);
