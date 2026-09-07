@@ -4,24 +4,34 @@ const { fetchHtml, DEBUG } = require('./fetchHtml');
 const URL = 'https://eaglepredict.com/';
 
 // EaglePredict is Cloudflare-gated (FlareSolverr clears it in the snapshot
-// job). Homepage is a Tailwind card grid — each match card links to
-// /predictions/match/<slug>, carries the two teams as `img[alt="X logo"]`,
-// and shows one prediction in an `.italic` pill:
-//   "Home Win" / "Away Win" / "Draw"     -> 1X2 pick
-//   "Over 2.5 Goals" / "Under 3.5 Goals" -> totalsPick
-//   "Double Chance: ...", "BTTS", a correct score -> neither
+// job). Its homepage fully renders only a few "prediction today" cards —
+// each has the two teams as `img[alt="X logo"]` and exactly one prediction
+// pill styled `.italic` ("Under 2.5 Goals", "Home Win", "Draw", "Double
+// Chance: …"). The match URL is in an Alpine `:class` binding, not an
+// href, and the card wrapper has no stable class, so anchor on the
+// `.italic` pill and walk up to the nearest ancestor holding two logos.
 async function fetchEaglePredictTips() {
   const html = await fetchHtml('eaglepredict', URL);
   const $ = cheerio.load(html);
   const tips = [];
   const seen = new Set();
 
-  $('a[href*="/predictions/match/"]').each((_, a) => {
-    const href = $(a).attr('href') || '';
-    if (!/-prediction-/i.test(href)) return;
+  $('.italic').each((_, el) => {
+    const pill = $(el);
+    const pred = pill.text().replace(/\s+/g, ' ').trim();
+    if (!pred) return;
 
-    const scope = $(a).closest('.card').length ? $(a).closest('.card') : $(a).parent();
-    const logos = scope.find('img[alt]').filter((__, im) => /logo\s*$/i.test($(im).attr('alt') || ''));
+    // The card wrapper is a `.p-4` div holding both the teams grid and this
+    // pill; fall back to walking up if that class ever changes.
+    let logos = pill.closest('.p-4').find('img[alt$="logo"], img[alt$="logo "]');
+    if (logos.length < 2) {
+      let box = pill;
+      for (let up = 0; up < 6 && box.length; up += 1) {
+        box = box.parent();
+        logos = box.find('img[alt$="logo"], img[alt$="logo "]');
+        if (logos.length >= 2) break;
+      }
+    }
     if (logos.length < 2) return;
 
     const home = $(logos[0]).attr('alt').replace(/\s*logo\s*$/i, '').trim();
@@ -29,8 +39,6 @@ async function fetchEaglePredictTips() {
     if (!home || !away) return;
     const key = `${home.toLowerCase()}|${away.toLowerCase()}`;
     if (seen.has(key)) return;
-
-    const pred = scope.find('.italic').first().text().replace(/\s+/g, ' ').trim();
 
     let pick = null;
     if (/\bhome win\b/i.test(pred)) pick = 'home';
@@ -44,7 +52,7 @@ async function fetchEaglePredictTips() {
     if (!pick && !totalsPick) return; // double chance / BTTS / correct score
 
     seen.add(key);
-    tips.push({ site: 'eaglepredict', homeTeam: home, awayTeam: away, pick, totalsPick, rawText: pred, sourceUrl: href });
+    tips.push({ site: 'eaglepredict', homeTeam: home, awayTeam: away, pick, totalsPick, rawText: pred, sourceUrl: URL });
   });
 
   if (DEBUG) console.log(`[tipsters:eaglepredict] ${tips.length} usable tips`);
