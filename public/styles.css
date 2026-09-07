@@ -110,6 +110,18 @@ main { padding: 20px 24px 60px; max-width: 1100px; margin: 0 auto; }
 .best-bet .headline { font-size: 20px; font-weight: 700; margin: 6px 0 4px; }
 .best-bet .sub { font-size: 13px; color: var(--muted); }
 
+/* ---- one fixed colour per prediction site (used everywhere a site is named) ---- */
+.site-forebet            { --site-color: #fbbf24; } /* amber */
+.site-predictz           { --site-color: #60a5fa; } /* blue */
+.site-windrawwin         { --site-color: #a78bfa; } /* purple */
+.site-whoscored          { --site-color: #94a3b8; } /* slate */
+.site-sportsmole         { --site-color: #34d399; } /* green */
+.site-matchoutlook       { --site-color: #fb923c; } /* orange */
+.site-eaglepredict       { --site-color: #22d3ee; } /* cyan */
+.site-footystats         { --site-color: #a3e635; } /* lime */
+.site-statarea           { --site-color: #f472b6; } /* pink */
+.site-footballpredictions { --site-color: #f87171; } /* red */
+
 .tip-chips {
   display: flex;
   flex-wrap: wrap;
@@ -117,19 +129,20 @@ main { padding: 20px 24px 60px; max-width: 1100px; margin: 0 auto; }
   margin-top: 2px;
 }
 .tip-chip {
+  --site-color: #94a3b8;
   font-size: 11px;
   padding: 3px 8px;
   border-radius: 6px;
-  background: rgba(148, 163, 184, 0.12);
+  background: rgba(148, 163, 184, 0.1);
   border: 1px solid var(--card-border);
   cursor: default;
 }
-.tip-chip.tip-home { border-color: rgba(52, 211, 153, 0.5); color: var(--ok); }
-.tip-chip.tip-away { border-color: rgba(56, 189, 248, 0.5); color: var(--accent); }
-.tip-chip.tip-draw { border-color: rgba(251, 191, 36, 0.5); color: var(--soon); }
-.tip-chip.tip-over { border-color: rgba(56, 189, 248, 0.5); color: var(--accent); }
-.tip-chip.tip-under { border-color: rgba(251, 191, 36, 0.5); color: var(--soon); }
-.tip-chip.tip-unknown { color: var(--muted); }
+/* colour the chip by its site, not by the pick */
+.tip-chip[class*="site-"] {
+  border-color: color-mix(in srgb, var(--site-color) 55%, transparent);
+  color: var(--site-color);
+}
+.tip-chip .tc-pick { color: var(--text); font-weight: 700; }
 
 /* ---- odds + value ---- */
 .odds-block { margin-top: 8px; }

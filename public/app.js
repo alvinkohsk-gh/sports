@@ -55,7 +55,7 @@ function renderTipsters(tipsterConsensus) {
     .map((p) => {
       const label = SITE_LABELS[p.site] || p.site;
       const pickText = p.pick ? p.pick.toUpperCase() : '?';
-      return `<span class="tip-chip tip-${p.pick || 'unknown'}" title="${escapeHtml(p.rawText || '')}">${label}: ${pickText}</span>`;
+      return `<span class="tip-chip site-${p.site}" title="${escapeHtml(p.rawText || '')}">${label}: <span class="tc-pick">${pickText}</span></span>`;
     })
     .join('');
   const majority = tipsterConsensus.majorityPick
@@ -67,7 +67,7 @@ function renderTipsters(tipsterConsensus) {
     .map((p) => {
       const label = SITE_LABELS[p.site] || p.site;
       const sel = p.totalsPick.selection.toUpperCase();
-      return `<span class="tip-chip tip-${p.totalsPick.selection}" title="${escapeHtml(p.rawText || '')}">${label}: ${sel} ${p.totalsPick.point}</span>`;
+      return `<span class="tip-chip site-${p.site}" title="${escapeHtml(p.rawText || '')}">${label}: <span class="tc-pick">${sel} ${p.totalsPick.point}</span></span>`;
     })
     .join('');
   const ouMajority = tipsterConsensus.totalsMajorityPick

@@ -17,7 +17,9 @@
     .windowsel button.active { background: rgba(56,189,248,0.18); color: var(--accent); border-color: rgba(56,189,248,0.5); }
     .accgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
     .acccard { background: var(--card); border: 1px solid var(--card-border); border-radius: 10px; padding: 16px; }
+    .acccard[class*="site-"] { border-left: 3px solid var(--site-color); }
     .acccard h3 { margin: 0 0 12px; font-size: 15px; }
+    .acccard[class*="site-"] h3 { color: var(--site-color); }
     .metric { margin-bottom: 12px; }
     .metric-top { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
     .metric-top b { color: var(--text); font-size: 14px; font-variant-numeric: tabular-nums; }
@@ -32,8 +34,8 @@
     .tick { color: var(--ok); } .cross { color: var(--urgent); } .dash { color: var(--muted); }
     .pillrow { display: flex; flex-wrap: wrap; gap: 4px; }
     .pill { font-size: 11px; padding: 2px 6px; border-radius: 5px; border: 1px solid var(--card-border); }
-    .pill.ok { border-color: rgba(52,211,153,0.5); color: var(--ok); }
-    .pill.bad { border-color: rgba(248,113,113,0.5); color: var(--urgent); }
+    .pill[class*="site-"] { border-color: color-mix(in srgb, var(--site-color) 55%, transparent); color: var(--site-color); }
+    .pill .tick { color: var(--ok); } .pill .cross { color: var(--urgent); }
   </style>
 </head>
 <body>
@@ -120,7 +122,7 @@
       emptyEl.hidden = true;
 
       gridEl.innerHTML = sites.map(([site, b]) => `
-        <div class="acccard">
+        <div class="acccard site-${site}">
           <h3>${label(site)}</h3>
           ${metric('1X2 (home/draw/away)', b.oneX2Correct, b.oneX2Total, b.oneX2Pct, 'x12')}
           ${metric('Over / Under goals', b.ouCorrect, b.ouTotal, b.ouPct, 'ou')}
@@ -152,13 +154,13 @@
     }
 
     function pillFor(s) {
+      const mark = (ok) => (ok ? '<span class="tick">✓</span>' : '<span class="cross">✗</span>');
       const bits = [];
       if (s.oneX2Correct !== null && s.oneX2Correct !== undefined)
-        bits.push(`${s.pick ? s.pick[0].toUpperCase() : '?'}${s.oneX2Correct ? '✓' : '✗'}`);
+        bits.push(`${s.pick ? s.pick[0].toUpperCase() : '?'}${mark(s.oneX2Correct)}`);
       if (s.ouCorrect !== null && s.ouCorrect !== undefined)
-        bits.push(`${(s.ou || '').split(' ')[0][0].toUpperCase()}${s.ouCorrect ? '✓' : '✗'}`);
-      const good = s.oneX2Correct || s.ouCorrect;
-      return `<span class="pill ${good ? 'ok' : 'bad'}">${label(s.site)}: ${bits.join(' ')}</span>`;
+        bits.push(`${(s.ou || '').split(' ')[0][0].toUpperCase()}${mark(s.ouCorrect)}`);
+      return `<span class="pill site-${s.site}">${label(s.site)}: ${bits.join(' ')}</span>`;
     }
 
     async function load() {
