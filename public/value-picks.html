@@ -209,7 +209,6 @@
     function renderSettled(picks) {
       settledHead.hidden = picks.length === 0;
       settledEl.hidden = picks.length === 0;
-      if (!picks.length) return;
       settledEl.querySelector('tbody').innerHTML = picks
         .map((p) => {
           const res = p.won ? '<span class="res-win">WON ✓</span>' : '<span class="res-lose">LOST ✗</span>';
