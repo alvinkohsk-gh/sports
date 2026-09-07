@@ -20,13 +20,39 @@ const CACHE_TTL_MS = Number(process.env.CACHE_TTL_MS || 60000);
 // crashes under load, and the Cloudflare-protected tipster sites 403
 // Vercel's datacenter IPs — so the live scrape below is only a fallback
 // for when the snapshot is missing or stale.
-const SNAPSHOT_URL =
+const SNAPSHOT_REPO = process.env.SNAPSHOT_REPO || 'alvinkohsk-gh/sports';
+const SNAPSHOT_BRANCH = process.env.SNAPSHOT_BRANCH || 'data-snapshot';
+const SNAPSHOT_FILE = process.env.SNAPSHOT_FILE || 'snapshot.json';
+// Prefer the GitHub contents API — it serves the branch tip with no CDN lag.
+// raw.githubusercontent.com caches per-edge for minutes, which showed up as
+// the app serving a snapshot one scrape-cycle stale. raw is the fallback
+// (unauthenticated contents API is 60 req/hr/IP; a warm instance only hits
+// it once per SNAPSHOT_REFETCH_MS, but Vercel functions share egress IPs).
+const SNAPSHOT_API_URL =
   process.env.SNAPSHOT_URL ||
-  'https://raw.githubusercontent.com/alvinkohsk-gh/sports/data-snapshot/snapshot.json';
+  `https://api.github.com/repos/${SNAPSHOT_REPO}/contents/${SNAPSHOT_FILE}?ref=${SNAPSHOT_BRANCH}`;
+const SNAPSHOT_RAW_URL = `https://raw.githubusercontent.com/${SNAPSHOT_REPO}/${SNAPSHOT_BRANCH}/${SNAPSHOT_FILE}`;
 const SNAPSHOT_MAX_AGE_MS = Number(process.env.SNAPSHOT_MAX_AGE_MS || 45 * 60 * 1000);
-const SNAPSHOT_REFETCH_MS = Number(process.env.SNAPSHOT_REFETCH_MS || 60 * 1000);
+const SNAPSHOT_REFETCH_MS = Number(process.env.SNAPSHOT_REFETCH_MS || 90 * 1000);
 
 let snapshotCache = { data: null, fetchedAt: 0 };
+
+async function fetchSnapshotJson() {
+  try {
+    const res = await fetch(SNAPSHOT_API_URL, {
+      cache: 'no-store',
+      headers: { Accept: 'application/vnd.github.raw+json', 'User-Agent': 'sg-pools-live-odds' },
+    });
+    if (res.ok) return await res.json();
+    if (res.status !== 403 && res.status !== 429) throw new Error(`contents API HTTP ${res.status}`);
+    // rate-limited — fall through to raw
+  } catch (err) {
+    console.error('[snapshot] contents API failed:', err.message);
+  }
+  const raw = await fetch(SNAPSHOT_RAW_URL, { cache: 'no-store', headers: { 'User-Agent': 'sg-pools-live-odds' } });
+  if (!raw.ok) throw new Error(`raw HTTP ${raw.status}`);
+  return await raw.json();
+}
 
 async function getSnapshot() {
   if (MOCK_MODE) return null;
@@ -34,9 +60,7 @@ async function getSnapshot() {
     return snapshotCache.data;
   }
   try {
-    const res = await fetch(SNAPSHOT_URL, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    const data = await fetchSnapshotJson();
     snapshotCache = { data, fetchedAt: Date.now() };
     return data;
   } catch (err) {

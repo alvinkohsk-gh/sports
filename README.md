@@ -201,7 +201,8 @@ outcome. Displayed with a disclaimer in the UI.
 | `PORT` | Local server port (default 3000) |
 | `SGPOOLS_POLL_MS` | Refresh interval for the background loop (local/long-running only) |
 | `CACHE_TTL_MS` | On-demand refresh staleness threshold (serverless) |
-| `SNAPSHOT_URL` | Where to read the pre-built scrape snapshot (default: this repo's `data-snapshot` branch on raw.githubusercontent.com) |
+| `SNAPSHOT_URL` | Override the snapshot source (default: the GitHub contents API for `<SNAPSHOT_REPO>`'s `<SNAPSHOT_BRANCH>`/`snapshot.json`, with raw.githubusercontent.com as fallback) |
+| `SNAPSHOT_REPO` / `SNAPSHOT_BRANCH` | Repo (`owner/name`) and branch the snapshot job publishes to (defaults `alvinkohsk-gh/sports` / `data-snapshot`) |
 | `SNAPSHOT_MAX_AGE_MS` | Max snapshot age before `/api/matches` falls back to an on-demand scrape (default 45 min) |
 | `FLARESOLVERR_URL` | If set (e.g. `http://localhost:8191/v1`), route Cloudflare-blocked tipster pages through FlareSolverr instead of the headless browser. Set by the snapshot workflow. |
 | `TIPSTERS_DEADLINE_MS` | Overall cap on the tipster-fetch phase (default 25 s; the snapshot job raises it since FlareSolverr solves take longer) |
