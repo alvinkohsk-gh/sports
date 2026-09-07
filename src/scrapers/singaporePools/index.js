@@ -1,5 +1,5 @@
 const { renderWithBrowser, getLastCapture } = require('./render');
-const { fetchSgPoolsOdds } = require('./odds');
+const { parseOu25, fetchSgPoolsOu25 } = require('./odds');
 const {
   toFixture,
   extractFixturesFromEventsApi,
@@ -11,9 +11,9 @@ const {
 // Scrapes the Singapore Pools football fixture list. Entry point:
 // fetchOpenFixtures(). The pieces:
 //   ./render.js    headless-browser render + JSON-response capture
-//   ./parsers.js   pure parsers for each payload shape
-//   ./odds.js      1X2 + O/U 2.5 prices from the same events API
-// This file decides which parser to trust, then attaches the odds.
+//   ./parsers.js   pure parsers (also lifts the 1X2 prices from the payload)
+//   ./odds.js      one extra call for the O/U 2.5 prices
+// This file decides which parser to trust, then attaches the O/U odds.
 
 const DEBUG = String(process.env.SGPOOLS_DEBUG || 'false').toLowerCase() === 'true';
 
@@ -60,24 +60,23 @@ async function fetchOpenFixtures() {
   }
 
   const fixtures = extractFixtures(rendered);
-
-  // Attach 1X2 + O/U 2.5 prices (best-effort — a failed odds fetch just
-  // leaves fixtures without an `odds` field).
-  let oddsById = new Map();
-  try {
-    oddsById = await fetchSgPoolsOdds();
-  } catch (err) {
-    console.error('[singaporePools] odds fetch failed:', err.message || err);
-  }
-  let priced = 0;
+  // fixtures may already carry `odds: { oneX2, ou25: null }` from the
+  // events payload (parsers.js). Add the O/U 2.5 line from the in-page
+  // fetch (render.js); only if that came back empty do we make a bare
+  // server-side call as a fallback.
+  let ou25ById = rendered.ouEvents ? parseOu25(rendered.ouEvents) : new Map();
+  if (ou25ById.size === 0) ou25ById = await fetchSgPoolsOu25();
+  let x12 = 0;
+  let ou = 0;
   for (const f of fixtures) {
-    const o = oddsById.get(String(f.sgpMatchId));
+    if (f.odds && f.odds.oneX2) x12 += 1;
+    const o = ou25ById.get(String(f.sgpMatchId));
     if (o) {
-      f.odds = o;
-      priced += 1;
+      f.odds = { ...(f.odds || { oneX2: null }), ou25: o };
+      ou += 1;
     }
   }
-  if (DEBUG) console.log(`[singaporePools] attached odds to ${priced}/${fixtures.length} fixtures`);
+  if (DEBUG) console.log(`[singaporePools] odds: 1X2 on ${x12}/${fixtures.length}, O/U 2.5 on ${ou}`);
 
   return fixtures;
 }

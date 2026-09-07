@@ -28,8 +28,25 @@ function toFixture({ homeTeam, awayTeam, kickoffISO, league, sgpMatchId }) {
  * field — each event's teams are combined into one "name" string like
  * "Ascoli vs Benevento SRL" (or "... (Live)" for in-play events), with
  * startTime already a clean ISO 8601 UTC string and type.name giving the
- * competition/league.
+ * competition/league. When the payload is the betType=MR view its events
+ * also carry the 1X2 market with prices, so we lift those here rather than
+ * making a second API call for them (see ./odds.js — only O/U 2.5 needs
+ * its own fetch).
  */
+function oneX2OddsFromEvent(event) {
+  const mkt = (event.markets || []).find((m) => m.minorCode === 'MR');
+  if (!mkt) return null;
+  const o = {};
+  for (const out of mkt.outcomes || []) {
+    const dec = Number(out.prices && out.prices[0] && out.prices[0].decimal);
+    if (!(dec > 1)) continue;
+    if (out.minorCode === 'H') o.home = dec;
+    else if (out.minorCode === 'D') o.draw = dec;
+    else if (out.minorCode === 'A') o.away = dec;
+  }
+  return o.home && o.draw && o.away ? o : null;
+}
+
 function extractFixturesFromEventsApi(data) {
   if (!data || !Array.isArray(data.events)) return [];
   const results = [];
@@ -46,7 +63,10 @@ function extractFixturesFromEventsApi(data) {
       league: event.type?.name || null,
       sgpMatchId: event.id != null ? String(event.id) : null,
     });
-    if (fixture) results.push(fixture);
+    if (!fixture) continue;
+    const oneX2 = oneX2OddsFromEvent(event);
+    if (oneX2) fixture.odds = { oneX2, ou25: null };
+    results.push(fixture);
   }
   return results;
 }

@@ -69,6 +69,17 @@ async function loadPublished(file, fallback) {
     console.error('[scrape-snapshot] nothing scraped — not writing anything');
     process.exit(1);
   }
+  // Guard against a transient Singapore Pools failure (render throttled /
+  // served a near-empty fixture list) nuking a healthy live board: if the
+  // fixture count collapsed while the tipster scrape is clearly fine, keep
+  // the previous snapshot rather than publishing the broken one.
+  if (snapshot.matches.length < 5 && snapshot.counts.tipsterPicks > 50) {
+    console.error(
+      `[scrape-snapshot] only ${snapshot.matches.length} SG Pools fixtures but ` +
+        `${snapshot.counts.tipsterPicks} tipster picks — treating as a transient SG Pools failure, not publishing`
+    );
+    process.exit(1);
+  }
 
   // ---- prediction history + accuracy grading + value-pick log ----
   const [prevHistory, prevAccuracy, prevValuePicks] = await Promise.all([

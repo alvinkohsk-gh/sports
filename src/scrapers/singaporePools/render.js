@@ -86,6 +86,27 @@ async function renderWithBrowser() {
 
     const html = await page.content();
 
+    // The page auto-loads the 1X2 (betType=MR) events but not the
+    // Over/Under view. Fetch it from inside the page — the SPA already
+    // calls api.singaporepools.com cross-origin, so CORS allows it, and
+    // this keeps every SG Pools API hit inside the one legit render
+    // session (a bare server-side request on top got the runner IP
+    // throttled — see odds.js history).
+    let ouEvents = null;
+    try {
+      ouEvents = await page.evaluate(async () => {
+        const r = await fetch(
+          'https://api.singaporepools.com/football/events/v1/upcoming-event?lang=en&betType=HL',
+          { credentials: 'omit' }
+        );
+        if (!r.ok) return null;
+        const d = await r.json();
+        return Array.isArray(d.events) ? d.events : null;
+      });
+    } catch (err) {
+      if (DEBUG) console.log('[singaporePools] in-page O/U fetch failed:', err.message);
+    }
+
     // A capture against the wrong URL rendered the site's own 404 page
     // (title "Page Not Found | Singapore Pools") — confirmed SPORTS_URL is
     // wrong. The 404 page still carries the site's real shared nav/header,
@@ -139,7 +160,7 @@ async function renderWithBrowser() {
       capturedJson.forEach((c, i) => console.log(`[singaporePools]   JSON response #${i}: ${c.url}`));
     }
 
-    return { html, capturedJson };
+    return { html, capturedJson, ouEvents };
   });
 }
 
