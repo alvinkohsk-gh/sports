@@ -33,7 +33,21 @@ jobs:
       - run: npx playwright install --with-deps chromium
 
       - name: Scrape
+        env:
+          TIPSTERS_DEBUG: 'true'
+          SGPOOLS_DEBUG: 'true'
         run: node scripts/scrape-snapshot.js snapshot.json
+
+      - name: Upload scraper debug dumps
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraper-debug
+          path: |
+            debug-tipsters/
+            debug-sgpools-raw.html
+          if-no-files-found: warn
+          retention-days: 3
 
       - name: Publish snapshot.json to data-snapshot branch
         run: |
