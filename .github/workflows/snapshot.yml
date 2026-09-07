@@ -19,7 +19,15 @@ permissions:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
+    services:
+      # Solves the Cloudflare challenges on Forebet / PredictZ / WinDrawWin /
+      # WhoScored / Sports Mole article pages (see src/scrapers/tipsters/
+      # fetchHtml.js). Reachable at http://localhost:8191 from the job.
+      flaresolverr:
+        image: ghcr.io/flaresolverr/flaresolverr:latest
+        ports:
+          - 8191:8191
     steps:
       - uses: actions/checkout@v4
 
@@ -32,10 +40,24 @@ jobs:
 
       - run: npx playwright install --with-deps chromium
 
+      - name: Wait for FlareSolverr
+        run: |
+          for i in $(seq 1 45); do
+            if curl -sf http://localhost:8191/ >/dev/null; then
+              echo "FlareSolverr ready after ${i}x2s"; exit 0
+            fi
+            sleep 2
+          done
+          echo "FlareSolverr never became ready" >&2
+          exit 1
+
       - name: Scrape
         env:
           TIPSTERS_DEBUG: 'true'
           SGPOOLS_DEBUG: 'true'
+          FLARESOLVERR_URL: 'http://localhost:8191/v1'
+          TIPSTERS_DEADLINE_MS: '480000'
+          SPORTSMOLE_MAX_ARTICLES: '30'
         run: node scripts/scrape-snapshot.js snapshot.json
 
       - name: Upload scraper debug dumps

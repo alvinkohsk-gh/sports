@@ -26,16 +26,23 @@ singaporepools.com.sg, with a live countdown to kickoff for each match.
 
 **In production the scrape runs off the request path.** Scraping inside a
 Vercel function is unreliable — `@sparticuz/chromium-min` runs
-`--single-process` and crashes under load, and the Cloudflare-protected
-tipster sites 403 Vercel's datacenter IPs. So `.github/workflows/
-snapshot.yml` runs `scripts/scrape-snapshot.js` every ~15 min on a GitHub
-Actions runner (real Chromium, no 60s limit, an IP the sites don't
-blanket-block) and force-pushes the result JSON to the orphan
-`data-snapshot` branch. `src/app.js` fetches
+`--single-process` and crashes under load, and every tipster site except
+Sports Mole's hub 403s any datacenter IP behind Cloudflare. So
+`.github/workflows/snapshot.yml` runs `scripts/scrape-snapshot.js` every
+~15 min on a GitHub Actions runner and force-pushes the result JSON to the
+orphan `data-snapshot` branch. `src/app.js` fetches
 `raw.githubusercontent.com/<repo>/data-snapshot/snapshot.json` and serves
 that; it only falls back to an on-demand scrape when the snapshot is
 missing or older than `SNAPSHOT_MAX_AGE_MS` (45 min). `GET /api/matches`
 reports which path served it via a `source: "snapshot" | "live"` field.
+
+The snapshot job runs a **FlareSolverr** service container and points
+`FLARESOLVERR_URL` at it. `src/scrapers/tipsters/fetchHtml.js` sends any
+page that plain HTTP can't get (Cloudflare challenge / 403) through
+FlareSolverr, which returns solved HTML plus a `cf_clearance` cookie that
+later same-domain fetches reuse over cheap plain axios. Without
+`FLARESOLVERR_URL` set (local dev, Vercel fallback) it drops back to the
+shared headless browser.
 
 ## Tipster sources
 
@@ -45,7 +52,7 @@ reports which path served it via a `source: "snapshot" | "live"` field.
 | PredictZ | Structured table | Same source as above |
 | WinDrawWin | Structured table | Same source as above |
 | WhoScored | Prose preview articles | No reference scraper found — generic heuristic extraction (regex for "Team A vs Team B" + a scoreline, a draw phrase, or win/lose phrasing tied to one of the two team names in nearby text) |
-| Sports Mole | Prose preview articles | Same heuristic approach as WhoScored |
+| Sports Mole | Prose preview articles | Reads the hub for fixture links, then fetches each per-match article and parses its "Sports Mole predicts: A x-y B" line (falls back to the closing paragraphs). Capped at `SPORTSMOLE_MAX_ARTICLES` (default 40). |
 
 The first three give a clean discrete pick (home/draw/away) reliably; the
 last two are best-effort. `inferPickFromProse` (`src/scrapers/tipsters/
@@ -196,6 +203,9 @@ outcome. Displayed with a disclaimer in the UI.
 | `CACHE_TTL_MS` | On-demand refresh staleness threshold (serverless) |
 | `SNAPSHOT_URL` | Where to read the pre-built scrape snapshot (default: this repo's `data-snapshot` branch on raw.githubusercontent.com) |
 | `SNAPSHOT_MAX_AGE_MS` | Max snapshot age before `/api/matches` falls back to an on-demand scrape (default 45 min) |
+| `FLARESOLVERR_URL` | If set (e.g. `http://localhost:8191/v1`), route Cloudflare-blocked tipster pages through FlareSolverr instead of the headless browser. Set by the snapshot workflow. |
+| `TIPSTERS_DEADLINE_MS` | Overall cap on the tipster-fetch phase (default 25 s; the snapshot job raises it since FlareSolverr solves take longer) |
+| `SPORTSMOLE_MAX_ARTICLES` | Max Sports Mole preview articles to fetch per run (default 40) |
 | `MOCK_MODE` | `true` to run entirely on bundled sample data |
 | `SGPOOLS_DEBUG` | `true` for verbose SG Pools scraper logs + HTML/screenshot dump |
 | `TIPSTERS_DEBUG` | `true` to save each tipster site's fetched HTML for inspection |

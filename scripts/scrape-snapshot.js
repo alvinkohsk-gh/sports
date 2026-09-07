@@ -37,11 +37,16 @@ const OUT = process.argv[2] || 'snapshot.json';
   };
 
   const bySite = {};
-  for (const p of snapshot.rawTipsterPicks) bySite[p.site] = (bySite[p.site] || 0) + 1;
+  for (const p of snapshot.rawTipsterPicks) {
+    const b = (bySite[p.site] = bySite[p.site] || { picks: 0, classified: 0 });
+    b.picks += 1;
+    if (p.pick) b.classified += 1;
+  }
+  const withMajority = snapshot.matches.filter((m) => m.tipsterConsensus?.majorityPick).length;
   console.error(
     `[scrape-snapshot] ${snapshot.matches.length} matches, ` +
       `${snapshot.counts.tipsterPicks} tipster picks ${JSON.stringify(bySite)}, ` +
-      `err=${snapshot.lastError || 'none'}`
+      `${withMajority} matches with a majority, err=${snapshot.lastError || 'none'}`
   );
 
   // Total failure (both stages empty) — don't write, so the workflow's

@@ -22,7 +22,11 @@ const SOURCES = [
 // the whole batch against an overall deadline means a slow request still
 // returns whatever picks did complete in time, instead of the entire
 // response timing out with nothing.
-const OVERALL_DEADLINE_MS = 25000;
+// 25s fits Vercel's leftover budget after SG Pools' own fetch. The GitHub
+// Actions snapshot job has no such limit and routes the Cloudflare sites
+// through FlareSolverr (tens of seconds each on first solve), so it raises
+// this via TIPSTERS_DEADLINE_MS.
+const OVERALL_DEADLINE_MS = Number(process.env.TIPSTERS_DEADLINE_MS) || 25000;
 
 /**
  * Fetches all tipster sources, one site failing (site redesign, block,

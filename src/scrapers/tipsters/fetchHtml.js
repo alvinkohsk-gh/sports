@@ -4,13 +4,20 @@ const path = require('path');
 const axios = require('axios');
 const { withSharedPage, IS_SERVERLESS } = require('../browser');
 
-// Forebet / PredictZ / WinDrawWin sit behind Cloudflare's "Just a moment…"
-// managed challenge, which auto-redirects to the real page after a few
-// seconds of client-side JS. Wait that out rather than returning the
-// interstitial. Only off-serverless (the GitHub Actions snapshot job, see
-// scripts/scrape-snapshot.js) — on Vercel the extra 10-15s/site would just
-// push the fallback scrape past maxDuration, and the snapshot is the real
-// data path there anyway.
+// Forebet / PredictZ / WinDrawWin / WhoScored (and Sports Mole's individual
+// article pages) all sit behind Cloudflare and 403 plain HTTP from any
+// datacenter IP. When FLARESOLVERR_URL is set (the GitHub Actions snapshot
+// job runs a FlareSolverr service container — see
+// .github/workflows/snapshot.yml) requests go through it: FlareSolverr
+// drives an undetected full Chromium that clears the challenge and returns
+// the solved HTML plus a `cf_clearance` cookie, which we then reuse for
+// cheap plain-axios fetches of the rest of that domain's pages.
+//
+// Without FlareSolverr (local dev, and the Vercel fallback path) it falls
+// back to the shared headless browser and — off-serverless only, since the
+// per-site wait would blow Vercel's 60s function limit — waits out the
+// passive "Just a moment…" interstitial.
+const FLARESOLVERR_URL = process.env.FLARESOLVERR_URL || '';
 const WAIT_OUT_CLOUDFLARE = !IS_SERVERLESS;
 
 const DEBUG = String(process.env.TIPSTERS_DEBUG || 'false').toLowerCase() === 'true';
@@ -28,7 +35,11 @@ const HTTP_HEADERS = {
 };
 
 function looksLikeChallengePage(html) {
-  return /just a moment|cf-browser-verification|cloudflare/i.test(html.slice(0, 3000));
+  // Deliberately specific — a bare "cloudflare" match false-positives on
+  // real pages that just load a cdnjs.cloudflare.com asset.
+  return /just a moment|cf-browser-verification|__cf_chl|_cf_chl_opt|cf_chl_|attention required!|checking your browser|challenge-platform/i.test(
+    String(html).slice(0, 4000)
+  );
 }
 
 function dumpDebug(site, html) {
@@ -41,22 +52,86 @@ function dumpDebug(site, html) {
   }
 }
 
+// cf_clearance (+ matching UA) captured per host from a FlareSolverr solve,
+// so only the first page of each domain pays the full challenge cost.
+const clearanceByHost = new Map();
+
+function hostOf(url) {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+}
+
+async function plainGet(url, extraHeaders) {
+  const { data } = await axios.get(url, {
+    timeout: 20000,
+    headers: { ...HTTP_HEADERS, ...extraHeaders },
+    // some CF error pages come back as 403 with a real body we can detect
+    validateStatus: (s) => s >= 200 && s < 500,
+  });
+  return typeof data === 'string' ? data : '';
+}
+
+async function solveWithFlareSolverr(url) {
+  const { data } = await axios.post(
+    FLARESOLVERR_URL,
+    { cmd: 'request.get', url, maxTimeout: 60000 },
+    { timeout: 90000 }
+  );
+  if (data.status !== 'ok' || !data.solution || !data.solution.response) {
+    throw new Error(`flaresolverr: ${data.message || data.status || 'no solution'}`);
+  }
+  const sol = data.solution;
+  const cookieHeader = (sol.cookies || []).map((c) => `${c.name}=${c.value}`).join('; ');
+  if (cookieHeader) {
+    clearanceByHost.set(hostOf(url), {
+      Cookie: cookieHeader,
+      'User-Agent': sol.userAgent || HTTP_HEADERS['User-Agent'],
+    });
+  }
+  return sol.response;
+}
+
 /**
- * Fetches a page as plain HTTP first (fast, works for sites with no bot
- * protection); if that comes back looking like a Cloudflare/JS challenge
- * page (or empty), retries by rendering with a headless browser, which
- * clears most JS-based challenges and client-rendered content alike.
+ * Fetches a page, transparently handling Cloudflare:
+ *  1. plain axios (works for un-protected pages and local dev);
+ *  2. if that's a challenge/error and we already hold a cf_clearance for
+ *     the host, plain axios with that cookie;
+ *  3. FlareSolverr, if FLARESOLVERR_URL is set (captures a cf_clearance for
+ *     step 2 on later pages);
+ *  4. otherwise the shared headless browser (Vercel fallback / local dev).
  */
 async function fetchHtml(site, url) {
   try {
-    const { data: html } = await axios.get(url, { headers: HTTP_HEADERS, timeout: 15000 });
-    if (html && html.length > 500 && !looksLikeChallengePage(html)) {
+    const html = await plainGet(url);
+    if (html.length > 500 && !looksLikeChallengePage(html)) {
       dumpDebug(site, html);
       return html;
     }
-    if (DEBUG) console.log(`[tipsters:${site}] plain fetch looked like a challenge/empty page, trying browser render`);
+    if (DEBUG) console.log(`[tipsters:${site}] plain fetch looked blocked/empty`);
   } catch (err) {
-    if (DEBUG) console.log(`[tipsters:${site}] plain fetch failed (${err.message}), trying browser render`);
+    if (DEBUG) console.log(`[tipsters:${site}] plain fetch failed (${err.message})`);
+  }
+
+  if (FLARESOLVERR_URL) {
+    const held = clearanceByHost.get(hostOf(url));
+    if (held) {
+      try {
+        const html = await plainGet(url, held);
+        if (html.length > 500 && !looksLikeChallengePage(html)) {
+          dumpDebug(site, html);
+          return html;
+        }
+      } catch {
+        /* clearance stale — re-solve below */
+      }
+    }
+    if (DEBUG) console.log(`[tipsters:${site}] solving via FlareSolverr`);
+    const solved = await solveWithFlareSolverr(url);
+    dumpDebug(site, solved);
+    return solved;
   }
 
   return withSharedPage(
@@ -66,10 +141,6 @@ async function fetchHtml(site, url) {
       // tables this scraper reads are server-rendered, so 'domcontentloaded'
       // plus a brief settle (same approach used for singaporePools.js) is
       // both faster and more reliable.
-      // With only one shared page allowed at a time (see browser.js), every
-      // page in the refresh's serial queue eats into the same 60s function
-      // budget — shortened from 2000ms now that image/media/font/ad
-      // requests are blocked and there's much less left to settle.
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
       await page.waitForTimeout(500);
       let html = await page.content();
@@ -78,9 +149,10 @@ async function fetchHtml(site, url) {
         if (DEBUG) console.log(`[tipsters:${site}] Cloudflare challenge — waiting for it to clear`);
         await page
           .waitForFunction(
-            () => !/just a moment|cf-browser-verification|challenge-platform/i.test(
-              document.title + ' ' + (document.body ? document.body.innerText.slice(0, 400) : '')
-            ),
+            () =>
+              !/just a moment|cf-browser-verification|challenge-platform/i.test(
+                document.title + ' ' + (document.body ? document.body.innerText.slice(0, 400) : '')
+              ),
             { timeout: 20000 }
           )
           .catch(() => {});
