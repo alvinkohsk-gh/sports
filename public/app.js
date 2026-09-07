@@ -44,6 +44,7 @@ const SITE_LABELS = {
   eaglepredict: 'EaglePredict',
   footystats: 'FootyStats',
   statarea: 'Statarea',
+  footballpredictions: 'FootballPredictions',
 };
 
 function renderTipsters(tipsterConsensus) {

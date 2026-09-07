@@ -11,8 +11,8 @@ each match.
    fixtures (team names + kickoff time).
 2. `src/scrapers/tipsters/` fetches picks from the prediction/tipster
    sites in parallel (Forebet, PredictZ, WinDrawWin, WhoScored, Sports
-   Mole, MatchOutlook, EaglePredict, FootyStats, Statarea) — see "Tipster sources"
-   below for per-site detail and how verified each one is.
+   Mole, MatchOutlook, EaglePredict, FootyStats, Statarea, FootballPredictions)
+   — see "Tipster sources" below for per-site detail and how verified each one is.
 3. `src/services/tipsterConsensus.js` attaches each match's tipster picks
    by fuzzy team-name matching (`src/services/matcher.js`).
 4. `src/services/tipsterRanking.js` picks each match's strongest tipster
@@ -70,6 +70,7 @@ shared headless browser.
 | EaglePredict | Tailwind card grid | Cloudflare-gated (FlareSolverr clears it). Per-match card: teams from `img[alt="X logo"]`, one prediction pill — "Home/Away Win"/"Draw" → `pick`, "Over/Under N Goals" → `totalsPick`, double-chance/BTTS/correct-score ignored. |
 | FootyStats | `.betWrapper` tip list | One market per block ("Home Win", "Over 2.5 Goals", "BTTS Yes", …); 1X2 outcomes → `pick`, over/under lines → `totalsPick`, everything else ignored. A fixture can appear in several blocks. Plain HTTP. |
 | Statarea | `div.match` blocks, per-day `/predictions/date/<YYYY-MM-DD>/starttime` | Mathematical model. Reads the `.inforow .coefrow` probability row (`1 X 2 … 1.5 2.5 3.5 BTS OTS`): headline `.tip` text "1"/"X"/"2" → `pick` (double chances "1X"/"X2"/"12" and no-tip fall back to the most likely of P1/PX/P2); P(over 2.5) > 50 → `totalsPick` over/under 2.5. Fetches `STATAREA_DAYS` days (default 3). Plain HTTP, no Cloudflare. Wide lower-league coverage. |
+| FootballPredictions | `.match-card` cards on two section pages (`/win-draw-win-predictions-…` and `/under-over-2-5-goals-…`) | Model tips, one page each for 1X2 and O/U 2.5, both already covering today + the weekend. `.home-team`/`.away-team .team-label` for teams, `.prediction` text for the tip ("`<Team>` to win"/"Draw" → `pick`; "Over/Under 2.5" → `totalsPick`); the two pages are merged per fixture. Behind Cloudflare's passive JS challenge only — plain GET works, FlareSolverr is the fallback. |
 
 The first three give a clean discrete pick (home/draw/away) reliably; the
 last two are best-effort. `inferPickFromProse` (`src/scrapers/tipsters/
