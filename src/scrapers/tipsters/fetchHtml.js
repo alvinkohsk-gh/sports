@@ -169,21 +169,26 @@ async function fetchHtml(site, url) {
 }
 
 /**
- * Like fetchHtml, but for pages that lazy-load the bulk of their rows on
- * scroll (Forebet's predictions list ships ~44 of 130+ rows in the initial
- * HTML, the rest arrive via a "More" XHR fired on scroll). Primes a
- * Cloudflare clearance via fetchHtml, then re-opens the page in the shared
- * headless browser carrying that clearance and scrolls to the bottom
- * repeatedly until the row count stops growing.
+ * Like fetchHtml, but for pages that lazy-load the bulk of their rows
+ * behind a "More" control (Forebet's list ships ~44 of 130+ rows, the
+ * rest arrive via an XHR fired by a `<span onclick="ltodrows(...)">More`
+ * button — a click, not a scroll). Primes a Cloudflare clearance via
+ * fetchHtml, then re-opens the page in the shared headless browser
+ * carrying that clearance and clicks "More" (scrolling it into view
+ * first) until it disappears or the row count stops growing.
  *
- * Needs FLARESOLVERR_URL + a non-serverless env (the scroll loop would
+ * Needs FLARESOLVERR_URL + a non-serverless env (the click loop would
  * blow Vercel's function budget); otherwise it just returns the initial,
  * partial HTML from fetchHtml.
  *
- * @param rowSelector  CSS for a repeated row element, used to detect "no
- *                     more loaded"
+ * @param rowSelector   CSS for a repeated row element (used to detect progress)
+ * @param moreSelector  CSS for the "load more" control to click each round
  */
-async function fetchHtmlScrolled(site, url, { rowSelector = '[class*="rcnt"]', rounds = 8 } = {}) {
+async function fetchHtmlScrolled(
+  site,
+  url,
+  { rowSelector = '[class*="rcnt"]', moreSelector = '#mrows span, .morepr, .lmpr', rounds = 12 } = {}
+) {
   const initial = await fetchHtml(site, url);
   const held = clearanceByHost.get(hostOf(url));
   if (!FLARESOLVERR_URL || IS_SERVERLESS || !held || !held.Cookie) return initial;
@@ -206,25 +211,33 @@ async function fetchHtmlScrolled(site, url, { rowSelector = '[class*="rcnt"]', r
         let last = -1;
         for (let i = 0; i < rounds; i += 1) {
           const count = await page.evaluate((sel) => document.querySelectorAll(sel).length, rowSelector);
-          if (count === last) break; // nothing new loaded this round
+          if (count === last) break; // last click loaded nothing new
           last = count;
-          await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-          await page.waitForTimeout(1600);
+
+          const clicked = await page.evaluate((sel) => {
+            const btn = document.querySelector(sel);
+            if (!btn) return false;
+            btn.scrollIntoView({ block: 'center' });
+            btn.click();
+            return true;
+          }, moreSelector);
+          if (!clicked) break; // no "More" control -> fully loaded
+          await page.waitForTimeout(1800);
         }
         return page.content();
       },
       { userAgent: held['User-Agent'] || HTTP_HEADERS['User-Agent'] }
     );
 
-    const scrolledRows = cheerio.load(html)(rowSelector).length;
-    if (DEBUG) console.log(`[tipsters:${site}] scrolled load: ${scrolledRows} rows (initial ${initialRows})`);
-    // If the re-render got fewer rows (cookie rejected -> challenge page, or
-    // a transient), keep the initial partial HTML.
-    if (scrolledRows < initialRows) return initial;
+    const loadedRows = cheerio.load(html)(rowSelector).length;
+    if (DEBUG) console.log(`[tipsters:${site}] lazy-load: ${loadedRows} rows (initial ${initialRows})`);
+    // If the re-render regressed (cookie rejected -> challenge page, or a
+    // transient), keep the initial partial HTML.
+    if (loadedRows < initialRows) return initial;
     dumpDebug(site, html);
     return html;
   } catch (err) {
-    if (DEBUG) console.log(`[tipsters:${site}] scrolled load failed (${err.message}) — using initial HTML`);
+    if (DEBUG) console.log(`[tipsters:${site}] lazy-load failed (${err.message}) — using initial HTML`);
     return initial;
   }
 }
