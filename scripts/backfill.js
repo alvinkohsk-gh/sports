@@ -136,7 +136,14 @@ function sgPoolsPairSet(history, snapshot) {
     `[backfill] wrote accuracy.json — ${all.length} total samples, ` +
       `${accuracy.gradedSamples} in the 48h window, sites: ${Object.keys(accuracy.perSite).join(', ') || 'none'}`
   );
-  if (!samples.length) process.exit(1); // nothing scraped — let the workflow skip publish
+  // Fail only if the archive scrape itself came back empty (something
+  // broke). Zero samples *after* the SG Pools filter is a legitimate
+  // outcome — the sites' "yesterday" pages just don't overlap the current
+  // board — so exit cleanly and let the Publish step no-op.
+  if (!allRows.length) {
+    console.error('[backfill] archive scrape returned nothing');
+    process.exit(1);
+  }
   process.exit(0);
 })().catch((err) => {
   console.error('[backfill] fatal:', err && err.stack ? err.stack : err);
