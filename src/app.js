@@ -15,6 +15,7 @@ const { ensureFreshState } = require('./liveState');
 const matchesRoutes = require('./routes/matches');
 const debugRoutes = require('./routes/debug');
 const accuracyRoutes = require('./routes/accuracy');
+const valueRoutes = require('./routes/value');
 
 const app = express();
 app.use(cors());
@@ -23,6 +24,7 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use('/api', matchesRoutes);
 app.use('/api', debugRoutes);
 app.use('/api', accuracyRoutes);
+app.use('/api', valueRoutes);
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 // Export `app` itself as the module's value (an Express app is callable,

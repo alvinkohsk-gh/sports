@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tipster Accuracy — SG Pools Tipster Predictions</title>
+  <title>Results — SG Pools Tipster Predictions</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
-    .subnav { display: flex; gap: 16px; align-items: center; }
+    .subnav { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
     .subnav a { color: var(--accent); text-decoration: none; font-size: 13px; }
+    .subnav a.current { color: var(--text); font-weight: 700; }
     .windowsel { display: flex; gap: 6px; }
     .windowsel button {
       background: rgba(148,163,184,0.12); color: var(--text); border: 1px solid var(--card-border);
@@ -37,7 +38,7 @@
 </head>
 <body>
   <header class="topbar">
-    <h1>Tipster Accuracy</h1>
+    <h1>Results</h1>
     <div class="subnav">
       <span class="status" id="status">Loading…</span>
       <div class="windowsel" id="windowsel">
@@ -45,6 +46,8 @@
         <button data-h="168">7d</button>
       </div>
       <a href="index.html">&larr; Board</a>
+      <a href="value-picks.html">Value Picks</a>
+      <a href="results.html" class="current">Results</a>
     </div>
   </header>
 

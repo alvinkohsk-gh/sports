@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Value Picks — SG Pools Tipster Predictions</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .subnav { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    .subnav a { color: var(--accent); text-decoration: none; font-size: 13px; }
+    .subnav a.current { color: var(--text); font-weight: 700; }
+
+    .summary {
+      display: flex; flex-wrap: wrap; gap: 10px 24px;
+      padding: 14px 16px; margin-bottom: 20px;
+      border: 1px solid var(--card-border); border-radius: 12px; background: var(--card);
+    }
+    .summary .stat { display: flex; flex-direction: column; }
+    .summary .stat .lab { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .summary .stat .val { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .summary .stat .val.pos { color: var(--ok); }
+    .summary .stat .val.neg { color: var(--urgent); }
+
+    h2.sec { font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 26px 0 10px; }
+
+    .vp-list { display: flex; flex-direction: column; gap: 8px; }
+    .vp-open {
+      display: grid;
+      grid-template-columns: minmax(160px, 1.5fr) minmax(96px, 0.9fr) repeat(3, minmax(66px, 0.6fr));
+      align-items: center; gap: 10px;
+      padding: 10px 12px; border: 1px solid rgba(52,211,153,0.4); border-radius: 10px;
+      background: rgba(52,211,153,0.07); font-size: 13px;
+    }
+    .vp-open .m { font-weight: 600; }
+    .vp-open .sub { color: var(--muted); font-size: 11px; margin-top: 1px; }
+    .vp-open .pick { color: var(--ok); font-weight: 700; }
+    .vp-open .metric { text-align: right; font-variant-numeric: tabular-nums; }
+    .vp-open .metric .l { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .vp-open .metric.ev { color: var(--ok); font-weight: 700; }
+
+    table.settled { width: 100%; border-collapse: collapse; font-size: 12px; }
+    table.settled th, table.settled td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--card-border); }
+    table.settled th { color: var(--muted); font-weight: 600; }
+    table.settled td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .res-win { color: var(--ok); font-weight: 700; }
+    .res-lose { color: var(--urgent); font-weight: 700; }
+    .pl-pos { color: var(--ok); } .pl-neg { color: var(--urgent); }
+
+    @media (max-width: 620px) {
+      .vp-open { grid-template-columns: 1fr 1fr; }
+      .vp-open .metric.fair { display: none; }
+      table.settled .hide-sm { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Value Picks</h1>
+    <div class="subnav">
+      <span class="status" id="status">Loading…</span>
+      <a href="index.html">&larr; Board</a>
+      <a href="value-picks.html" class="current">Value Picks</a>
+      <a href="results.html">Results</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="summary" id="summary" hidden></div>
+
+    <div id="empty" class="empty" hidden>
+      No value picks yet. A pick is logged whenever the Singapore Pools price on a market implies a
+      lower win chance than the tipster consensus (positive expected value by that reference). Its
+      result shows here once the match finishes.
+    </div>
+
+    <h2 class="sec" id="open-head" hidden>Open — waiting on kickoff</h2>
+    <div class="vp-list" id="open"></div>
+
+    <h2 class="sec" id="settled-head" hidden>Settled</h2>
+    <table class="settled" id="settled" hidden>
+      <thead>
+        <tr>
+          <th>Kickoff</th><th>Fixture</th><th class="hide-sm">League</th>
+          <th>Pick</th><th class="num">Odd</th><th class="num">Score</th><th>Result</th><th class="num">P/L (u)</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <p class="disclaimer">
+      A value pick is flagged when SG Pools' de-vigged price on an outcome implies a lower probability
+      than the tipster consensus does — i.e. positive expected value <em>by that reference</em>. The
+      consensus is softer than a true sharp line, so this is "the crowd disagrees with the price", not
+      a guaranteed edge. Record and ROI assume a flat 1-unit stake per pick and settle at the odd shown
+      (the last price seen before kickoff). Results come from Forebet; picks it doesn't cover stay
+      "open". Past performance says nothing about future results. Gamble responsibly.
+    </p>
+  </main>
+
+  <script>
+    const MKT_ORDER = { '1X2': 0, 'O/U 2.5': 1 };
+    const statusEl = document.getElementById('status');
+    const summaryEl = document.getElementById('summary');
+    const emptyEl = document.getElementById('empty');
+    const openEl = document.getElementById('open');
+    const openHead = document.getElementById('open-head');
+    const settledEl = document.getElementById('settled');
+    const settledHead = document.getElementById('settled-head');
+
+    const pct = (v) => (v == null ? '—' : `${(v * 100).toFixed(0)}%`);
+    const signedPct = (v) => (v == null ? '—' : `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}%`);
+    const signedU = (v) => (v == null ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(2)}`);
+    const fmtKO = (iso) =>
+      new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    function renderSummary(s) {
+      if (!s || !s.settledCount) {
+        summaryEl.hidden = true;
+        return;
+      }
+      summaryEl.hidden = false;
+      const roiCls = s.roi > 0 ? 'pos' : s.roi < 0 ? 'neg' : '';
+      const plCls = s.profitUnits > 0 ? 'pos' : s.profitUnits < 0 ? 'neg' : '';
+      summaryEl.innerHTML = `
+        <div class="stat"><span class="lab">Record</span><span class="val">${s.won}–${s.settledCount - s.won}</span></div>
+        <div class="stat"><span class="lab">Win rate</span><span class="val">${pct(s.winRate)}</span></div>
+        <div class="stat"><span class="lab">ROI (flat 1u)</span><span class="val ${roiCls}">${signedPct(s.roi)}</span></div>
+        <div class="stat"><span class="lab">P/L</span><span class="val ${plCls}">${signedU(s.profitUnits)} u</span></div>
+        <div class="stat"><span class="lab">Avg odd</span><span class="val">${s.avgOdd == null ? '—' : s.avgOdd.toFixed(2)}</span></div>
+        <div class="stat"><span class="lab">Open</span><span class="val">${s.openCount}</span></div>`;
+    }
+
+    function renderOpen(picks) {
+      if (!picks.length) {
+        openHead.hidden = true;
+        openEl.innerHTML = '';
+        return;
+      }
+      openHead.hidden = false;
+      openEl.innerHTML = picks
+        .map(
+          (p) => `
+        <div class="vp-open">
+          <div>
+            <div class="m">${p.fixture}</div>
+            <div class="sub">${p.league || ''} · ${fmtKO(p.kickoffISO)}</div>
+          </div>
+          <div class="pick">${p.market}<br />${p.label} @ ${p.odd.toFixed(2)}</div>
+          <div class="metric ev"><span class="l">EV</span>${signedPct(p.ev)}</div>
+          <div class="metric fair"><span class="l">fair / price</span>${pct(p.refProb)} / ${pct(p.impliedProb)}</div>
+          <div class="metric"><span class="l">¼-Kelly</span>${pct(p.quarterKelly)}</div>
+        </div>`
+        )
+        .join('');
+    }
+
+    function renderSettled(picks) {
+      if (!picks.length) {
+        settledHead.hidden = true;
+        settledEl.hidden = true;
+        return;
+      }
+      settledHead.hidden = false;
+      settledEl.hidden = false;
+      settledEl.querySelector('tbody').innerHTML = picks
+        .map((p) => {
+          const res = p.won
+            ? '<span class="res-win">WON ✓</span>'
+            : '<span class="res-lose">LOST ✗</span>';
+          const pl = `<span class="${p.profitUnits >= 0 ? 'pl-pos' : 'pl-neg'}">${signedU(p.profitUnits)}</span>`;
+          return `
+          <tr>
+            <td>${fmtKO(p.kickoffISO)}</td>
+            <td>${p.fixture}</td>
+            <td class="hide-sm">${p.league || ''}</td>
+            <td>${p.market} <strong>${p.label}</strong></td>
+            <td class="num">${p.odd.toFixed(2)}</td>
+            <td class="num">${p.score || '—'}</td>
+            <td>${res}</td>
+            <td class="num">${pl}</td>
+          </tr>`;
+        })
+        .join('');
+    }
+
+    async function load() {
+      try {
+        const res = await fetch('/api/value-picks');
+        if (res.status === 503) {
+          statusEl.textContent = 'No value-pick data yet';
+          emptyEl.hidden = false;
+          return;
+        }
+        const data = await res.json();
+        const open = (data.open || []).slice().sort((a, b) => b.ev - a.ev);
+        const settled = (data.settled || [])
+          .slice()
+          .sort((a, b) => Date.parse(b.kickoffISO) - Date.parse(a.kickoffISO));
+
+        emptyEl.hidden = open.length + settled.length > 0;
+        renderSummary(data.summary);
+        renderOpen(open);
+        renderSettled(settled);
+
+        const s = data.summary || {};
+        statusEl.textContent =
+          `${s.openCount || 0} open · ${s.settledCount || 0} settled` +
+          (s.settledCount ? ` · ROI ${signedPct(s.roi)}` : '') +
+          (data.updatedAt ? ` · updated ${new Date(data.updatedAt).toLocaleString()}` : '');
+      } catch (err) {
+        statusEl.textContent = `Failed to load: ${err.message}`;
+      }
+    }
+
+    load();
+    setInterval(load, 60000);
+  </script>
+</body>
+</html>

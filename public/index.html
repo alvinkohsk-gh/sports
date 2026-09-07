@@ -9,14 +9,14 @@
 <body>
   <header class="topbar">
     <h1>Tipster Predictions — Open on Singapore Pools</h1>
-    <div style="display:flex;gap:16px;align-items:center">
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
       <div class="status" id="status">Loading…</div>
-      <a href="results.html" style="color:var(--accent);text-decoration:none;font-size:13px;white-space:nowrap">Accuracy &rarr;</a>
+      <a href="value-picks.html" style="color:var(--accent);text-decoration:none;font-size:13px;white-space:nowrap">Value Picks &rarr;</a>
+      <a href="results.html" style="color:var(--accent);text-decoration:none;font-size:13px;white-space:nowrap">Results &rarr;</a>
     </div>
   </header>
 
   <main id="app">
-    <section id="value-bets" class="value-bets" hidden></section>
     <div id="best-bet" class="best-bet" hidden></div>
     <div id="empty" class="empty" hidden>No open Singapore Pools matches right now.</div>
     <div id="matches" class="matches"></div>
@@ -28,9 +28,10 @@
       <strong>Odds &amp; value:</strong> "Singapore Pools odds" are their live 1X2 and Over/Under 2.5 prices; "margin"
       is the bookmaker's built-in edge on that market. A <span style="color:var(--ok)">VALUE</span> flag means the
       tipster consensus implies a higher win probability than the price does (positive expected value by that
-      reference). The consensus is <em>softer than a true sharp line</em>, so treat it as "the crowd disagrees with
-      the price", not a guaranteed edge. "¼-Kelly" is a conservative stake fraction of your bankroll.
-      Gamble responsibly and only what you can afford to lose.
+      reference) — every flagged pick is logged on the <a href="value-picks.html" style="color:var(--accent)">Value
+      Picks</a> page with its result once the match finishes. The consensus is <em>softer than a true sharp
+      line</em>, so treat it as "the crowd disagrees with the price", not a guaranteed edge. "¼-Kelly" is a
+      conservative stake fraction of your bankroll. Gamble responsibly and only what you can afford to lose.
     </p>
   </main>
 

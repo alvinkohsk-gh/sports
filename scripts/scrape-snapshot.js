@@ -2,9 +2,10 @@
  * Runs the full scrape (Singapore Pools fixtures + all tipster sites +
  * consensus matching) once, then folds the picks into a rolling prediction
  * history and grades finished predictions against Forebet results. Writes:
- *   snapshot.json  — current board (src/app.js serves this)
- *   history.json   — rolling per-(fixture,site) picks, ~6 days
- *   accuracy.json  — graded samples + per-site accuracy summary
+ *   snapshot.json     — current board (src/app.js serves this)
+ *   history.json      — rolling per-(fixture,site) picks, ~6 days
+ *   accuracy.json     — graded samples + per-site accuracy summary
+ *   value-picks.json  — rolling log of VALUE-flagged picks, graded once played
  *
  * Meant to run OUTSIDE the request path — in GitHub Actions on a schedule
  * (see .github/workflows/snapshot.yml). The Vercel app just serves these
@@ -19,6 +20,7 @@ const { refresh, getState } = require('../src/services/aggregator');
 const { mergeHistory } = require('../src/results/history');
 const { fetchForebetResults } = require('../src/results/forebetResults');
 const { grade } = require('../src/results/accuracy');
+const { mergeValuePicks, gradeValuePicks, summarizeValuePicks } = require('../src/results/valuePicks');
 
 const OUT = process.argv[2] || 'snapshot.json';
 const DIR = process.argv[3] || path.dirname(OUT) || '.';
@@ -68,10 +70,11 @@ async function loadPublished(file, fallback) {
     process.exit(1);
   }
 
-  // ---- prediction history + accuracy grading ----
-  const [prevHistory, prevAccuracy] = await Promise.all([
+  // ---- prediction history + accuracy grading + value-pick log ----
+  const [prevHistory, prevAccuracy, prevValuePicks] = await Promise.all([
     loadPublished('history.json', { entries: [] }),
     loadPublished('accuracy.json', { samples: [] }),
+    loadPublished('value-picks.json', { picks: [] }),
   ]);
 
   const history = mergeHistory(prevHistory, snapshot.matches, nowISO);
@@ -86,17 +89,25 @@ async function loadPublished(file, fallback) {
   const graded = grade(history, results, prevAccuracy.samples || [], { windowHours: 48 });
   const accuracy = { ...graded.summary, samples: graded.samples };
 
+  const vpMerged = mergeValuePicks(prevValuePicks, snapshot.matches, nowISO);
+  const vpGraded = gradeValuePicks(vpMerged, results);
+  const valuePicks = { ...vpGraded, summary: summarizeValuePicks(vpGraded) };
+
   fs.mkdirSync(DIR, { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify(snapshot, null, 1));
   fs.writeFileSync(path.join(DIR, 'history.json'), JSON.stringify(history));
   fs.writeFileSync(path.join(DIR, 'accuracy.json'), JSON.stringify(accuracy));
+  fs.writeFileSync(path.join(DIR, 'value-picks.json'), JSON.stringify(valuePicks));
 
   console.error(
     `[scrape-snapshot] ${snapshot.matches.length} matches, ` +
       `${snapshot.counts.tipsterPicks} picks ${JSON.stringify(bySite)}, ` +
       `${withMajority} 1X2 maj, ${withOU} O/U maj | ` +
       `history ${history.entries.length} entries, forebet results ${results.length}, ` +
-      `+${graded.newlyGraded} graded (${graded.summary.gradedSamples} in 48h window)`
+      `+${graded.newlyGraded} graded (${graded.summary.gradedSamples} in 48h window) | ` +
+      `value picks: ${valuePicks.picks.length} logged, ${valuePicks.summary.open} open, ` +
+      `${valuePicks.summary.settled} settled (+${vpGraded.newlyGraded} new), ` +
+      `ROI ${valuePicks.summary.roi == null ? 'n/a' : (valuePicks.summary.roi * 100).toFixed(1) + '%'}`
   );
   process.exit(0);
 })().catch((err) => {

@@ -71,15 +71,16 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
 
-      - name: Publish snapshot + history + accuracy to data-snapshot branch
+      - name: Publish snapshot + history + accuracy + value-picks to data-snapshot branch
         run: |
           set -euo pipefail
           test -s snapshot.json
           work="$(mktemp -d)"
           cp snapshot.json "$work/"
-          # history/accuracy are best-effort — copy them if the scrape wrote them
+          # history/accuracy/value-picks are best-effort — copy if the scrape wrote them
           [ -s history.json ] && cp history.json "$work/" || true
           [ -s accuracy.json ] && cp accuracy.json "$work/" || true
+          [ -s value-picks.json ] && cp value-picks.json "$work/" || true
           # A vercel.json that disables deployments, so Vercel never builds a
           # preview off this branch when the workflow force-pushes it.
           printf '{ "git": { "deploymentEnabled": false } }\n' > "$work/vercel.json"

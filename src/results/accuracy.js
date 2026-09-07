@@ -100,4 +100,4 @@ function summarize(samples, windowHours, nowMs) {
   return { windowHours, gradedSamples: n, perSite, updatedAt: new Date(nowMs).toISOString() };
 }
 
-module.exports = { grade, summarize };
+module.exports = { grade, summarize, findResult, outcome1x2, GRADE_MIN_AGE_MS, GRADE_MAX_AGE_MS };
