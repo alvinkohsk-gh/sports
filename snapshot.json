@@ -1,0 +1,4874 @@
+{
+ "generatedAt": "2026-09-07T06:02:43.145Z",
+ "matches": [
+  {
+   "id": "143819",
+   "homeTeam": "Al Khaleej",
+   "awayTeam": "Al Riyadh",
+   "league": "Saudi League",
+   "kickoffISO": "2026-09-07T15:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "windrawwin",
+      "pick": "away",
+      "totalsPick": null,
+      "rawText": "Away Win",
+      "sourceUrl": "https://www.windrawwin.com/predictions/today"
+     },
+     {
+      "site": "predictz",
+      "pick": "draw",
+      "totalsPick": null,
+      "rawText": "Draw 0-0",
+      "sourceUrl": "https://www.predictz.com/predictions"
+     },
+     {
+      "site": "forebet",
+      "pick": "home",
+      "totalsPick": null,
+      "rawText": "1",
+      "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today"
+     }
+    ],
+    "tally": {
+     "home": 1,
+     "draw": 1,
+     "away": 1,
+     "unclassified": 0
+    },
+    "majorityPick": "home",
+    "majorityCount": 1,
+    "totalTipsters": 3,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": {
+    "market": "1X2",
+    "selection": "home",
+    "label": "Al Khaleej to win",
+    "tipsterCount": 1,
+    "totalTipsters": 3,
+    "agreement": 0.3333333333333333
+   }
+  },
+  {
+   "id": "143497",
+   "homeTeam": "Cagliari",
+   "awayTeam": "Lecce",
+   "league": "Italian League",
+   "kickoffISO": "2026-09-07T16:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": "0:20 Preview: Cagliari vs Inter Milan - prediction, team news, lineups Football | 28 Aug 2026 11:52 Inter, Napoli to start with wins? Saturday's Serie A predictions and previews Football | 22 Aug 2026",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/cagliari/preview/cagliari-vs-lecce-prediction-team-news-lineups_604525.html"
+     },
+     {
+      "site": "windrawwin",
+      "pick": "away",
+      "totalsPick": null,
+      "rawText": "Away Win",
+      "sourceUrl": "https://www.windrawwin.com/predictions/today"
+     },
+     {
+      "site": "predictz",
+      "pick": "draw",
+      "totalsPick": null,
+      "rawText": "Draw 0-0",
+      "sourceUrl": "https://www.predictz.com/predictions"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 1,
+     "away": 1,
+     "unclassified": 1
+    },
+    "majorityPick": "draw",
+    "majorityCount": 1,
+    "totalTipsters": 3,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": {
+    "market": "1X2",
+    "selection": "draw",
+    "label": "Draw",
+    "tipsterCount": 1,
+    "totalTipsters": 3,
+    "agreement": 0.3333333333333333
+   }
+  },
+  {
+   "id": "143920",
+   "homeTeam": "Rubin Kazan",
+   "awayTeam": "Akhmat Grozny",
+   "league": "Russian League",
+   "kickoffISO": "2026-09-07T16:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "windrawwin",
+      "pick": "home",
+      "totalsPick": null,
+      "rawText": "Home Win",
+      "sourceUrl": "https://www.windrawwin.com/predictions/today"
+     },
+     {
+      "site": "predictz",
+      "pick": "home",
+      "totalsPick": null,
+      "rawText": "Home 2-0",
+      "sourceUrl": "https://www.predictz.com/predictions"
+     }
+    ],
+    "tally": {
+     "home": 2,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": "home",
+    "majorityCount": 2,
+    "totalTipsters": 2,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": {
+    "market": "1X2",
+    "selection": "home",
+    "label": "Rubin Kazan to win",
+    "tipsterCount": 2,
+    "totalTipsters": 2,
+    "agreement": 1
+   }
+  },
+  {
+   "id": "143821",
+   "homeTeam": "Getafe",
+   "awayTeam": "Celta de Vigo",
+   "league": "Spanish League",
+   "kickoffISO": "2026-09-07T17:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": "29 Aug 2026 16:49 Preview: Partizan vs Getafe - prediction, team news, lineups Football | 25 Aug 2026 18:37 Barca to start with a win? Sunday's La Liga predictions and previews Football | 23 Aug 2026 ",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/getafe/preview/getafe-vs-celta-vigo-prediction-team-news-lineups_604549.html"
+     },
+     {
+      "site": "windrawwin",
+      "pick": "draw",
+      "totalsPick": null,
+      "rawText": "Draw",
+      "sourceUrl": "https://www.windrawwin.com/predictions/today"
+     },
+     {
+      "site": "predictz",
+      "pick": "away",
+      "totalsPick": null,
+      "rawText": "Away 0-1",
+      "sourceUrl": "https://www.predictz.com/predictions"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 1,
+     "away": 1,
+     "unclassified": 1
+    },
+    "majorityPick": "draw",
+    "majorityCount": 1,
+    "totalTipsters": 3,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": {
+    "market": "1X2",
+    "selection": "draw",
+    "label": "Draw",
+    "tipsterCount": 1,
+    "totalTipsters": 3,
+    "agreement": 0.3333333333333333
+   }
+  },
+  {
+   "id": "143826",
+   "homeTeam": "Kalmar",
+   "awayTeam": "Djurgarden",
+   "league": "Swedish League",
+   "kickoffISO": "2026-09-07T17:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "windrawwin",
+      "pick": "away",
+      "totalsPick": null,
+      "rawText": "Away Win",
+      "sourceUrl": "https://www.windrawwin.com/predictions/today"
+     },
+     {
+      "site": "predictz",
+      "pick": "away",
+      "totalsPick": null,
+      "rawText": "Away 0-2",
+      "sourceUrl": "https://www.predictz.com/predictions"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 2,
+     "unclassified": 0
+    },
+    "majorityPick": "away",
+    "majorityCount": 2,
+    "totalTipsters": 2,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": {
+    "market": "1X2",
+    "selection": "away",
+    "label": "Djurgarden to win",
+    "tipsterCount": 2,
+    "totalTipsters": 2,
+    "agreement": 1
+   }
+  },
+  {
+   "id": "143827",
+   "homeTeam": "Malmo",
+   "awayTeam": "AIK Stockholm",
+   "league": "Swedish League",
+   "kickoffISO": "2026-09-07T17:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "windrawwin",
+      "pick": "away",
+      "totalsPick": null,
+      "rawText": "Away Win",
+      "sourceUrl": "https://www.windrawwin.com/predictions/today"
+     },
+     {
+      "site": "predictz",
+      "pick": "draw",
+      "totalsPick": null,
+      "rawText": "Draw 2-2",
+      "sourceUrl": "https://www.predictz.com/predictions"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 1,
+     "away": 1,
+     "unclassified": 0
+    },
+    "majorityPick": "draw",
+    "majorityCount": 1,
+    "totalTipsters": 2,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": {
+    "market": "1X2",
+    "selection": "draw",
+    "label": "Draw",
+    "tipsterCount": 1,
+    "totalTipsters": 2,
+    "agreement": 0.5
+   }
+  },
+  {
+   "id": "143825",
+   "homeTeam": "Mjallby AIF",
+   "awayTeam": "IFK Gothenburg",
+   "league": "Swedish League",
+   "kickoffISO": "2026-09-07T17:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143621",
+   "homeTeam": "Jong PSV",
+   "awayTeam": "Den Bosch",
+   "league": "Dutch League Div 2",
+   "kickoffISO": "2026-09-07T18:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "windrawwin",
+      "pick": "home",
+      "totalsPick": null,
+      "rawText": "Home Win",
+      "sourceUrl": "https://www.windrawwin.com/predictions/today"
+     },
+     {
+      "site": "predictz",
+      "pick": "home",
+      "totalsPick": null,
+      "rawText": "Home 2-1",
+      "sourceUrl": "https://www.predictz.com/predictions"
+     }
+    ],
+    "tally": {
+     "home": 2,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": "home",
+    "majorityCount": 2,
+    "totalTipsters": 2,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": {
+    "market": "1X2",
+    "selection": "home",
+    "label": "Jong PSV to win",
+    "tipsterCount": 2,
+    "totalTipsters": 2,
+    "agreement": 1
+   }
+  },
+  {
+   "id": "143622",
+   "homeTeam": "Jong Utrecht",
+   "awayTeam": "FC Eindhoven",
+   "league": "Dutch League Div 2",
+   "kickoffISO": "2026-09-07T18:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143820",
+   "homeTeam": "Al Hilal (KSA)",
+   "awayTeam": "Neom Sports",
+   "league": "Saudi League",
+   "kickoffISO": "2026-09-07T18:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143765",
+   "homeTeam": "Palermo",
+   "awayTeam": "Sampdoria",
+   "league": "Italian League Div 2",
+   "kickoffISO": "2026-09-07T18:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "windrawwin",
+      "pick": "home",
+      "totalsPick": null,
+      "rawText": "Home Win",
+      "sourceUrl": "https://www.windrawwin.com/predictions/today"
+     },
+     {
+      "site": "predictz",
+      "pick": "home",
+      "totalsPick": null,
+      "rawText": "Home 3-0",
+      "sourceUrl": "https://www.predictz.com/predictions"
+     }
+    ],
+    "tally": {
+     "home": 2,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": "home",
+    "majorityCount": 2,
+    "totalTipsters": 2,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": {
+    "market": "1X2",
+    "selection": "home",
+    "label": "Palermo to win",
+    "tipsterCount": 2,
+    "totalTipsters": 2,
+    "agreement": 1
+   }
+  },
+  {
+   "id": "143749",
+   "homeTeam": "Sabadell",
+   "awayTeam": "Cordoba",
+   "league": "Spanish League Div 2",
+   "kickoffISO": "2026-09-07T18:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "windrawwin",
+      "pick": "draw",
+      "totalsPick": null,
+      "rawText": "Draw",
+      "sourceUrl": "https://www.windrawwin.com/predictions/today"
+     },
+     {
+      "site": "predictz",
+      "pick": "draw",
+      "totalsPick": null,
+      "rawText": "Draw 1-1",
+      "sourceUrl": "https://www.predictz.com/predictions"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 2,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": "draw",
+    "majorityCount": 2,
+    "totalTipsters": 2,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": {
+    "market": "1X2",
+    "selection": "draw",
+    "label": "Draw",
+    "tipsterCount": 2,
+    "totalTipsters": 2,
+    "agreement": 1
+   }
+  },
+  {
+   "id": "143498",
+   "homeTeam": "Udinese",
+   "awayTeam": "Lazio",
+   "league": "Italian League",
+   "kickoffISO": "2026-09-07T18:45:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": "2026 00:15 Preview: Monza vs Udinese - prediction, team news, lineups Football | 27 Aug 2026 12:28 Inter, Napoli to start with wins? Saturday's Serie A predictions and previews Football | 22 Aug 2026 ",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/udinese/preview/udinese-vs-lazio-prediction-team-news-lineups_604528.html"
+     },
+     {
+      "site": "windrawwin",
+      "pick": "away",
+      "totalsPick": null,
+      "rawText": "Away Win",
+      "sourceUrl": "https://www.windrawwin.com/predictions/today"
+     },
+     {
+      "site": "predictz",
+      "pick": "draw",
+      "totalsPick": null,
+      "rawText": "Draw 1-1",
+      "sourceUrl": "https://www.predictz.com/predictions"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 1,
+     "away": 1,
+     "unclassified": 1
+    },
+    "majorityPick": "draw",
+    "majorityCount": 1,
+    "totalTipsters": 3,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": {
+    "market": "1X2",
+    "selection": "draw",
+    "label": "Draw",
+    "tipsterCount": 1,
+    "totalTipsters": 3,
+    "agreement": 0.3333333333333333
+   }
+  },
+  {
+   "id": "143695",
+   "homeTeam": "Nantes",
+   "awayTeam": "AS Nancy",
+   "league": "French League Div 2",
+   "kickoffISO": "2026-09-07T18:45:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "windrawwin",
+      "pick": "away",
+      "totalsPick": null,
+      "rawText": "Away Win",
+      "sourceUrl": "https://www.windrawwin.com/predictions/today"
+     },
+     {
+      "site": "predictz",
+      "pick": "away",
+      "totalsPick": null,
+      "rawText": "Away 0-2",
+      "sourceUrl": "https://www.predictz.com/predictions"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 2,
+     "unclassified": 0
+    },
+    "majorityPick": "away",
+    "majorityCount": 2,
+    "totalTipsters": 2,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": {
+    "market": "1X2",
+    "selection": "away",
+    "label": "AS Nancy to win",
+    "tipsterCount": 2,
+    "totalTipsters": 2,
+    "agreement": 1
+   }
+  },
+  {
+   "id": "143668",
+   "homeTeam": "Bromley",
+   "awayTeam": "AFC Wimbledon",
+   "league": "English League One",
+   "kickoffISO": "2026-09-07T19:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": "all | 27 Aug 2026 19:28 Preview: Bromley vs Cambridge - prediction, team news, lineups Football | 20 Aug 2026 11:07 Preview: Barnsley vs Bromley - prediction, team news, lineups Football | 13 Aug 2026",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/bromley/preview/bromley-vs-afc-wimbledon-prediction-team-news-lineups_604526.html"
+     },
+     {
+      "site": "windrawwin",
+      "pick": "draw",
+      "totalsPick": null,
+      "rawText": "Draw",
+      "sourceUrl": "https://www.windrawwin.com/predictions/today"
+     },
+     {
+      "site": "predictz",
+      "pick": "draw",
+      "totalsPick": null,
+      "rawText": "Draw 0-0",
+      "sourceUrl": "https://www.predictz.com/predictions"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 2,
+     "away": 0,
+     "unclassified": 1
+    },
+    "majorityPick": "draw",
+    "majorityCount": 2,
+    "totalTipsters": 3,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": {
+    "market": "1X2",
+    "selection": "draw",
+    "label": "Draw",
+    "tipsterCount": 2,
+    "totalTipsters": 3,
+    "agreement": 0.6666666666666666
+   }
+  },
+  {
+   "id": "143823",
+   "homeTeam": "Elche",
+   "awayTeam": "Sociedad",
+   "league": "Spanish League",
+   "kickoffISO": "2026-09-07T19:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": "026 15:32 Barca to start with a win? Sunday's La Liga predictions and previews Football | 23 Aug 2026 00:05 Team News: Elche vs. Barcelona injury, suspension list, predicted XIs Football | 22 Aug 2026",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/elche/preview/elche-vs-real-sociedad-prediction-team-news-lineups_604548.html"
+     },
+     {
+      "site": "windrawwin",
+      "pick": "home",
+      "totalsPick": null,
+      "rawText": "Home Win",
+      "sourceUrl": "https://www.windrawwin.com/predictions/today"
+     },
+     {
+      "site": "predictz",
+      "pick": "draw",
+      "totalsPick": null,
+      "rawText": "Draw 1-1",
+      "sourceUrl": "https://www.predictz.com/predictions"
+     }
+    ],
+    "tally": {
+     "home": 1,
+     "draw": 1,
+     "away": 0,
+     "unclassified": 1
+    },
+    "majorityPick": "home",
+    "majorityCount": 1,
+    "totalTipsters": 3,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": {
+    "market": "1X2",
+    "selection": "home",
+    "label": "Elche to win",
+    "tipsterCount": 1,
+    "totalTipsters": 3,
+    "agreement": 0.3333333333333333
+   }
+  },
+  {
+   "id": "143793",
+   "homeTeam": "Barracas Central",
+   "awayTeam": "Argentinos Jrs",
+   "league": "Argentine League",
+   "kickoffISO": "2026-09-07T22:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143805",
+   "homeTeam": "Vitoria (BRA)",
+   "awayTeam": "Gremio",
+   "league": "Brazilian League",
+   "kickoffISO": "2026-09-07T23:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143812",
+   "homeTeam": "Limache",
+   "awayTeam": "Cobresal",
+   "league": "Chilean League",
+   "kickoffISO": "2026-09-07T23:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143794",
+   "homeTeam": "Union Santa Fe",
+   "awayTeam": "Instituto ACC",
+   "league": "Argentine League",
+   "kickoffISO": "2026-09-08T00:15:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143943",
+   "homeTeam": "Incheon",
+   "awayTeam": "Bucheon",
+   "league": "K League",
+   "kickoffISO": "2026-09-08T10:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143942",
+   "homeTeam": "Ulsan",
+   "awayTeam": "Seoul",
+   "league": "K League",
+   "kickoffISO": "2026-09-08T10:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143946",
+   "homeTeam": "Al Ettifaq",
+   "awayTeam": "Al Faisaly (KSA)",
+   "league": "Saudi League",
+   "kickoffISO": "2026-09-08T15:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143947",
+   "homeTeam": "Al Hazem",
+   "awayTeam": "Al Taawoun",
+   "league": "Saudi League",
+   "kickoffISO": "2026-09-08T15:55:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143921",
+   "homeTeam": "Nijmegen",
+   "awayTeam": "Excelsior",
+   "league": "Dutch League",
+   "kickoffISO": "2026-09-08T16:45:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": "news, lineups Football | 27 Aug 2026 23:56 Preview: Willem II vs. Nijmegen - prediction, team news, lineups Football | 13 Aug 2026 17:26 Preview: Nijmegen vs. Olympiacos - prediction, team news, lineu",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/nec/preview/nijmegen-vs-excelsior-prediction-team-news-lineups_604581.html"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 1
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 1,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143957",
+   "homeTeam": "AEK",
+   "awayTeam": "LASK",
+   "league": "UE Champions",
+   "kickoffISO": "2026-09-08T16:45:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": "Villa agree 'surprise deal' with Champions League club for long-serving player Football | 02 Sep 2026 15:00 Preview: AEK Athens vs. Levski Sofia - prediction, team news, lineups Football | 25 Aug 2026",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/aek-athens/champions-league/preview/aek-athens-vs-lask-prediction-team-news-lineups_604564.html"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 1
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 1,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143959",
+   "homeTeam": "Club Brugge",
+   "awayTeam": "Aston Villa",
+   "league": "UE Champions",
+   "kickoffISO": "2026-09-08T16:45:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": "re-back Football | 26 Aug 2026 18:06 Late Man Utd spending spree ‘imminent’ as Carrick wants three more signings Football | 25 Aug 2026 12:18 Aston Villa 'getting closer' to centre-back signing despit",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/club-brugge/champions-league/preview/brugge-vs-aston-villa-prediction-team-news-lineups_604571.html"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 1
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 1,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143949",
+   "homeTeam": "Al Ittihad",
+   "awayTeam": "Al Fayha",
+   "league": "Saudi League",
+   "kickoffISO": "2026-09-08T18:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143948",
+   "homeTeam": "Al Qadsiah (KSA)",
+   "awayTeam": "Al Ahli (KSA)",
+   "league": "Saudi League",
+   "kickoffISO": "2026-09-08T18:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143933",
+   "homeTeam": "Bournemouth",
+   "awayTeam": "Lincoln City",
+   "league": "English League Cup",
+   "kickoffISO": "2026-09-08T18:45:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": "Football | 05 Sep 2026 00:00 Team News: Newcastle vs. Bournemouth injury, suspension list, predicted XIs Football | 04 Sep 2026 12:30 Will Fernandez-Pardo make his debut? Predicted Newcastle lineup vs",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/bournemouth/league-cup/preview/bournemouth-vs-lincoln-prediction-team-news-lineups_604612.html"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 1
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 1,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143932",
+   "homeTeam": "Crystal Palace",
+   "awayTeam": "Middlesbrough",
+   "league": "English League Cup",
+   "kickoffISO": "2026-09-08T18:45:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": "ate yet again - Saturday's Premier League roundup Football | 05 Sep 2026 17:37 Can Coventry shock Man City? Saturday's Premier League predictions Football | 05 Sep 2026 00:00 Team News: Fulham vs. Pal",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/crystal-palace/league-cup/preview/crystal-palace-vs-middlesbrough-prediction-team-news-lineups_604587.html"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 1
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 1,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143935",
+   "homeTeam": "Leyton Orient",
+   "awayTeam": "Bradford",
+   "league": "English League Cup",
+   "kickoffISO": "2026-09-08T18:45:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": "rient - prediction, team news, lineups Football | 30 Aug 2026 23:55 Preview: Leyton Orient vs Barnsley - prediction, team news, lineups Football | 28 Aug 2026 01:32 Preview: Walsall vs Leyton Orient -",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/leyton-orient/league-cup/preview/leyton-orient-vs-bradford-prediction-team-news-lineups_604563.html"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 1
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 1,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143934",
+   "homeTeam": "Sunderland",
+   "awayTeam": "Hull City",
+   "league": "English League Cup",
+   "kickoffISO": "2026-09-08T18:45:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": "entford vs. Sunderland injury, suspension list, predicted XIs Football | 04 Sep 2026 15:00 Another French player at Sunderland? Rennes' young talent is 'being targeted' for 2027 Football | 04 Sep 2026",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/sunderland/league-cup/preview/sunderland-vs-hull-city-prediction-team-news-lineups_604565.html"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 1
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 1,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143925",
+   "homeTeam": "Blackburn",
+   "awayTeam": "Sheffield Utd",
+   "league": "English League Champ",
+   "kickoffISO": "2026-09-08T18:45:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": "rn - prediction, team news, lineups Football | 30 Aug 2026 15:29 Preview: Blackburn vs QPR - prediction, team news, lineups Football | 27 Aug 2026 11:47 Preview: Blackburn vs Sheff Utd - prediction, t",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/blackburn-rovers/preview/blackburn-vs-sheff-utd-prediction-team-news-lineups_604591.html"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 1
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 1,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143924",
+   "homeTeam": "Cardiff",
+   "awayTeam": "Stoke City",
+   "league": "English League Champ",
+   "kickoffISO": "2026-09-08T18:45:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143923",
+   "homeTeam": "Southampton",
+   "awayTeam": "Swansea",
+   "league": "English League Champ",
+   "kickoffISO": "2026-09-08T18:45:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143926",
+   "homeTeam": "Watford",
+   "awayTeam": "Preston",
+   "league": "English League Champ",
+   "kickoffISO": "2026-09-08T18:45:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": ":15 Preview: Watford vs West Ham - prediction, team news, lineups Football | 27 Aug 2026 19:22 Preview: Watford vs Peterborough - prediction, team news, lineups Football | 23 Aug 2026 09:32 Football r",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/watford/preview/watford-vs-preston-prediction-team-news-lineups_604631.html"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 1
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 1,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143927",
+   "homeTeam": "Wrexham",
+   "awayTeam": "Burnley",
+   "league": "English League Champ",
+   "kickoffISO": "2026-09-08T18:45:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": "news, lineups Football | 31 Aug 2026 11:56 Transfer news and rumours: Bahoya 'decision', Minteh replacement, Wrexham fee Football | 30 Aug 2026 21:25 Hull complete 12th signing: Transfer news and rumo",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/wrexham/preview/wrexham-vs-burnley-prediction-team-news-lineups_604628.html"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 1
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 1,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143936",
+   "homeTeam": "Millwall",
+   "awayTeam": "Newcastle",
+   "league": "English League Cup",
+   "kickoffISO": "2026-09-08T19:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": "otball | 02 Sep 2026 14:10 Brighton seal late deals for ex-Real Madrid ace and award-winning attacker Football | 02 Sep 2026 13:58 New Tommy Setford destination 'emerges' after Spanish loan deal colla",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/millwall/league-cup/preview/millwall-vs-newcastle-prediction-team-news-lineups_604589.html"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 1
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 1,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143928",
+   "homeTeam": "Bolton",
+   "awayTeam": "West Ham",
+   "league": "English League Champ",
+   "kickoffISO": "2026-09-08T19:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": "vs Bolton - prediction, team news, lineups Football | 30 Aug 2026 16:30 Preview: Bolton vs Lincoln - prediction, team news, lineups Football | 27 Aug 2026 10:57 Preview: QPR vs Bolton - prediction, te",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/bolton-wanderers/preview/bolton-vs-west-ham-prediction-team-news-lineups_604599.html"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 1
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 1,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143961",
+   "homeTeam": "Dortmund",
+   "awayTeam": "Villarreal",
+   "league": "UE Champions",
+   "kickoffISO": "2026-09-08T19:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": "are doing is the Wild West, it's unfair' — Liverpool legend slams Premier League spending Football | 03 Sep 2026 07:06 How much Arsenal will receive from Nwaneri Dortmund loan Football | 01 Sep 2026 1",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/borussia-dortmund/champions-league/preview/dortmund-vs-villarreal-prediction-team-news-lineups_604610.html"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 1
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 1,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143963",
+   "homeTeam": "Lille",
+   "awayTeam": "Real Betis",
+   "league": "UE Champions",
+   "kickoffISO": "2026-09-08T19:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": ": Lille vs PSG - prediction, team news, lineups Football | 25 Aug 2026 22:47 Transfer news and rumours: Palacios to Ipswich, Diouf to Brentford, Flemming Burnley doubts Football | 24 Aug 2026 09:55 Fo",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/lille/champions-league/preview/lille-vs-betis-prediction-team-news-lineups_604600.html"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 1
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 1,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143965",
+   "homeTeam": "Porto",
+   "awayTeam": "Manchester City",
+   "league": "UE Champions",
+   "kickoffISO": "2026-09-08T19:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": "League roundup Football | 05 Sep 2026 17:37 Haaland heads to new heights as Man City marksman breaks Aguero scoring record Football | 05 Sep 2026 16:22 City forced into late Fernandez change as new in",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/man-city/champions-league/preview/porto-vs-man-city-prediction-team-news-lineups_604577.html"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 1
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 1,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143967",
+   "homeTeam": "Real Madrid",
+   "awayTeam": "Inter",
+   "league": "UE Champions",
+   "kickoffISO": "2026-09-08T19:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": {
+       "selection": "under",
+       "point": 0
+      },
+      "rawText": "French, Spanish media after Real Madrid loss Football | 05 Sep 2026 10:29 Guler gives Mourinho fresh selection headache Football | 05 Sep 2026 09:50 Why Trent Alexander-Arnold is far from finished at ",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/real-madrid/champions-league/preview/real-madrid-vs-inter-milan-prediction-team-news-lineups_604588.html"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 1
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 1,
+    "totalsTally": {
+     "over": 0,
+     "under": 1
+    },
+    "totalsMajorityPick": "under",
+    "totalsMajorityCount": 1,
+    "totalsMajorityPoint": 0,
+    "totalTotalsTipsters": 1
+   },
+   "topPick": {
+    "market": "totals",
+    "selection": "under",
+    "point": 0,
+    "label": "Under 0 goals",
+    "tipsterCount": 1,
+    "totalTipsters": 1,
+    "agreement": 1
+   }
+  },
+  {
+   "id": "143944",
+   "homeTeam": "Fluminense",
+   "awayTeam": "Platense",
+   "league": "Libertadores Cup",
+   "kickoffISO": "2026-09-08T22:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143953",
+   "homeTeam": "Indep Santa Fe",
+   "awayTeam": "Vasco da Gama",
+   "league": "Sudamericana Cup",
+   "kickoffISO": "2026-09-08T22:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143955",
+   "homeTeam": "Boca Juniors",
+   "awayTeam": "Sao Paulo",
+   "league": "Sudamericana Cup",
+   "kickoffISO": "2026-09-09T00:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143950",
+   "homeTeam": "Al Kholood",
+   "awayTeam": "Al Shabab (KSA)",
+   "league": "Saudi League",
+   "kickoffISO": "2026-09-09T15:55:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143922",
+   "homeTeam": "Twente Enschede",
+   "awayTeam": "Telstar",
+   "league": "Dutch League",
+   "kickoffISO": "2026-09-09T16:45:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143951",
+   "homeTeam": "Al Fateh",
+   "awayTeam": "Diriyah Club",
+   "league": "Saudi League",
+   "kickoffISO": "2026-09-09T18:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143952",
+   "homeTeam": "Al Nassr (KSA)",
+   "awayTeam": "Abha Club",
+   "league": "Saudi League",
+   "kickoffISO": "2026-09-09T18:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143929",
+   "homeTeam": "Derby",
+   "awayTeam": "West Bromwich",
+   "league": "English League Champ",
+   "kickoffISO": "2026-09-09T18:45:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143930",
+   "homeTeam": "Norwich",
+   "awayTeam": "Birmingham",
+   "league": "English League Champ",
+   "kickoffISO": "2026-09-09T18:45:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143931",
+   "homeTeam": "Charlton",
+   "awayTeam": "QPR",
+   "league": "English League Champ",
+   "kickoffISO": "2026-09-09T19:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143970",
+   "homeTeam": "Atlanta Utd",
+   "awayTeam": "Orlando City",
+   "league": "US Soccer League",
+   "kickoffISO": "2026-09-09T23:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143972",
+   "homeTeam": "DC United",
+   "awayTeam": "Columbus Crew",
+   "league": "US Soccer League",
+   "kickoffISO": "2026-09-09T23:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143973",
+   "homeTeam": "Montreal Impact",
+   "awayTeam": "Charlotte FC",
+   "league": "US Soccer League",
+   "kickoffISO": "2026-09-09T23:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143971",
+   "homeTeam": "Philadelphia U",
+   "awayTeam": "FC Cincinnati",
+   "league": "US Soccer League",
+   "kickoffISO": "2026-09-09T23:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143969",
+   "homeTeam": "Toronto FC",
+   "awayTeam": "Nashville SC",
+   "league": "US Soccer League",
+   "kickoffISO": "2026-09-09T23:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143974",
+   "homeTeam": "NY City FC",
+   "awayTeam": "NE Revolution",
+   "league": "US Soccer League",
+   "kickoffISO": "2026-09-10T00:00:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143975",
+   "homeTeam": "Austin FC",
+   "awayTeam": "Colorado Rapids",
+   "league": "US Soccer League",
+   "kickoffISO": "2026-09-10T00:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143976",
+   "homeTeam": "Chicago Fire",
+   "awayTeam": "Inter Miami",
+   "league": "US Soccer League",
+   "kickoffISO": "2026-09-10T00:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [
+     {
+      "site": "sportsmole",
+      "pick": null,
+      "totalsPick": null,
+      "rawText": "7 Preview: Inter Miami vs. Chicago Fire - prediction, team news, lineups Football | 20 Jul 2026 21:34 Preview: Chicago Fire vs Vancouver - prediction, team news, lineups Football | 14 Jul 2026 06:28 F",
+      "sourceUrl": "https://www.sportsmole.co.uk/football/chicago-fire/preview/chicago-fire-vs-inter-miami-prediction-team-news-lineups_604633.html"
+     }
+    ],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 1
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 1,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143977",
+   "homeTeam": "Houston Dynamo",
+   "awayTeam": "Real Salt Lake",
+   "league": "US Soccer League",
+   "kickoffISO": "2026-09-10T00:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143978",
+   "homeTeam": "Minnesota Utd",
+   "awayTeam": "FC Dallas",
+   "league": "US Soccer League",
+   "kickoffISO": "2026-09-10T00:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143981",
+   "homeTeam": "Los Angeles FC",
+   "awayTeam": "NY Red Bulls",
+   "league": "US Soccer League",
+   "kickoffISO": "2026-09-10T02:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143980",
+   "homeTeam": "Portland T",
+   "awayTeam": "St Louis City",
+   "league": "US Soccer League",
+   "kickoffISO": "2026-09-10T02:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143979",
+   "homeTeam": "San Diego FC",
+   "awayTeam": "San Jose Quakes",
+   "league": "US Soccer League",
+   "kickoffISO": "2026-09-10T02:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  },
+  {
+   "id": "143982",
+   "homeTeam": "Vancouver W",
+   "awayTeam": "LA Galaxy",
+   "league": "US Soccer League",
+   "kickoffISO": "2026-09-10T02:30:00.000Z",
+   "sgPoolsOpen": true,
+   "tipsterConsensus": {
+    "picks": [],
+    "tally": {
+     "home": 0,
+     "draw": 0,
+     "away": 0,
+     "unclassified": 0
+    },
+    "majorityPick": null,
+    "majorityCount": 0,
+    "totalTipsters": 0,
+    "totalsTally": {
+     "over": 0,
+     "under": 0
+    },
+    "totalsMajorityPick": null,
+    "totalsMajorityCount": 0,
+    "totalsMajorityPoint": null,
+    "totalTotalsTipsters": 0
+   },
+   "topPick": null
+  }
+ ],
+ "bestBet": {
+  "homeTeam": "Rubin Kazan",
+  "awayTeam": "Akhmat Grozny",
+  "league": "Russian League",
+  "kickoffISO": "2026-09-07T16:30:00.000Z",
+  "tipsterConsensus": {
+   "picks": [
+    {
+     "site": "windrawwin",
+     "pick": "home",
+     "totalsPick": null,
+     "rawText": "Home Win",
+     "sourceUrl": "https://www.windrawwin.com/predictions/today"
+    },
+    {
+     "site": "predictz",
+     "pick": "home",
+     "totalsPick": null,
+     "rawText": "Home 2-0",
+     "sourceUrl": "https://www.predictz.com/predictions"
+    }
+   ],
+   "tally": {
+    "home": 2,
+    "draw": 0,
+    "away": 0,
+    "unclassified": 0
+   },
+   "majorityPick": "home",
+   "majorityCount": 2,
+   "totalTipsters": 2,
+   "totalsTally": {
+    "over": 0,
+    "under": 0
+   },
+   "totalsMajorityPick": null,
+   "totalsMajorityCount": 0,
+   "totalsMajorityPoint": null,
+   "totalTotalsTipsters": 0
+  },
+  "market": "1X2",
+  "selection": "home",
+  "label": "Rubin Kazan to win",
+  "tipsterCount": 2,
+  "totalTipsters": 2,
+  "agreement": 1
+ },
+ "lastUpdated": "2026-09-07T06:02:43.145Z",
+ "lastError": null,
+ "counts": {
+  "sgpFixtures": 68,
+  "tipsterPicks": 202
+ },
+ "rawSgpFixtures": [
+  {
+   "sgpMatchId": "143819",
+   "homeTeam": "Al Khaleej",
+   "awayTeam": "Al Riyadh",
+   "kickoffISO": "2026-09-07T15:30:00.000Z",
+   "league": "Saudi League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143497",
+   "homeTeam": "Cagliari",
+   "awayTeam": "Lecce",
+   "kickoffISO": "2026-09-07T16:30:00.000Z",
+   "league": "Italian League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143920",
+   "homeTeam": "Rubin Kazan",
+   "awayTeam": "Akhmat Grozny",
+   "kickoffISO": "2026-09-07T16:30:00.000Z",
+   "league": "Russian League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143821",
+   "homeTeam": "Getafe",
+   "awayTeam": "Celta de Vigo",
+   "kickoffISO": "2026-09-07T17:00:00.000Z",
+   "league": "Spanish League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143826",
+   "homeTeam": "Kalmar",
+   "awayTeam": "Djurgarden",
+   "kickoffISO": "2026-09-07T17:00:00.000Z",
+   "league": "Swedish League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143827",
+   "homeTeam": "Malmo",
+   "awayTeam": "AIK Stockholm",
+   "kickoffISO": "2026-09-07T17:00:00.000Z",
+   "league": "Swedish League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143825",
+   "homeTeam": "Mjallby AIF",
+   "awayTeam": "IFK Gothenburg",
+   "kickoffISO": "2026-09-07T17:00:00.000Z",
+   "league": "Swedish League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143621",
+   "homeTeam": "Jong PSV",
+   "awayTeam": "Den Bosch",
+   "kickoffISO": "2026-09-07T18:00:00.000Z",
+   "league": "Dutch League Div 2",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143622",
+   "homeTeam": "Jong Utrecht",
+   "awayTeam": "FC Eindhoven",
+   "kickoffISO": "2026-09-07T18:00:00.000Z",
+   "league": "Dutch League Div 2",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143820",
+   "homeTeam": "Al Hilal (KSA)",
+   "awayTeam": "Neom Sports",
+   "kickoffISO": "2026-09-07T18:00:00.000Z",
+   "league": "Saudi League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143765",
+   "homeTeam": "Palermo",
+   "awayTeam": "Sampdoria",
+   "kickoffISO": "2026-09-07T18:30:00.000Z",
+   "league": "Italian League Div 2",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143749",
+   "homeTeam": "Sabadell",
+   "awayTeam": "Cordoba",
+   "kickoffISO": "2026-09-07T18:30:00.000Z",
+   "league": "Spanish League Div 2",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143498",
+   "homeTeam": "Udinese",
+   "awayTeam": "Lazio",
+   "kickoffISO": "2026-09-07T18:45:00.000Z",
+   "league": "Italian League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143695",
+   "homeTeam": "Nantes",
+   "awayTeam": "AS Nancy",
+   "kickoffISO": "2026-09-07T18:45:00.000Z",
+   "league": "French League Div 2",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143668",
+   "homeTeam": "Bromley",
+   "awayTeam": "AFC Wimbledon",
+   "kickoffISO": "2026-09-07T19:00:00.000Z",
+   "league": "English League One",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143823",
+   "homeTeam": "Elche",
+   "awayTeam": "Sociedad",
+   "kickoffISO": "2026-09-07T19:30:00.000Z",
+   "league": "Spanish League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143793",
+   "homeTeam": "Barracas Central",
+   "awayTeam": "Argentinos Jrs",
+   "kickoffISO": "2026-09-07T22:00:00.000Z",
+   "league": "Argentine League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143805",
+   "homeTeam": "Vitoria (BRA)",
+   "awayTeam": "Gremio",
+   "kickoffISO": "2026-09-07T23:00:00.000Z",
+   "league": "Brazilian League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143812",
+   "homeTeam": "Limache",
+   "awayTeam": "Cobresal",
+   "kickoffISO": "2026-09-07T23:00:00.000Z",
+   "league": "Chilean League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143794",
+   "homeTeam": "Union Santa Fe",
+   "awayTeam": "Instituto ACC",
+   "kickoffISO": "2026-09-08T00:15:00.000Z",
+   "league": "Argentine League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143943",
+   "homeTeam": "Incheon",
+   "awayTeam": "Bucheon",
+   "kickoffISO": "2026-09-08T10:30:00.000Z",
+   "league": "K League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143942",
+   "homeTeam": "Ulsan",
+   "awayTeam": "Seoul",
+   "kickoffISO": "2026-09-08T10:30:00.000Z",
+   "league": "K League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143946",
+   "homeTeam": "Al Ettifaq",
+   "awayTeam": "Al Faisaly (KSA)",
+   "kickoffISO": "2026-09-08T15:30:00.000Z",
+   "league": "Saudi League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143947",
+   "homeTeam": "Al Hazem",
+   "awayTeam": "Al Taawoun",
+   "kickoffISO": "2026-09-08T15:55:00.000Z",
+   "league": "Saudi League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143921",
+   "homeTeam": "Nijmegen",
+   "awayTeam": "Excelsior",
+   "kickoffISO": "2026-09-08T16:45:00.000Z",
+   "league": "Dutch League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143957",
+   "homeTeam": "AEK",
+   "awayTeam": "LASK",
+   "kickoffISO": "2026-09-08T16:45:00.000Z",
+   "league": "UE Champions",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143959",
+   "homeTeam": "Club Brugge",
+   "awayTeam": "Aston Villa",
+   "kickoffISO": "2026-09-08T16:45:00.000Z",
+   "league": "UE Champions",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143949",
+   "homeTeam": "Al Ittihad",
+   "awayTeam": "Al Fayha",
+   "kickoffISO": "2026-09-08T18:00:00.000Z",
+   "league": "Saudi League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143948",
+   "homeTeam": "Al Qadsiah (KSA)",
+   "awayTeam": "Al Ahli (KSA)",
+   "kickoffISO": "2026-09-08T18:00:00.000Z",
+   "league": "Saudi League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143933",
+   "homeTeam": "Bournemouth",
+   "awayTeam": "Lincoln City",
+   "kickoffISO": "2026-09-08T18:45:00.000Z",
+   "league": "English League Cup",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143932",
+   "homeTeam": "Crystal Palace",
+   "awayTeam": "Middlesbrough",
+   "kickoffISO": "2026-09-08T18:45:00.000Z",
+   "league": "English League Cup",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143935",
+   "homeTeam": "Leyton Orient",
+   "awayTeam": "Bradford",
+   "kickoffISO": "2026-09-08T18:45:00.000Z",
+   "league": "English League Cup",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143934",
+   "homeTeam": "Sunderland",
+   "awayTeam": "Hull City",
+   "kickoffISO": "2026-09-08T18:45:00.000Z",
+   "league": "English League Cup",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143925",
+   "homeTeam": "Blackburn",
+   "awayTeam": "Sheffield Utd",
+   "kickoffISO": "2026-09-08T18:45:00.000Z",
+   "league": "English League Champ",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143924",
+   "homeTeam": "Cardiff",
+   "awayTeam": "Stoke City",
+   "kickoffISO": "2026-09-08T18:45:00.000Z",
+   "league": "English League Champ",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143923",
+   "homeTeam": "Southampton",
+   "awayTeam": "Swansea",
+   "kickoffISO": "2026-09-08T18:45:00.000Z",
+   "league": "English League Champ",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143926",
+   "homeTeam": "Watford",
+   "awayTeam": "Preston",
+   "kickoffISO": "2026-09-08T18:45:00.000Z",
+   "league": "English League Champ",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143927",
+   "homeTeam": "Wrexham",
+   "awayTeam": "Burnley",
+   "kickoffISO": "2026-09-08T18:45:00.000Z",
+   "league": "English League Champ",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143936",
+   "homeTeam": "Millwall",
+   "awayTeam": "Newcastle",
+   "kickoffISO": "2026-09-08T19:00:00.000Z",
+   "league": "English League Cup",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143928",
+   "homeTeam": "Bolton",
+   "awayTeam": "West Ham",
+   "kickoffISO": "2026-09-08T19:00:00.000Z",
+   "league": "English League Champ",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143961",
+   "homeTeam": "Dortmund",
+   "awayTeam": "Villarreal",
+   "kickoffISO": "2026-09-08T19:00:00.000Z",
+   "league": "UE Champions",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143963",
+   "homeTeam": "Lille",
+   "awayTeam": "Real Betis",
+   "kickoffISO": "2026-09-08T19:00:00.000Z",
+   "league": "UE Champions",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143965",
+   "homeTeam": "Porto",
+   "awayTeam": "Manchester City",
+   "kickoffISO": "2026-09-08T19:00:00.000Z",
+   "league": "UE Champions",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143967",
+   "homeTeam": "Real Madrid",
+   "awayTeam": "Inter",
+   "kickoffISO": "2026-09-08T19:00:00.000Z",
+   "league": "UE Champions",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143944",
+   "homeTeam": "Fluminense",
+   "awayTeam": "Platense",
+   "kickoffISO": "2026-09-08T22:00:00.000Z",
+   "league": "Libertadores Cup",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143953",
+   "homeTeam": "Indep Santa Fe",
+   "awayTeam": "Vasco da Gama",
+   "kickoffISO": "2026-09-08T22:00:00.000Z",
+   "league": "Sudamericana Cup",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143955",
+   "homeTeam": "Boca Juniors",
+   "awayTeam": "Sao Paulo",
+   "kickoffISO": "2026-09-09T00:30:00.000Z",
+   "league": "Sudamericana Cup",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143950",
+   "homeTeam": "Al Kholood",
+   "awayTeam": "Al Shabab (KSA)",
+   "kickoffISO": "2026-09-09T15:55:00.000Z",
+   "league": "Saudi League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143922",
+   "homeTeam": "Twente Enschede",
+   "awayTeam": "Telstar",
+   "kickoffISO": "2026-09-09T16:45:00.000Z",
+   "league": "Dutch League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143951",
+   "homeTeam": "Al Fateh",
+   "awayTeam": "Diriyah Club",
+   "kickoffISO": "2026-09-09T18:00:00.000Z",
+   "league": "Saudi League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143952",
+   "homeTeam": "Al Nassr (KSA)",
+   "awayTeam": "Abha Club",
+   "kickoffISO": "2026-09-09T18:00:00.000Z",
+   "league": "Saudi League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143929",
+   "homeTeam": "Derby",
+   "awayTeam": "West Bromwich",
+   "kickoffISO": "2026-09-09T18:45:00.000Z",
+   "league": "English League Champ",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143930",
+   "homeTeam": "Norwich",
+   "awayTeam": "Birmingham",
+   "kickoffISO": "2026-09-09T18:45:00.000Z",
+   "league": "English League Champ",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143931",
+   "homeTeam": "Charlton",
+   "awayTeam": "QPR",
+   "kickoffISO": "2026-09-09T19:00:00.000Z",
+   "league": "English League Champ",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143970",
+   "homeTeam": "Atlanta Utd",
+   "awayTeam": "Orlando City",
+   "kickoffISO": "2026-09-09T23:30:00.000Z",
+   "league": "US Soccer League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143972",
+   "homeTeam": "DC United",
+   "awayTeam": "Columbus Crew",
+   "kickoffISO": "2026-09-09T23:30:00.000Z",
+   "league": "US Soccer League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143973",
+   "homeTeam": "Montreal Impact",
+   "awayTeam": "Charlotte FC",
+   "kickoffISO": "2026-09-09T23:30:00.000Z",
+   "league": "US Soccer League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143971",
+   "homeTeam": "Philadelphia U",
+   "awayTeam": "FC Cincinnati",
+   "kickoffISO": "2026-09-09T23:30:00.000Z",
+   "league": "US Soccer League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143969",
+   "homeTeam": "Toronto FC",
+   "awayTeam": "Nashville SC",
+   "kickoffISO": "2026-09-09T23:30:00.000Z",
+   "league": "US Soccer League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143974",
+   "homeTeam": "NY City FC",
+   "awayTeam": "NE Revolution",
+   "kickoffISO": "2026-09-10T00:00:00.000Z",
+   "league": "US Soccer League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143975",
+   "homeTeam": "Austin FC",
+   "awayTeam": "Colorado Rapids",
+   "kickoffISO": "2026-09-10T00:30:00.000Z",
+   "league": "US Soccer League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143976",
+   "homeTeam": "Chicago Fire",
+   "awayTeam": "Inter Miami",
+   "kickoffISO": "2026-09-10T00:30:00.000Z",
+   "league": "US Soccer League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143977",
+   "homeTeam": "Houston Dynamo",
+   "awayTeam": "Real Salt Lake",
+   "kickoffISO": "2026-09-10T00:30:00.000Z",
+   "league": "US Soccer League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143978",
+   "homeTeam": "Minnesota Utd",
+   "awayTeam": "FC Dallas",
+   "kickoffISO": "2026-09-10T00:30:00.000Z",
+   "league": "US Soccer League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143981",
+   "homeTeam": "Los Angeles FC",
+   "awayTeam": "NY Red Bulls",
+   "kickoffISO": "2026-09-10T02:30:00.000Z",
+   "league": "US Soccer League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143980",
+   "homeTeam": "Portland T",
+   "awayTeam": "St Louis City",
+   "kickoffISO": "2026-09-10T02:30:00.000Z",
+   "league": "US Soccer League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143979",
+   "homeTeam": "San Diego FC",
+   "awayTeam": "San Jose Quakes",
+   "kickoffISO": "2026-09-10T02:30:00.000Z",
+   "league": "US Soccer League",
+   "source": "online.singaporepools.com"
+  },
+  {
+   "sgpMatchId": "143982",
+   "homeTeam": "Vancouver W",
+   "awayTeam": "LA Galaxy",
+   "kickoffISO": "2026-09-10T02:30:00.000Z",
+   "league": "US Soccer League",
+   "source": "online.singaporepools.com"
+  }
+ ],
+ "rawTipsterPicks": [
+  {
+   "site": "sportsmole",
+   "homeTeam": "Getafe",
+   "awayTeam": "Celta Vigo",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "29 Aug 2026 16:49 Preview: Partizan vs Getafe - prediction, team news, lineups Football | 25 Aug 2026 18:37 Barca to start with a win? Sunday's La Liga predictions and previews Football | 23 Aug 2026 ",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/getafe/preview/getafe-vs-celta-vigo-prediction-team-news-lineups_604549.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Elche",
+   "awayTeam": "Real Sociedad",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "026 15:32 Barca to start with a win? Sunday's La Liga predictions and previews Football | 23 Aug 2026 00:05 Team News: Elche vs. Barcelona injury, suspension list, predicted XIs Football | 22 Aug 2026",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/elche/preview/elche-vs-real-sociedad-prediction-team-news-lineups_604548.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Cagliari",
+   "awayTeam": "Lecce",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "0:20 Preview: Cagliari vs Inter Milan - prediction, team news, lineups Football | 28 Aug 2026 11:52 Inter, Napoli to start with wins? Saturday's Serie A predictions and previews Football | 22 Aug 2026",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/cagliari/preview/cagliari-vs-lecce-prediction-team-news-lineups_604525.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Udinese",
+   "awayTeam": "Lazio",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "2026 00:15 Preview: Monza vs Udinese - prediction, team news, lineups Football | 27 Aug 2026 12:28 Inter, Napoli to start with wins? Saturday's Serie A predictions and previews Football | 22 Aug 2026 ",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/udinese/preview/udinese-vs-lazio-prediction-team-news-lineups_604528.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Estoril",
+   "awayTeam": "Arouca",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "all | 20 Aug 2026 22:23 Preview: Nacional vs Estoril - prediction, team news, lineups Football | 14 Aug 2026 23:43 Preview: Estoril vs Famalicao - prediction, team news, lineups Football | 05 Aug 2026",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/estoril-praia/preview/estoril-vs-arouca-prediction-team-news-lineups_604545.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Bromley",
+   "awayTeam": "AFC Wimbledon",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "all | 27 Aug 2026 19:28 Preview: Bromley vs Cambridge - prediction, team news, lineups Football | 20 Aug 2026 11:07 Preview: Barnsley vs Bromley - prediction, team news, lineups Football | 13 Aug 2026",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/bromley/preview/bromley-vs-afc-wimbledon-prediction-team-news-lineups_604526.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Goztepe SK",
+   "awayTeam": "Gaziantep",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "ction, team news, lineups Football | 21 Aug 2026 10:33 Preview: Samsunspor vs Goztepe SK - prediction, team news, lineups Football | 15 Aug 2026 20:11 Preview: Samsunspor vs Goztepe SK - prediction, t",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/goztepe-sk/preview/goztepe-sk-vs-gaziantep-prediction-team-news-lineups_604557.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Caykur Rizespor",
+   "awayTeam": "Alanyaspor",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "eam news, lineups Football | 20 Aug 2026 22:25 Preview: Konyaspor vs Caykur Rizespor - prediction, team news, lineups Football | 14 Aug 2026 00:21 Preview: Caykur Rizespor vs Hull City - prediction, t",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/caykur-rizespor/preview/caykur-rizespor-vs-alanyaspor-prediction-team-news-lineups_604555.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "AEK Athens",
+   "awayTeam": "LASK",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "Villa agree 'surprise deal' with Champions League club for long-serving player Football | 02 Sep 2026 15:00 Preview: AEK Athens vs. Levski Sofia - prediction, team news, lineups Football | 25 Aug 2026",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/aek-athens/champions-league/preview/aek-athens-vs-lask-prediction-team-news-lineups_604564.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Brugge",
+   "awayTeam": "Aston Villa",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "re-back Football | 26 Aug 2026 18:06 Late Man Utd spending spree ‘imminent’ as Carrick wants three more signings Football | 25 Aug 2026 12:18 Aston Villa 'getting closer' to centre-back signing despit",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/club-brugge/champions-league/preview/brugge-vs-aston-villa-prediction-team-news-lineups_604571.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Porto",
+   "awayTeam": "Man City",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "League roundup Football | 05 Sep 2026 17:37 Haaland heads to new heights as Man City marksman breaks Aguero scoring record Football | 05 Sep 2026 16:22 City forced into late Fernandez change as new in",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/man-city/champions-league/preview/porto-vs-man-city-prediction-team-news-lineups_604577.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Lille",
+   "awayTeam": "Betis",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": ": Lille vs PSG - prediction, team news, lineups Football | 25 Aug 2026 22:47 Transfer news and rumours: Palacios to Ipswich, Diouf to Brentford, Flemming Burnley doubts Football | 24 Aug 2026 09:55 Fo",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/lille/champions-league/preview/lille-vs-betis-prediction-team-news-lineups_604600.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Dortmund",
+   "awayTeam": "Villarreal",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "are doing is the Wild West, it's unfair' — Liverpool legend slams Premier League spending Football | 03 Sep 2026 07:06 How much Arsenal will receive from Nwaneri Dortmund loan Football | 01 Sep 2026 1",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/borussia-dortmund/champions-league/preview/dortmund-vs-villarreal-prediction-team-news-lineups_604610.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Real Madrid",
+   "awayTeam": "Inter Milan",
+   "pick": null,
+   "totalsPick": {
+    "selection": "under",
+    "point": 0
+   },
+   "rawText": "French, Spanish media after Real Madrid loss Football | 05 Sep 2026 10:29 Guler gives Mourinho fresh selection headache Football | 05 Sep 2026 09:50 Why Trent Alexander-Arnold is far from finished at ",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/real-madrid/champions-league/preview/real-madrid-vs-inter-milan-prediction-team-news-lineups_604588.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Wrexham",
+   "awayTeam": "Burnley",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "news, lineups Football | 31 Aug 2026 11:56 Transfer news and rumours: Bahoya 'decision', Minteh replacement, Wrexham fee Football | 30 Aug 2026 21:25 Hull complete 12th signing: Transfer news and rumo",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/wrexham/preview/wrexham-vs-burnley-prediction-team-news-lineups_604628.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Watford",
+   "awayTeam": "Preston",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": ":15 Preview: Watford vs West Ham - prediction, team news, lineups Football | 27 Aug 2026 19:22 Preview: Watford vs Peterborough - prediction, team news, lineups Football | 23 Aug 2026 09:32 Football r",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/watford/preview/watford-vs-preston-prediction-team-news-lineups_604631.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Blackburn",
+   "awayTeam": "Sheff Utd",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "rn - prediction, team news, lineups Football | 30 Aug 2026 15:29 Preview: Blackburn vs QPR - prediction, team news, lineups Football | 27 Aug 2026 11:47 Preview: Blackburn vs Sheff Utd - prediction, t",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/blackburn-rovers/preview/blackburn-vs-sheff-utd-prediction-team-news-lineups_604591.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Bolton",
+   "awayTeam": "West Ham",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "vs Bolton - prediction, team news, lineups Football | 30 Aug 2026 16:30 Preview: Bolton vs Lincoln - prediction, team news, lineups Football | 27 Aug 2026 10:57 Preview: QPR vs Bolton - prediction, te",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/bolton-wanderers/preview/bolton-vs-west-ham-prediction-team-news-lineups_604599.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Leyton Orient",
+   "awayTeam": "Bradford",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "rient - prediction, team news, lineups Football | 30 Aug 2026 23:55 Preview: Leyton Orient vs Barnsley - prediction, team news, lineups Football | 28 Aug 2026 01:32 Preview: Walsall vs Leyton Orient -",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/leyton-orient/league-cup/preview/leyton-orient-vs-bradford-prediction-team-news-lineups_604563.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Bournemouth",
+   "awayTeam": "Lincoln",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "Football | 05 Sep 2026 00:00 Team News: Newcastle vs. Bournemouth injury, suspension list, predicted XIs Football | 04 Sep 2026 12:30 Will Fernandez-Pardo make his debut? Predicted Newcastle lineup vs",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/bournemouth/league-cup/preview/bournemouth-vs-lincoln-prediction-team-news-lineups_604612.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Crystal Palace",
+   "awayTeam": "Middlesbrough",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "ate yet again - Saturday's Premier League roundup Football | 05 Sep 2026 17:37 Can Coventry shock Man City? Saturday's Premier League predictions Football | 05 Sep 2026 00:00 Team News: Fulham vs. Pal",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/crystal-palace/league-cup/preview/crystal-palace-vs-middlesbrough-prediction-team-news-lineups_604587.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Sunderland",
+   "awayTeam": "Hull City",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "entford vs. Sunderland injury, suspension list, predicted XIs Football | 04 Sep 2026 15:00 Another French player at Sunderland? Rennes' young talent is 'being targeted' for 2027 Football | 04 Sep 2026",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/sunderland/league-cup/preview/sunderland-vs-hull-city-prediction-team-news-lineups_604565.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Millwall",
+   "awayTeam": "Newcastle",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "otball | 02 Sep 2026 14:10 Brighton seal late deals for ex-Real Madrid ace and award-winning attacker Football | 02 Sep 2026 13:58 New Tommy Setford destination 'emerges' after Spanish loan deal colla",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/millwall/league-cup/preview/millwall-vs-newcastle-prediction-team-news-lineups_604589.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Nijmegen",
+   "awayTeam": "Excelsior",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "news, lineups Football | 27 Aug 2026 23:56 Preview: Willem II vs. Nijmegen - prediction, team news, lineups Football | 13 Aug 2026 17:26 Preview: Nijmegen vs. Olympiacos - prediction, team news, lineu",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/nec/preview/nijmegen-vs-excelsior-prediction-team-news-lineups_604581.html"
+  },
+  {
+   "site": "sportsmole",
+   "homeTeam": "Chicago Fire",
+   "awayTeam": "Inter Miami",
+   "pick": null,
+   "totalsPick": null,
+   "rawText": "7 Preview: Inter Miami vs. Chicago Fire - prediction, team news, lineups Football | 20 Jul 2026 21:34 Preview: Chicago Fire vs Vancouver - prediction, team news, lineups Football | 14 Jul 2026 06:28 F",
+   "sourceUrl": "https://www.sportsmole.co.uk/football/chicago-fire/preview/chicago-fire-vs-inter-miami-prediction-team-news-lineups_604633.html"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Bromley",
+   "awayTeam": "AFC Wimbledon",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Cagliari",
+   "awayTeam": "Lecce",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Udinese",
+   "awayTeam": "Lazio",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Palermo",
+   "awayTeam": "Sampdoria",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Alcione Milano",
+   "awayTeam": "Treviso",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "AZ Picerno",
+   "awayTeam": "Inter Milan U23",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Catania",
+   "awayTeam": "Cosenza",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Pro Vercelli",
+   "awayTeam": "Folgore Caratese",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Renate",
+   "awayTeam": "Novara",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Trento",
+   "awayTeam": "Calcio Lecco",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Elche",
+   "awayTeam": "Real Sociedad",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Getafe",
+   "awayTeam": "Celta Vigo",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Sabadell",
+   "awayTeam": "Cordoba",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Nantes",
+   "awayTeam": "Nancy",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "FC Utrecht II",
+   "awayTeam": "FC Eindhoven",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Jong PSV",
+   "awayTeam": "FC Den Bosch",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Estoril",
+   "awayTeam": "Arouca",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Lusitania",
+   "awayTeam": "Avs Futebol SAD",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Rubin Kazan",
+   "awayTeam": "Akhmat Grozny",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Midtjylland",
+   "awayTeam": "FC Nordsjaelland",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Klubi 04",
+   "awayTeam": "KaPa",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "MSK Zilina II",
+   "awayTeam": "Slovan Bratislava II",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Kalmar",
+   "awayTeam": "Djurgardens",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Malmo",
+   "awayTeam": "AIK Stockholm",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Mjallby",
+   "awayTeam": "IFK Goteborg",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Orebro",
+   "awayTeam": "Ostersunds",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Caykur Rizespor",
+   "awayTeam": "Alanyaspor",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Goztepespor",
+   "awayTeam": "Gaziantep BB",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Esenler Erokspor",
+   "awayTeam": "Kayserispor",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Istanbulspor",
+   "awayTeam": "Igdir FK",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Manisa Futbol Kulubu",
+   "awayTeam": "Bursaspor",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Mardin 1969 Spor",
+   "awayTeam": "Bodrumspor",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "PFC Dunav Ruse",
+   "awayTeam": "Slavia Sofia",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Dinamo Brest",
+   "awayTeam": "BATE Borisov",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Isloch",
+   "awayTeam": "Arsenal Dzerzhinsk",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Aris Limassol",
+   "awayTeam": "Omonia Nicosia",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Paphos",
+   "awayTeam": "Olympiakos Nicosia",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Asteras Tripolis",
+   "awayTeam": "POT Iraklis",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Riga",
+   "awayTeam": "BFC Daugavpils",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Rigas FS",
+   "awayTeam": "FK Liepaja",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Hegelmann Litauen",
+   "awayTeam": "FK Panevezys",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Zalgiris III",
+   "awayTeam": "Neptunas Klaipeda",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Struga",
+   "awayTeam": "Sileks",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Vardar",
+   "awayTeam": "KF Arsimi",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Pogon Szczecin",
+   "awayTeam": "Wisla Plock",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Wieczysta Krakow",
+   "awayTeam": "Zaglebie Lubin",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Ruch Chorzow",
+   "awayTeam": "Unia Skierniewice",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "CS Universitatea Craiova",
+   "awayTeam": "Universitatea Cluj",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Voluntari",
+   "awayTeam": "Arges",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "OFK Beograd",
+   "awayTeam": "IMT Novi Beograd",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Vozdovac",
+   "awayTeam": "Backa Topola",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Al Ittihad",
+   "awayTeam": "Asyut Petroleum",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Al Qanah",
+   "awayTeam": "El Gaish",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "National Bank",
+   "awayTeam": "Ghazl EL Mahallah",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Petrojet",
+   "awayTeam": "Al Masry",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Azam",
+   "awayTeam": "Namungo",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Barracas Central",
+   "awayTeam": "Argentinos Juniors",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Nueva Chicago",
+   "awayTeam": "Quilmes",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Paysandu",
+   "awayTeam": "Brusque",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Cerro Porteno",
+   "awayTeam": "Nacional Asuncion",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Club Guarani",
+   "awayTeam": "Recoleta",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Albion FC",
+   "awayTeam": "Progreso",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Carabobo FC",
+   "awayTeam": "Estudiantes Merida",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "HFX Wanderers",
+   "awayTeam": "Cavalry",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Bnei Sakhnin",
+   "awayTeam": "Beitar Jerusalem",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Hapoel Sheva",
+   "awayTeam": "Maccabi Tel Aviv",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Hapoel Tel Aviv",
+   "awayTeam": "Hapoel Ramat Gan",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Maccabi Netanya",
+   "awayTeam": "Hapoel Haifa",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Foolad",
+   "awayTeam": "Fajr Sepasi",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Mes Shahr-e Babak",
+   "awayTeam": "Malavan",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Nassaji Mazandaran",
+   "awayTeam": "Kheybar Khorramabad",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Persepolis",
+   "awayTeam": "Zob Ahan Esfahan",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Al Hilal",
+   "awayTeam": "Neom SC",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "windrawwin",
+   "homeTeam": "Al Khaleej",
+   "awayTeam": "Al Riyadh",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away Win",
+   "sourceUrl": "https://www.windrawwin.com/predictions/today"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Bromley",
+   "awayTeam": "AFC Wimbledon",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 0-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Getafe",
+   "awayTeam": "Celta Vigo",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away 0-1",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Elche",
+   "awayTeam": "Real Sociedad",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 1-1",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Sabadell",
+   "awayTeam": "Cordoba",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 1-1",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Catania",
+   "awayTeam": "Cosenza",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 0-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Alcione Milano",
+   "awayTeam": "Treviso",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 0-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "AZ Picerno",
+   "awayTeam": "Inter Milan U23",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 0-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Pro Vercelli",
+   "awayTeam": "Folgore Caratese",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 0-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Renate",
+   "awayTeam": "Novara",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 0-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Trento",
+   "awayTeam": "Calcio Lecco",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 0-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Cagliari",
+   "awayTeam": "Lecce",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 0-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Udinese",
+   "awayTeam": "Lazio",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 1-1",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Palermo",
+   "awayTeam": "Sampdoria",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 3-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Nantes",
+   "awayTeam": "Nancy",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away 0-2",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "FC Utrecht II",
+   "awayTeam": "FC Eindhoven",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away 0-1",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Jong PSV",
+   "awayTeam": "FC Den Bosch",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 2-1",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "PFC Dunav Ruse",
+   "awayTeam": "Slavia Sofia",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away 0-2",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Paphos",
+   "awayTeam": "Olympiakos Nicosia",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 3-1",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Aris Limassol",
+   "awayTeam": "Omonia Nicosia",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 2-2",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Midtjylland",
+   "awayTeam": "FC Nordsjaelland",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 3-2",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Klubi 04",
+   "awayTeam": "KaPa",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 1-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Asteras Tripolis",
+   "awayTeam": "POT Iraklis",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away 0-2",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Riga",
+   "awayTeam": "BFC Daugavpils",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 3-1",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Rigas FS",
+   "awayTeam": "FK Liepaja",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 3-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Hegelmann Litauen",
+   "awayTeam": "FK Panevezys",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 1-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Wieczysta Krakow",
+   "awayTeam": "Zaglebie Lubin",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 2-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Pogon Szczecin",
+   "awayTeam": "Wisla Plock",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 2-1",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Estoril",
+   "awayTeam": "Arouca",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 0-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Lusitania",
+   "awayTeam": "Avs Futebol SAD",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 2-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Rubin Kazan",
+   "awayTeam": "Akhmat Grozny",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 2-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "OFK Beograd",
+   "awayTeam": "Novi Beograd",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 1-1",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Vozdovac",
+   "awayTeam": "Backa Topola",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away 0-3",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Kalmar",
+   "awayTeam": "Djurgardens",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away 0-2",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Malmo",
+   "awayTeam": "AIK Stockholm",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 2-2",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Mjallby",
+   "awayTeam": "IFK Goteborg",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 2-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Orebro",
+   "awayTeam": "Ostersunds",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 1-1",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Caykur Rizespor",
+   "awayTeam": "Alanyaspor",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 0-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Goztepespor",
+   "awayTeam": "Gaziantep BB",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 2-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Esenler Erokspor",
+   "awayTeam": "Kayserispor",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away 0-2",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Istanbulspor",
+   "awayTeam": "Igdir FK",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 2-1",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Manisa Futbol Kulubu",
+   "awayTeam": "Bursaspor",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 2-2",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Mardin 1969 Spor",
+   "awayTeam": "Bodrumspor",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 1-1",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Barracas Central",
+   "awayTeam": "Argentinos Juniors",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 0-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Nueva Chicago",
+   "awayTeam": "Quilmes",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 1-1",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Paysandu",
+   "awayTeam": "Brusque",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 3-2",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Club Guarani",
+   "awayTeam": "Recoleta",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 3-2",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Cerro Porteno",
+   "awayTeam": "Nacional Asuncion",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 2-2",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Albion FC",
+   "awayTeam": "Progreso",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 2-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "HFX Wanderers",
+   "awayTeam": "Cavalry",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away 0-2",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Mes Shahr-e Babak",
+   "awayTeam": "Malavan",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 1-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Nassaji Mazandaran",
+   "awayTeam": "Kheybar Khorramabad",
+   "pick": "away",
+   "totalsPick": null,
+   "rawText": "Away 0-1",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Persepolis",
+   "awayTeam": "Zob Ahan Esfahan",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 3-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Foolad",
+   "awayTeam": "Fajr Sepasi",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 1-1",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Al Khaleej",
+   "awayTeam": "Al Riyadh",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 0-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Al Hilal",
+   "awayTeam": "Neom SC",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 3-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Al Ittihad",
+   "awayTeam": "Asyut Petroleum",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 0-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Al Qanah",
+   "awayTeam": "El Gaish",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 1-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "National Bank",
+   "awayTeam": "Ghazl EL Mahallah",
+   "pick": "draw",
+   "totalsPick": null,
+   "rawText": "Draw 0-0",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "predictz",
+   "homeTeam": "Azam",
+   "awayTeam": "Namungo",
+   "pick": "home",
+   "totalsPick": null,
+   "rawText": "Home 2-1",
+   "sourceUrl": "https://www.predictz.com/predictions"
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "ISPE FC",
+   "awayTeam": "Sagaing United",
+   "rawText": "1",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "home",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "FK Orenburg-2",
+   "awayTeam": "Zenit-Izhevsk",
+   "rawText": "X",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "draw",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Andranik",
+   "awayTeam": "Pyunik-2",
+   "rawText": "X",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "draw",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Ararat-2",
+   "awayTeam": "Olympia Yerevan",
+   "rawText": "2",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "away",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Araks Ararat",
+   "awayTeam": "Noah II",
+   "rawText": "X",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "draw",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Marko",
+   "awayTeam": "Panserraikos",
+   "rawText": "1",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "home",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Police FC (RWA)",
+   "awayTeam": "Gicumbi",
+   "rawText": "1",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "home",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Svoge",
+   "awayTeam": "Lokomotiv Gorna O.",
+   "rawText": "2",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "away",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "FC Struga",
+   "awayTeam": "Sileks Kratovo",
+   "rawText": "1",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "home",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Ittihad Alexandria",
+   "awayTeam": "Petrol Asyut",
+   "rawText": "X",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "draw",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Al Qanah",
+   "awayTeam": "Tala'ea Al Jaish",
+   "rawText": "X",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "draw",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Erokspor",
+   "awayTeam": "Kayserispor",
+   "rawText": "2",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "away",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Istanbulspor AS",
+   "awayTeam": "76 Igdır Belediye Spor",
+   "rawText": "2",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "away",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "FC Isloch",
+   "awayTeam": "Arsenal Dzyarzhynsk",
+   "rawText": "1",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "home",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Kallithea FC",
+   "awayTeam": "Niki Volos",
+   "rawText": "X",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "draw",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Umm Salal SC",
+   "awayTeam": "Khor SC",
+   "rawText": "1",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "home",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "FC Dordoi",
+   "awayTeam": "OshMU-Aldier",
+   "rawText": "1",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "home",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Asia Talas",
+   "awayTeam": "Alga Bishkek",
+   "rawText": "X",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "draw",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Asiagoal",
+   "awayTeam": "Kara-Balta",
+   "rawText": "1",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "home",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "FC Voluntari",
+   "awayTeam": "Arges Pitesti",
+   "rawText": "2",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "away",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Ellas Syros",
+   "awayTeam": "Apollon Kalamaria",
+   "rawText": "1",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "home",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Fratria",
+   "awayTeam": "Chernomorets 1919",
+   "rawText": "1",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "home",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Asteras Tripoli",
+   "awayTeam": "Iraklis Salonica",
+   "rawText": "X",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "draw",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "MSK Zilina B",
+   "awayTeam": "Slovan Bratislava Youth",
+   "rawText": "1",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "home",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Riga FC II",
+   "awayTeam": "Skanstes",
+   "rawText": "2",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "away",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "TB Tvoroyri",
+   "awayTeam": "Víkingur II",
+   "rawText": "2",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "away",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Mes Shahr-e Babak",
+   "awayTeam": "Malavan FC",
+   "rawText": "X",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "draw",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Nassaji Mazandaran",
+   "awayTeam": "Kheybar Khorramabad",
+   "rawText": "X",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "draw",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Persepolis FC",
+   "awayTeam": "Zob Ahan",
+   "rawText": "1",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "home",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Al Khaleej Club",
+   "awayTeam": "Al Riyadh SC",
+   "rawText": "1",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "home",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Al Adalah",
+   "awayTeam": "Al-Saqer",
+   "rawText": "X",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "draw",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Hegelmann Litauen",
+   "awayTeam": "Panevezys",
+   "rawText": "X",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "draw",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Wieczysta Kraków",
+   "awayTeam": "Zaglebie Lubin",
+   "rawText": "X",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "draw",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Spartak Pleven",
+   "awayTeam": "Hebar Pazardzhik",
+   "rawText": "2",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "away",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Pirin Blagoevgrad",
+   "awayTeam": "Ludogorets II",
+   "rawText": "X",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "draw",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Pafos",
+   "awayTeam": "Olympiakos Nicosia",
+   "rawText": "X",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "draw",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Riga FC",
+   "awayTeam": "BFC Daugavpils",
+   "rawText": "1",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "home",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Rigas Futbola skola",
+   "awayTeam": "FK Liepaja",
+   "rawText": "1",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "home",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Klubi 04",
+   "awayTeam": "KäPa Helsinki",
+   "rawText": "1",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "home",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "FK Vozdovac",
+   "awayTeam": "Backa Topola",
+   "rawText": "2",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "away",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Bnei Yehuda",
+   "awayTeam": "Hapoel Rishon Lezion",
+   "rawText": "2",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "away",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Kafr Qasim",
+   "awayTeam": "Ironi Modi'in",
+   "rawText": "X",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "draw",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Mjällby AIF",
+   "awayTeam": "IFK Göteborg",
+   "rawText": "X",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "draw",
+   "totalsPick": null
+  },
+  {
+   "site": "forebet",
+   "homeTeam": "Unión Santa Fe",
+   "awayTeam": "Instituto Córdoba",
+   "rawText": "2",
+   "sourceUrl": "https://www.forebet.com/en/football-tips-and-predictions-for-today",
+   "pick": "away",
+   "totalsPick": null
+  }
+ ]
+}
