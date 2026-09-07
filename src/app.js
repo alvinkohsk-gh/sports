@@ -28,31 +28,39 @@ const SNAPSHOT_FILE = process.env.SNAPSHOT_FILE || 'snapshot.json';
 // the app serving a snapshot one scrape-cycle stale. raw is the fallback
 // (unauthenticated contents API is 60 req/hr/IP; a warm instance only hits
 // it once per SNAPSHOT_REFETCH_MS, but Vercel functions share egress IPs).
-const SNAPSHOT_API_URL =
-  process.env.SNAPSHOT_URL ||
-  `https://api.github.com/repos/${SNAPSHOT_REPO}/contents/${SNAPSHOT_FILE}?ref=${SNAPSHOT_BRANCH}`;
-const SNAPSHOT_RAW_URL = `https://raw.githubusercontent.com/${SNAPSHOT_REPO}/${SNAPSHOT_BRANCH}/${SNAPSHOT_FILE}`;
 const SNAPSHOT_MAX_AGE_MS = Number(process.env.SNAPSHOT_MAX_AGE_MS || 45 * 60 * 1000);
 const SNAPSHOT_REFETCH_MS = Number(process.env.SNAPSHOT_REFETCH_MS || 90 * 1000);
 
-let snapshotCache = { data: null, fetchedAt: 0 };
-
-async function fetchSnapshotJson() {
+// Fetch a file from the data-snapshot branch. Prefer the GitHub contents
+// API — it serves the branch tip with no CDN lag, unlike
+// raw.githubusercontent.com which caches per-edge for minutes (that showed
+// up as the app serving a snapshot one scrape-cycle stale). raw is the
+// fallback for when the (unauthenticated, 60/hr/IP) contents API is
+// rate-limited.
+async function fetchBranchJson(file) {
+  const custom = file === SNAPSHOT_FILE ? process.env.SNAPSHOT_URL : null;
+  const apiUrl =
+    custom || `https://api.github.com/repos/${SNAPSHOT_REPO}/contents/${file}?ref=${SNAPSHOT_BRANCH}`;
   try {
-    const res = await fetch(SNAPSHOT_API_URL, {
+    const res = await fetch(apiUrl, {
       cache: 'no-store',
       headers: { Accept: 'application/vnd.github.raw+json', 'User-Agent': 'sg-pools-live-odds' },
     });
     if (res.ok) return await res.json();
     if (res.status !== 403 && res.status !== 429) throw new Error(`contents API HTTP ${res.status}`);
-    // rate-limited — fall through to raw
   } catch (err) {
-    console.error('[snapshot] contents API failed:', err.message);
+    console.error(`[branch] ${file} contents API failed:`, err.message);
   }
-  const raw = await fetch(SNAPSHOT_RAW_URL, { cache: 'no-store', headers: { 'User-Agent': 'sg-pools-live-odds' } });
+  const raw = await fetch(
+    `https://raw.githubusercontent.com/${SNAPSHOT_REPO}/${SNAPSHOT_BRANCH}/${file}`,
+    { cache: 'no-store', headers: { 'User-Agent': 'sg-pools-live-odds' } }
+  );
   if (!raw.ok) throw new Error(`raw HTTP ${raw.status}`);
   return await raw.json();
 }
+
+let snapshotCache = { data: null, fetchedAt: 0 };
+const fetchSnapshotJson = () => fetchBranchJson(SNAPSHOT_FILE);
 
 async function getSnapshot() {
   if (MOCK_MODE) return null;
@@ -216,6 +224,61 @@ app.get('/api/debug/sgpools-raw', async (req, res) => {
     return;
   }
   res.json(capture);
+});
+
+// Per-site prediction accuracy, graded by scripts/scrape-snapshot.js
+// against Forebet results and published to the data-snapshot branch.
+// `?hours=N` recomputes the per-site summary over a custom window from the
+// raw graded samples (default 48).
+let accuracyCache = { data: null, fetchedAt: 0 };
+
+app.get('/api/accuracy', async (req, res) => {
+  let acc = accuracyCache.data;
+  if (!acc || Date.now() - accuracyCache.fetchedAt > SNAPSHOT_REFETCH_MS) {
+    try {
+      acc = await fetchBranchJson('accuracy.json');
+      accuracyCache = { data: acc, fetchedAt: Date.now() };
+    } catch (err) {
+      if (!acc) {
+        res.status(503).json({ error: 'accuracy data not available yet', detail: err.message });
+        return;
+      }
+    }
+  }
+
+  const samples = acc.samples || [];
+  const hours = Math.min(Math.max(Number(req.query.hours) || acc.windowHours || 48, 1), 240);
+  const cutoff = Date.now() - hours * 60 * 60 * 1000;
+  const perSite = {};
+  let graded = 0;
+  for (const s of samples) {
+    if ((Date.parse(s.kickoffISO) || 0) < cutoff) continue;
+    graded += 1;
+    const b = (perSite[s.site] = perSite[s.site] || { oneX2Correct: 0, oneX2Total: 0, ouCorrect: 0, ouTotal: 0 });
+    if (s.oneX2Correct !== null && s.oneX2Correct !== undefined) {
+      b.oneX2Total += 1;
+      if (s.oneX2Correct) b.oneX2Correct += 1;
+    }
+    if (s.ouCorrect !== null && s.ouCorrect !== undefined) {
+      b.ouTotal += 1;
+      if (s.ouCorrect) b.ouCorrect += 1;
+    }
+  }
+  for (const b of Object.values(perSite)) {
+    b.oneX2Pct = b.oneX2Total ? Math.round((100 * b.oneX2Correct) / b.oneX2Total) : null;
+    b.ouPct = b.ouTotal ? Math.round((100 * b.ouCorrect) / b.ouTotal) : null;
+  }
+
+  res.json({
+    windowHours: hours,
+    updatedAt: acc.updatedAt || null,
+    gradedSamples: graded,
+    perSite,
+    recent: samples
+      .slice()
+      .sort((a, b) => Date.parse(b.kickoffISO) - Date.parse(a.kickoffISO))
+      .slice(0, 60),
+  });
 });
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));

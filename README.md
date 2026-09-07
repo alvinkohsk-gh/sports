@@ -37,6 +37,18 @@ that; it only falls back to an on-demand scrape when the snapshot is
 missing or older than `SNAPSHOT_MAX_AGE_MS` (45 min). `GET /api/matches`
 reports which path served it via a `source: "snapshot" | "live"` field.
 
+**Accuracy dashboard.** Each scrape also folds the current picks into a
+rolling prediction history (`history.json` on the `data-snapshot` branch,
+~6 days), fetches Forebet's today + "for yesterday" results pages, and
+grades any prediction whose match finished 2–60 h ago against the actual
+score — 1X2 and Over/Under, scored separately. The rolling graded sample
+set + a per-site summary go to `accuracy.json`; `GET /api/accuracy`
+(`?hours=N`) serves it and `public/results.html` is the dashboard (linked
+from the board header). Forebet is the results source because no key-free
+API covers the leagues Singapore Pools lists; matches Forebet doesn't
+cover stay ungraded. The dashboard is empty until ~48 h of history and
+finished matches have accumulated.
+
 The snapshot job runs a **FlareSolverr** service container and points
 `FLARESOLVERR_URL` at it. `src/scrapers/tipsters/fetchHtml.js` sends any
 page that plain HTTP can't get (Cloudflare challenge / 403) through

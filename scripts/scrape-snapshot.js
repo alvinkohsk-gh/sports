@@ -1,37 +1,53 @@
 /*
- * Runs the full scrape (Singapore Pools fixtures + all 5 tipster sites +
- * consensus matching) once and writes the result to a JSON snapshot.
+ * Runs the full scrape (Singapore Pools fixtures + all tipster sites +
+ * consensus matching) once, then folds the picks into a rolling prediction
+ * history and grades finished predictions against Forebet results. Writes:
+ *   snapshot.json  — current board (src/app.js serves this)
+ *   history.json   — rolling per-(fixture,site) picks, ~6 days
+ *   accuracy.json  — graded samples + per-site accuracy summary
  *
  * Meant to run OUTSIDE the request path — in GitHub Actions on a schedule
- * (see .github/workflows/snapshot.yml) — where there's a real Chromium
- * (not @sparticuz/chromium-min's fragile --single-process build), no 60s
- * function limit, and an IP that Cloudflare-protected tipster sites don't
- * blanket-403 the way they do Vercel's. The Vercel app then just serves
- * this snapshot (src/app.js), falling back to an on-demand scrape only
- * when the snapshot is missing or stale.
+ * (see .github/workflows/snapshot.yml). The Vercel app just serves these
+ * files, falling back to an on-demand scrape only when the snapshot is
+ * missing or stale.
  *
- * Usage: node scripts/scrape-snapshot.js [outfile]   (default: snapshot.json)
+ * Usage: node scripts/scrape-snapshot.js [snapshotOut] [dir]
  */
 const fs = require('fs');
+const path = require('path');
 const { refresh, getState } = require('../src/services/aggregator');
+const { mergeHistory } = require('../src/results/history');
+const { fetchForebetResults } = require('../src/results/forebetResults');
+const { grade } = require('../src/results/accuracy');
 
 const OUT = process.argv[2] || 'snapshot.json';
+const DIR = process.argv[3] || path.dirname(OUT) || '.';
+const REPO = process.env.SNAPSHOT_REPO || 'alvinkohsk-gh/sports';
+const BRANCH = process.env.SNAPSHOT_BRANCH || 'data-snapshot';
+
+async function loadPublished(file, fallback) {
+  const url = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${file}?t=${Date.now()}`;
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (res.ok) return await res.json();
+  } catch (err) {
+    console.error(`[scrape-snapshot] could not load published ${file}:`, err.message);
+  }
+  return fallback;
+}
 
 (async () => {
   await refresh({ mockMode: false });
   const s = getState();
 
+  const nowISO = new Date().toISOString();
   const snapshot = {
-    generatedAt: new Date().toISOString(),
+    generatedAt: nowISO,
     matches: s.matches || [],
     bestBet: s.bestBet || null,
     lastUpdated: s.lastUpdated || null,
     lastError: s.lastError || null,
-    counts: {
-      sgpFixtures: s.sgpFixtureCount ?? 0,
-      tipsterPicks: s.tipsterPickCount ?? 0,
-    },
-    // kept so /api/debug and /api/debug/tipsters can serve from the snapshot too
+    counts: { sgpFixtures: s.sgpFixtureCount ?? 0, tipsterPicks: s.tipsterPickCount ?? 0 },
     rawSgpFixtures: s.rawSgpFixtures || [],
     rawTipsterPicks: s.rawTipsterPicks || [],
   };
@@ -45,24 +61,42 @@ const OUT = process.argv[2] || 'snapshot.json';
   }
   const withMajority = snapshot.matches.filter((m) => m.tipsterConsensus?.majorityPick).length;
   const withOU = snapshot.matches.filter((m) => m.tipsterConsensus?.totalsMajorityPick).length;
-  console.error(
-    `[scrape-snapshot] ${snapshot.matches.length} matches, ` +
-      `${snapshot.counts.tipsterPicks} tipster picks ${JSON.stringify(bySite)}, ` +
-      `${withMajority} with a 1X2 majority, ${withOU} with an O/U majority, ` +
-      `err=${snapshot.lastError || 'none'}`
-  );
 
-  // Total failure (both stages empty) — don't write, so the workflow's
-  // publish step is skipped and the last good snapshot stays live. A
-  // partial scrape (some sites blocked/slow, or a genuinely empty fixture
-  // board while the tipster sites are up) still publishes.
   if (snapshot.matches.length === 0 && snapshot.counts.tipsterPicks === 0) {
-    console.error('[scrape-snapshot] nothing scraped — not writing snapshot');
+    console.error('[scrape-snapshot] nothing scraped — not writing anything');
     process.exit(1);
   }
 
+  // ---- prediction history + accuracy grading ----
+  const [prevHistory, prevAccuracy] = await Promise.all([
+    loadPublished('history.json', { entries: [] }),
+    loadPublished('accuracy.json', { samples: [] }),
+  ]);
+
+  const history = mergeHistory(prevHistory, snapshot.matches, nowISO);
+
+  let results = [];
+  try {
+    results = await fetchForebetResults();
+  } catch (err) {
+    console.error('[scrape-snapshot] forebet results failed:', err.message);
+  }
+
+  const graded = grade(history, results, prevAccuracy.samples || [], { windowHours: 48 });
+  const accuracy = { ...graded.summary, samples: graded.samples };
+
+  fs.mkdirSync(DIR, { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify(snapshot, null, 1));
-  console.error(`[scrape-snapshot] wrote ${OUT}`);
+  fs.writeFileSync(path.join(DIR, 'history.json'), JSON.stringify(history));
+  fs.writeFileSync(path.join(DIR, 'accuracy.json'), JSON.stringify(accuracy));
+
+  console.error(
+    `[scrape-snapshot] ${snapshot.matches.length} matches, ` +
+      `${snapshot.counts.tipsterPicks} picks ${JSON.stringify(bySite)}, ` +
+      `${withMajority} 1X2 maj, ${withOU} O/U maj | ` +
+      `history ${history.entries.length} entries, forebet results ${results.length}, ` +
+      `+${graded.newlyGraded} graded (${graded.summary.gradedSamples} in 48h window)`
+  );
   process.exit(0);
 })().catch((err) => {
   console.error('[scrape-snapshot] fatal:', err && err.stack ? err.stack : err);

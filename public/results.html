@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tipster Accuracy — SG Pools Tipster Predictions</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .subnav { display: flex; gap: 16px; align-items: center; }
+    .subnav a { color: var(--accent); text-decoration: none; font-size: 13px; }
+    .windowsel { display: flex; gap: 6px; }
+    .windowsel button {
+      background: rgba(148,163,184,0.12); color: var(--text); border: 1px solid var(--card-border);
+      border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer;
+    }
+    .windowsel button.active { background: rgba(56,189,248,0.18); color: var(--accent); border-color: rgba(56,189,248,0.5); }
+    .accgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    .acccard { background: var(--card); border: 1px solid var(--card-border); border-radius: 10px; padding: 16px; }
+    .acccard h3 { margin: 0 0 12px; font-size: 15px; }
+    .metric { margin-bottom: 12px; }
+    .metric-top { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .metric-top b { color: var(--text); font-size: 14px; font-variant-numeric: tabular-nums; }
+    .bar { height: 8px; border-radius: 999px; background: rgba(148,163,184,0.15); overflow: hidden; }
+    .bar > span { display: block; height: 100%; border-radius: 999px; }
+    .bar.x12 > span { background: var(--ok); }
+    .bar.ou > span { background: var(--accent); }
+    .muted-note { color: var(--muted); font-size: 13px; line-height: 1.5; margin-top: 40px; text-align: center; }
+    table.recent { width: 100%; border-collapse: collapse; margin-top: 28px; font-size: 12px; }
+    table.recent th, table.recent td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--card-border); }
+    table.recent th { color: var(--muted); font-weight: 600; }
+    .tick { color: var(--ok); } .cross { color: var(--urgent); } .dash { color: var(--muted); }
+    .pillrow { display: flex; flex-wrap: wrap; gap: 4px; }
+    .pill { font-size: 11px; padding: 2px 6px; border-radius: 5px; border: 1px solid var(--card-border); }
+    .pill.ok { border-color: rgba(52,211,153,0.5); color: var(--ok); }
+    .pill.bad { border-color: rgba(248,113,113,0.5); color: var(--urgent); }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Tipster Accuracy</h1>
+    <div class="subnav">
+      <span class="status" id="status">Loading…</span>
+      <div class="windowsel" id="windowsel">
+        <button data-h="48" class="active">48h</button>
+        <button data-h="168">7d</button>
+      </div>
+      <a href="index.html">&larr; Board</a>
+    </div>
+  </header>
+
+  <main>
+    <div id="empty" class="empty" hidden>
+      No graded predictions yet. This dashboard fills in as fixtures finish — it needs
+      roughly 48 hours of prediction history and completed matches before the numbers mean anything.
+    </div>
+
+    <div id="accgrid" class="accgrid"></div>
+
+    <table class="recent" id="recent" hidden>
+      <thead>
+        <tr><th>Kickoff</th><th>Fixture</th><th>Score</th><th>Per-site picks (✓/✗)</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <p class="muted-note" id="note"></p>
+
+    <p class="disclaimer">
+      "Accuracy" here is simply: of the predictions a site made for matches that have since finished,
+      how many were right — 1X2 (home/draw/away) and Over/Under total goals, scored separately.
+      Results come from Forebet; matches it doesn't cover aren't graded. Past performance says nothing
+      about future results. Gamble responsibly.
+    </p>
+  </main>
+
+  <script>
+    const SITE_LABELS = {
+      forebet: 'Forebet', predictz: 'PredictZ', windrawwin: 'WinDrawWin', whoscored: 'WhoScored',
+      sportsmole: 'Sports Mole', matchoutlook: 'MatchOutlook', eaglepredict: 'EaglePredict', footystats: 'FootyStats',
+    };
+    const statusEl = document.getElementById('status');
+    const gridEl = document.getElementById('accgrid');
+    const emptyEl = document.getElementById('empty');
+    const recentEl = document.getElementById('recent');
+    const noteEl = document.getElementById('note');
+    let hours = 48;
+
+    function label(s) { return SITE_LABELS[s] || s; }
+    function pct(n) { return n == null ? '—' : n + '%'; }
+
+    function metric(name, correct, total, pctVal, cls) {
+      const w = total ? Math.round((100 * correct) / total) : 0;
+      return `
+        <div class="metric">
+          <div class="metric-top"><span>${name}</span><b>${pct(pctVal)}</b></div>
+          <div class="bar ${cls}"><span style="width:${w}%"></span></div>
+          <div class="metric-top"><span></span><span>${correct}/${total}</span></div>
+        </div>`;
+    }
+
+    function render(data) {
+      const sites = Object.entries(data.perSite || {})
+        .sort((a, b) => (b[1].oneX2Pct ?? -1) - (a[1].oneX2Pct ?? -1) || (b[1].ouPct ?? -1) - (a[1].ouPct ?? -1));
+
+      statusEl.textContent = `${data.gradedSamples} graded prediction${data.gradedSamples === 1 ? '' : 's'} · ${hours >= 168 ? '7 days' : hours + 'h'}` +
+        (data.updatedAt ? ` · updated ${new Date(data.updatedAt).toLocaleString()}` : '');
+
+      if (!sites.length) {
+        gridEl.innerHTML = '';
+        emptyEl.hidden = false;
+        recentEl.hidden = true;
+        noteEl.textContent = '';
+        return;
+      }
+      emptyEl.hidden = true;
+
+      gridEl.innerHTML = sites.map(([site, b]) => `
+        <div class="acccard">
+          <h3>${label(site)}</h3>
+          ${metric('1X2 (home/draw/away)', b.oneX2Correct, b.oneX2Total, b.oneX2Pct, 'x12')}
+          ${metric('Over / Under goals', b.ouCorrect, b.ouTotal, b.ouPct, 'ou')}
+        </div>`).join('');
+
+      const rows = (data.recent || []);
+      if (rows.length) {
+        recentEl.hidden = false;
+        const byMatch = new Map();
+        for (const s of rows) {
+          const k = s.matchKey;
+          if (!byMatch.has(k)) byMatch.set(k, { fixture: s.fixture, score: s.score, kickoffISO: s.kickoffISO, picks: [] });
+          byMatch.get(k).picks.push(s);
+        }
+        recentEl.querySelector('tbody').innerHTML = [...byMatch.values()]
+          .sort((a, b) => new Date(b.kickoffISO) - new Date(a.kickoffISO))
+          .slice(0, 30)
+          .map((m) => `
+            <tr>
+              <td>${new Date(m.kickoffISO).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+              <td>${m.fixture}</td>
+              <td>${m.score}</td>
+              <td><div class="pillrow">${m.picks.map(pillFor).join('')}</div></td>
+            </tr>`).join('');
+      } else {
+        recentEl.hidden = true;
+      }
+      noteEl.textContent = `Results source: Forebet. Ungraded picks are for matches Forebet didn't cover, or that finished more than 60h ago.`;
+    }
+
+    function pillFor(s) {
+      const bits = [];
+      if (s.oneX2Correct !== null && s.oneX2Correct !== undefined)
+        bits.push(`${s.pick ? s.pick[0].toUpperCase() : '?'}${s.oneX2Correct ? '✓' : '✗'}`);
+      if (s.ouCorrect !== null && s.ouCorrect !== undefined)
+        bits.push(`${(s.ou || '').split(' ')[0][0].toUpperCase()}${s.ouCorrect ? '✓' : '✗'}`);
+      const good = s.oneX2Correct || s.ouCorrect;
+      return `<span class="pill ${good ? 'ok' : 'bad'}">${label(s.site)}: ${bits.join(' ')}</span>`;
+    }
+
+    async function load() {
+      try {
+        const res = await fetch(`/api/accuracy?hours=${hours}`);
+        if (res.status === 503) {
+          statusEl.textContent = 'No accuracy data yet';
+          emptyEl.hidden = false;
+          gridEl.innerHTML = '';
+          return;
+        }
+        render(await res.json());
+      } catch (err) {
+        statusEl.textContent = `Failed to load: ${err.message}`;
+      }
+    }
+
+    document.getElementById('windowsel').addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      hours = Number(btn.dataset.h);
+      document.querySelectorAll('#windowsel button').forEach((b) => b.classList.toggle('active', b === btn));
+      load();
+    });
+
+    load();
+    setInterval(load, 60000);
+  </script>
+</body>
+</html>
