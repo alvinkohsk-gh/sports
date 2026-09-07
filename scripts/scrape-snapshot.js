@@ -45,6 +45,7 @@ async function loadPublished(file, fallback) {
     generatedAt: nowISO,
     matches: s.matches || [],
     bestBet: s.bestBet || null,
+    bestValue: s.bestValue || null,
     lastUpdated: s.lastUpdated || null,
     lastError: s.lastError || null,
     counts: { sgpFixtures: s.sgpFixtureCount ?? 0, tipsterPicks: s.tipsterPickCount ?? 0 },

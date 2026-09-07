@@ -2,11 +2,13 @@ const { fetchOpenFixtures } = require('../scrapers/singaporePools');
 const { fetchAllTipsterPicks } = require('../scrapers/tipsters');
 const { attachTipsterConsensus } = require('./tipsterConsensus');
 const { attachTopPick, pickBestBetOverall } = require('./tipsterRanking');
+const { assessValue } = require('./value');
 const { getMockSgpFixtures, getMockTipsterPicks } = require('../mock/mockData');
 
 const state = {
   matches: [],
   bestBet: null,
+  bestValue: null,
   lastUpdated: null,
   lastError: null,
 };
@@ -23,7 +25,27 @@ function toMatch(fixture) {
     league: fixture.league,
     kickoffISO: fixture.kickoffISO,
     sgPoolsOpen: true,
+    odds: fixture.odds || null,
   };
+}
+
+// Highest-EV flagged value bet across the board (separate from `bestBet`,
+// which is the strongest tipster-agreement pick regardless of price).
+function pickBestValue(matches) {
+  let best = null;
+  for (const m of matches) {
+    const b = m.value && m.value.best;
+    if (b && (!best || b.ev > best.ev)) {
+      best = {
+        ...b,
+        homeTeam: m.homeTeam,
+        awayTeam: m.awayTeam,
+        league: m.league,
+        kickoffISO: m.kickoffISO,
+      };
+    }
+  }
+  return best;
 }
 
 // Each source is fetched independently (allSettled, not all) so that one
@@ -46,8 +68,12 @@ async function refresh({ mockMode }) {
 
   const matches = sgpFixtures.map(toMatch).sort((a, b) => new Date(a.kickoffISO) - new Date(b.kickoffISO));
   const withTipsters = attachTipsterConsensus(matches, tipsterPicks);
+  for (const m of withTipsters) {
+    m.value = m.odds ? assessValue(m.odds, m.tipsterConsensus) : null;
+  }
   state.matches = attachTopPick(withTipsters);
   state.bestBet = pickBestBetOverall(state.matches);
+  state.bestValue = pickBestValue(state.matches);
   state.lastUpdated = new Date().toISOString();
   state.lastError = errors.length ? errors.join(' | ') : null;
   state.sgpFixtureCount = sgpFixtures.length;

@@ -87,6 +87,55 @@ function escapeHtml(s) {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+const OUTCOME_LABEL = { home: 'H', draw: 'D', away: 'A', over: 'O2.5', under: 'U2.5' };
+
+function signedPct(v) {
+  if (v == null) return '—';
+  const s = (v * 100).toFixed(1);
+  return `${v >= 0 ? '+' : ''}${s}%`;
+}
+
+// One market's odds row, highlighting any outcome flagged as value.
+function renderOddsRow(label, assessment, rawOdds, keys) {
+  if (!assessment && !rawOdds) return '';
+  const cells = keys
+    .map((k) => {
+      const oc = assessment && assessment.outcomes.find((x) => x.key === k);
+      const odd = oc ? oc.odd : rawOdds ? rawOdds[k] : null;
+      if (odd == null) return '';
+      const isVal = !!(oc && oc.value);
+      const tip = oc
+        ? `no-vig ${pct(oc.noVigProb)} · reference ${pct(oc.refProb)} · EV ${signedPct(oc.ev)}` +
+          (isVal ? ` · stake ¼-Kelly ${pct(oc.quarterKelly)} of bank` : '')
+        : '';
+      return `<span class="odds-cell${isVal ? ' is-value' : ''}" title="${escapeHtml(tip)}"><span class="o-lab">${OUTCOME_LABEL[k]}</span>${Number(odd).toFixed(2)}</span>`;
+    })
+    .join('');
+  if (!cells) return '';
+  const margin = assessment ? `<span class="odds-margin">margin ${(assessment.overround * 100).toFixed(1)}%</span>` : '';
+  return `<div class="odds-row"><span class="odds-market">${label}</span>${cells}${margin}</div>`;
+}
+
+function renderOdds(match) {
+  const v = match.value;
+  const o = match.odds;
+  if (!v && !o) return '';
+  const rows = [
+    renderOddsRow('1X2', v && v.oneX2, o && o.oneX2, ['home', 'draw', 'away']),
+    renderOddsRow('O/U 2.5', v && v.ou25, o && o.ou25, ['over', 'under']),
+  ].join('');
+  if (!rows) return '';
+
+  let badge = '';
+  if (v && v.best) {
+    const b = v.best;
+    badge =
+      `<div class="value-badge" title="reference prob ${pct(b.refProb)} vs price-implied ${pct(b.impliedProb)}">` +
+      `VALUE · ${b.market} ${b.label} @ ${b.odd.toFixed(2)} · EV ${signedPct(b.ev)} · ¼-Kelly ${pct(b.quarterKelly)} of bank</div>`;
+  }
+  return `<div class="odds-block"><div class="section-label">Singapore Pools odds</div>${rows}${badge}</div>`;
+}
+
 function renderCard(match) {
   const div = document.createElement('div');
   div.className = 'card';
@@ -99,6 +148,7 @@ function renderCard(match) {
     <div class="kickoff-time">Kickoff: ${new Date(match.kickoffISO).toLocaleString()}</div>
     ${renderPick(match.topPick)}
     ${renderTipsters(match.tipsterConsensus)}
+    ${renderOdds(match)}
   `;
   return div;
 }
@@ -116,6 +166,25 @@ function renderBestBet(bestBet) {
     <div class="sub">
       ${bestBet.league || ''} · ${bestBet.tipsterCount}/${bestBet.totalTipsters} tipsters agree (${pct(bestBet.agreement)})
       · kickoff ${new Date(bestBet.kickoffISO).toLocaleString()}
+    </div>
+  `;
+}
+
+function renderBestValue(bestValue) {
+  const el = document.getElementById('best-value');
+  if (!el) return;
+  if (!bestValue) {
+    el.hidden = true;
+    return;
+  }
+  el.hidden = false;
+  el.innerHTML = `
+    <div class="kicker">Best value vs the Singapore Pools price (tipster-consensus reference)</div>
+    <div class="headline">${bestValue.market} ${bestValue.label} @ ${bestValue.odd.toFixed(2)} — ${bestValue.homeTeam} vs ${bestValue.awayTeam}</div>
+    <div class="sub">
+      EV ${signedPct(bestValue.ev)} · reference prob ${pct(bestValue.refProb)} vs price-implied ${pct(bestValue.impliedProb)}
+      · suggested stake ¼-Kelly ${pct(bestValue.quarterKelly)} of bankroll
+      · ${bestValue.league || ''} · kickoff ${new Date(bestValue.kickoffISO).toLocaleString()}
     </div>
   `;
 }
@@ -145,6 +214,7 @@ async function fetchMatches() {
     currentMatches = data.matches || [];
     renderMatches(currentMatches);
     renderBestBet(data.bestBet);
+    renderBestValue(data.bestValue);
 
     const updated = data.lastUpdated ? new Date(data.lastUpdated).toLocaleTimeString() : '—';
     const mockTag = data.mockMode ? ' [MOCK DATA]' : '';

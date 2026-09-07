@@ -17,12 +17,20 @@
 
   <main id="app">
     <div id="best-bet" class="best-bet" hidden></div>
+    <div id="best-value" class="best-value" hidden></div>
     <div id="empty" class="empty" hidden>No open Singapore Pools matches right now.</div>
     <div id="matches" class="matches"></div>
     <p class="disclaimer">
       Picks are pulled from several prediction/tipster sites (Forebet, PredictZ, WinDrawWin, WhoScored, Sports
       Mole, MatchOutlook, EaglePredict, FootyStats, Statarea, FootballPredictions) and tallied by majority vote — this is not a guarantee of outcome, just
-      what those sites currently predict. Gamble responsibly and only what you can afford to lose.
+      what those sites currently predict.
+      <br /><br />
+      <strong>Odds &amp; value:</strong> "Singapore Pools odds" are their live 1X2 and Over/Under 2.5 prices; "margin"
+      is the bookmaker's built-in edge on that market. A <span style="color:var(--ok)">VALUE</span> flag means the
+      tipster consensus implies a higher win probability than the price does (positive expected value by that
+      reference). The consensus is <em>softer than a true sharp line</em>, so treat it as "the crowd disagrees with
+      the price", not a guaranteed edge. "¼-Kelly" is a conservative stake fraction of your bankroll.
+      Gamble responsibly and only what you can afford to lose.
     </p>
   </main>
 

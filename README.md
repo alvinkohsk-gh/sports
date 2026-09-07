@@ -7,22 +7,26 @@ each match.
 
 ## How it works
 
-1. `src/scrapers/singaporePools.js` fetches Singapore Pools' open football
-   fixtures (team names + kickoff time).
+1. `src/scrapers/singaporePools/` fetches Singapore Pools' open football
+   fixtures (team names + kickoff time) plus the 1X2 and Over/Under 2.5
+   prices (`odds.js`).
 2. `src/scrapers/tipsters/` fetches picks from the prediction/tipster
    sites in parallel (Forebet, PredictZ, WinDrawWin, WhoScored, Sports
    Mole, MatchOutlook, EaglePredict, FootyStats, Statarea, FootballPredictions)
    — see "Tipster sources" below for per-site detail and how verified each one is.
 3. `src/services/tipsterConsensus.js` attaches each match's tipster picks
-   by fuzzy team-name matching (`src/services/matcher.js`).
+   by fuzzy team-name matching (`src/services/matcher/`).
 4. `src/services/tipsterRanking.js` picks each match's strongest tipster
    vote (1X2 majority or O/U majority, whichever has the higher agreement
    ratio) as its `topPick`; the single strongest across all matches is
    exposed as `bestBet`.
-5. `src/services/aggregator.js` refreshes both sources on a timer and
+5. `src/services/value.js` de-vigs the SG Pools price and compares it to a
+   tipster-consensus reference probability, flagging positive-EV outcomes;
+   the strongest is exposed as `bestValue` (see "Odds & value detection").
+6. `src/services/aggregator.js` refreshes both sources on a timer and
    caches the merged result in memory.
-6. `src/server.js` serves the merged list at `GET /api/matches`.
-7. `public/` is a static page that polls that endpoint every 15s and runs a
+7. `src/server.js` serves the merged list at `GET /api/matches`.
+8. `public/` is a static page that polls that endpoint every 15s and runs a
    client-side countdown clock per match, ticking every second.
 
 **In production the scrape runs off the request path.** Scraping inside a
@@ -202,6 +206,35 @@ This is a straightforward majority vote, not a probability estimate — it
 reflects what those five sites currently predict, not a guarantee of
 outcome. Displayed with a disclaimer in the UI.
 
+## Odds & value detection
+
+Singapore Pools' fixture-events API also serves the prices — `src/scrapers/singaporePools/odds.js`
+pulls the **1X2** (`betType=MR`) and **Over/Under 2.5** (`betType=HL`,
+market `Total Goals Over/Under 2.5`) decimal odds and attaches them to each
+fixture as `match.odds` (about two-thirds of fixtures carry a 2.5 line;
+the rest are priced at 1.5 or 3.5 and get no O/U assessment).
+
+`src/services/value.js` then assesses each priced market:
+
+1. **implied prob** = `1 / decimal_odd`
+2. **margin / overround** = `Σ implied − 1` — the bookmaker's built-in edge
+3. **no-vig prob** = `implied / (1 + overround)` — SG Pools' own fair line
+4. **consensus prob** = smoothed tipster vote share (needs ≥ `VALUE_MIN_VOTES`
+   picks on that market, else the market is left unassessed)
+5. **reference prob** = `(1 − w)·no-vig + w·consensus`, `w = VALUE_CONSENSUS_WEIGHT`
+6. **EV per unit** = `reference · odd − 1`; **Kelly fraction** =
+   `(reference·odd − 1) / (odd − 1)` (the UI shows ¼-Kelly)
+
+An outcome is flagged **VALUE** when its EV clears `VALUE_MIN_EV` (default
++5%). The single highest-EV flagged outcome across the board is exposed as
+`bestValue` on `GET /api/matches`, alongside `bestBet`.
+
+The reference is the tipster consensus, which is **softer than a true
+sharp line** (Pinnacle / Betfair), so a VALUE flag means "the crowd
+implies a higher win probability than the price does", not a guaranteed
+edge. SG Pools juices 1X2 markets far more than O/U (often ~13% vs ~9%
+margin), so value surfaces on totals more often.
+
 ## Notes on matching
 
 - Kickoff times from Singapore Pools are assumed to be Singapore time
@@ -227,6 +260,10 @@ outcome. Displayed with a disclaimer in the UI.
 | `TIPSTERS_DEADLINE_MS` | Overall cap on the tipster-fetch phase (default 25 s; the snapshot job raises it since FlareSolverr solves take longer) |
 | `SPORTSMOLE_MAX_ARTICLES` | Max Sports Mole preview articles to fetch per run (default 40) |
 | `STATAREA_DAYS` | How many days of Statarea predictions to fetch, starting today (default 3) |
+| `SGPOOLS_ODDS_TIMEOUT_MS` | Timeout for each SG Pools odds API call (default 15 s) |
+| `VALUE_CONSENSUS_WEIGHT` | How much the tipster consensus pulls the reference probability off SG Pools' no-vig line, 0–1 (default 0.35) |
+| `VALUE_MIN_EV` | EV threshold for the VALUE flag (default 0.05 = +5%) |
+| `VALUE_MIN_VOTES` | Minimum tipster picks on a market before it's assessed for value (default 4) |
 | `MOCK_MODE` | `true` to run entirely on bundled sample data |
 | `SGPOOLS_DEBUG` | `true` for verbose SG Pools scraper logs + HTML/screenshot dump |
 | `TIPSTERS_DEBUG` | `true` to save each tipster site's fetched HTML for inspection |

@@ -14,6 +14,7 @@ router.get('/matches', async (req, res) => {
     res.json({
       matches: snap.matches,
       bestBet: snap.bestBet,
+      bestValue: snap.bestValue || null,
       lastUpdated: snap.lastUpdated,
       lastError: snap.lastError,
       mockMode: MOCK_MODE,
@@ -28,6 +29,7 @@ router.get('/matches', async (req, res) => {
   res.json({
     matches: state.matches,
     bestBet: state.bestBet,
+    bestValue: state.bestValue || null,
     lastUpdated: state.lastUpdated,
     lastError: state.lastError,
     mockMode: MOCK_MODE,
