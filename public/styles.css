@@ -168,21 +168,57 @@ main { padding: 20px 24px 60px; max-width: 1100px; margin: 0 auto; }
   border: 1px solid rgba(52, 211, 153, 0.6);
   background: rgba(52, 211, 153, 0.12);
 }
-.best-value {
-  margin-top: 12px;
-  padding: 14px 16px;
+/* ---- value bets panel (top of board) ---- */
+.value-bets {
+  margin-bottom: 18px;
+  padding: 16px 18px;
   border: 1px solid rgba(52, 211, 153, 0.55);
-  border-radius: 12px;
-  background: rgba(52, 211, 153, 0.08);
+  border-radius: 14px;
+  background: rgba(52, 211, 153, 0.09);
 }
-.best-value .kicker {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+.value-bets .vb-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.value-bets .vb-title {
+  font-size: 15px;
+  font-weight: 700;
   color: var(--ok);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
-.best-value .headline { font-size: 19px; font-weight: 700; margin: 6px 0 4px; }
-.best-value .sub { font-size: 13px; color: var(--muted); }
+.value-bets .vb-note { font-size: 12px; color: var(--muted); }
+.vb-list { display: flex; flex-direction: column; gap: 8px; }
+.vb-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.4fr) minmax(90px, 0.8fr) repeat(3, minmax(72px, 0.7fr));
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.5);
+  cursor: pointer;
+  font-size: 13px;
+}
+.vb-row:hover { border-color: rgba(52, 211, 153, 0.6); }
+.vb-row .vb-match { font-weight: 600; }
+.vb-row .vb-sub { color: var(--muted); font-size: 11px; font-weight: 400; margin-top: 1px; }
+.vb-row .vb-pick { color: var(--ok); font-weight: 700; }
+.vb-row .vb-metric { text-align: right; font-variant-numeric: tabular-nums; }
+.vb-row .vb-metric .vb-lab { display: block; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
+.vb-row .vb-metric.vb-ev { color: var(--ok); font-weight: 700; }
+@media (max-width: 620px) {
+  .vb-row { grid-template-columns: 1fr 1fr; }
+  .vb-row .vb-metric.vb-fair { display: none; }
+}
+.card.vb-flash { animation: vbflash 1.4s ease-out; }
+@keyframes vbflash {
+  0%, 30% { box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.7); }
+  100% { box-shadow: 0 0 0 2px rgba(52, 211, 153, 0); }
+}
 
 .disclaimer {
   margin-top: 28px;

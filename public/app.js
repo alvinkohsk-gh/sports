@@ -139,6 +139,7 @@ function renderOdds(match) {
 function renderCard(match) {
   const div = document.createElement('div');
   div.className = 'card';
+  div.id = `match-${match.id}`;
   div.dataset.kickoff = match.kickoffISO;
   div.innerHTML = `
     <span class="badge">Open on Singapore Pools</span>
@@ -170,23 +171,76 @@ function renderBestBet(bestBet) {
   `;
 }
 
-function renderBestValue(bestValue) {
-  const el = document.getElementById('best-value');
+// Every VALUE-flagged outcome across the board, highest EV first.
+function collectValueBets(matches) {
+  const bets = [];
+  for (const m of matches) {
+    const v = m.value;
+    if (!v) continue;
+    for (const [market, a] of [['1X2', v.oneX2], ['O/U 2.5', v.ou25]]) {
+      if (!a || !a.outcomes) continue;
+      for (const o of a.outcomes) {
+        if (o.value) {
+          bets.push({
+            ...o,
+            market,
+            matchId: m.id,
+            homeTeam: m.homeTeam,
+            awayTeam: m.awayTeam,
+            league: m.league,
+            kickoffISO: m.kickoffISO,
+          });
+        }
+      }
+    }
+  }
+  return bets.sort((a, b) => b.ev - a.ev);
+}
+
+function renderValueBets(matches) {
+  const el = document.getElementById('value-bets');
   if (!el) return;
-  if (!bestValue) {
+  const bets = collectValueBets(matches);
+  if (!bets.length) {
     el.hidden = true;
     return;
   }
   el.hidden = false;
+
+  const rows = bets
+    .map((b) => {
+      const ko = new Date(b.kickoffISO).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return `
+        <div class="vb-row" data-match="${b.matchId}">
+          <div>
+            <div class="vb-match">${b.homeTeam} vs ${b.awayTeam}</div>
+            <div class="vb-sub">${b.league || ''} · ${ko}</div>
+          </div>
+          <div class="vb-pick">${b.market}<br />${b.label} @ ${b.odd.toFixed(2)}</div>
+          <div class="vb-metric vb-ev"><span class="vb-lab">EV</span>${signedPct(b.ev)}</div>
+          <div class="vb-metric vb-fair"><span class="vb-lab">fair / price</span>${pct(b.refProb)} / ${pct(b.impliedProb)}</div>
+          <div class="vb-metric"><span class="vb-lab">¼-Kelly</span>${pct(b.quarterKelly)}</div>
+        </div>`;
+    })
+    .join('');
+
   el.innerHTML = `
-    <div class="kicker">Best value vs the Singapore Pools price (tipster-consensus reference)</div>
-    <div class="headline">${bestValue.market} ${bestValue.label} @ ${bestValue.odd.toFixed(2)} — ${bestValue.homeTeam} vs ${bestValue.awayTeam}</div>
-    <div class="sub">
-      EV ${signedPct(bestValue.ev)} · reference prob ${pct(bestValue.refProb)} vs price-implied ${pct(bestValue.impliedProb)}
-      · suggested stake ¼-Kelly ${pct(bestValue.quarterKelly)} of bankroll
-      · ${bestValue.league || ''} · kickoff ${new Date(bestValue.kickoffISO).toLocaleString()}
+    <div class="vb-head">
+      <span class="vb-title">⚡ Value bets — ${bets.length}</span>
+      <span class="vb-note">Singapore Pools price implies a lower win chance than the tipster consensus (positive EV by that reference — a soft signal, not a sharp line). Stake = fraction of bankroll.</span>
     </div>
-  `;
+    <div class="vb-list">${rows}</div>`;
+
+  el.querySelectorAll('.vb-row').forEach((row) => {
+    row.addEventListener('click', () => {
+      const card = document.getElementById(`match-${row.dataset.match}`);
+      if (!card) return;
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.classList.remove('vb-flash');
+      void card.offsetWidth;
+      card.classList.add('vb-flash');
+    });
+  });
 }
 
 function renderMatches(matches) {
@@ -213,8 +267,8 @@ async function fetchMatches() {
     const data = await res.json();
     currentMatches = data.matches || [];
     renderMatches(currentMatches);
+    renderValueBets(currentMatches);
     renderBestBet(data.bestBet);
-    renderBestValue(data.bestValue);
 
     const updated = data.lastUpdated ? new Date(data.lastUpdated).toLocaleTimeString() : '—';
     const mockTag = data.mockMode ? ' [MOCK DATA]' : '';
