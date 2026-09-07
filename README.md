@@ -108,8 +108,9 @@ required; the app works out of the box against the live sites.
 
 Deploy with `vercel --prod`, or connect the GitHub repo in the Vercel
 dashboard for automatic deploys on push. `vercel.json` sets `maxDuration:
-60` (Vercel Hobby's ceiling for this runtime — it can't be raised further
-on that plan) and `memory: 3009` on the function, since fitting Singapore
+60` and `memory: 2048` on the function (both Vercel Hobby's ceilings —
+the git-integration deploy path hard-rejects a higher `memory`, and the
+CLI path silently ignores it), since fitting Singapore
 Pools' render plus all 5 tipster fetches through the single shared page
 above needs both the time and the memory headroom. `src/scrapers/tipsters/
 index.js` also caps the whole tipster-fetching phase at a 25s deadline, so
