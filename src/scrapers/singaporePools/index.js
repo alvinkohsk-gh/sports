@@ -3,6 +3,7 @@ const { parseOu25, fetchSgPoolsOu25 } = require('./odds');
 const {
   toFixture,
   extractFixturesFromEventsApi,
+  extractLiveFixtures,
   extractFixturesFromJson,
   parseRenderedHtml,
   coerceSgTimeToISO,
@@ -16,6 +17,13 @@ const {
 // This file decides which parser to trust, then attaches the O/U odds.
 
 const DEBUG = String(process.env.SGPOOLS_DEBUG || 'false').toLowerCase() === 'true';
+
+// In-play fixtures from the render's live-endpoint capture. Populated by
+// fetchOpenFixtures (one render serves both); read by the aggregator.
+let lastInPlay = [];
+function getInPlayFixtures() {
+  return lastInPlay;
+}
 
 function extractFixtures(rendered) {
   // The page's own JSON calls are the real source of truth — prefer them
@@ -84,15 +92,20 @@ async function fetchOpenFixtures() {
   }
   if (DEBUG) console.log(`[singaporePools] odds: 1X2 on ${x12}/${fixtures.length}, O/U 2.5 on ${ou}`);
 
+  lastInPlay = extractLiveFixtures(rendered.liveEvents);
+  if (DEBUG) console.log(`[singaporePools] in-play: ${lastInPlay.length}`);
+
   return fixtures;
 }
 
 module.exports = {
   fetchOpenFixtures,
+  getInPlayFixtures,
   getLastCapture,
   // re-exported for tests / callers that used the flat module
   extractFixturesFromJson,
   extractFixturesFromEventsApi,
+  extractLiveFixtures,
   parseRenderedHtml,
   coerceSgTimeToISO,
   toFixture,

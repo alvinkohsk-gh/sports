@@ -47,18 +47,23 @@ function oneX2OddsFromEvent(event) {
   return o.home && o.draw && o.away ? o : null;
 }
 
+function eventTeams(event) {
+  if (!event || typeof event.name !== 'string') return null;
+  const clean = event.name.replace(/\s*\(live\)\s*$/i, '').trim();
+  const parts = clean.split(/\s+vs\s+/i);
+  return parts.length === 2 ? [parts[0].trim(), parts[1].trim()] : null;
+}
+
 function extractFixturesFromEventsApi(data) {
   if (!data || !Array.isArray(data.events)) return [];
   const results = [];
   for (const event of data.events) {
-    if (!event || typeof event.name !== 'string' || !event.startTime) continue;
-    const cleanName = event.name.replace(/\s*\(live\)\s*$/i, '').trim();
-    const parts = cleanName.split(/\s+vs\s+/i);
-    if (parts.length !== 2) continue;
-    const [homeTeam, awayTeam] = parts;
+    if (!event || !event.startTime) continue;
+    const teams = eventTeams(event);
+    if (!teams) continue;
     const fixture = toFixture({
-      homeTeam,
-      awayTeam,
+      homeTeam: teams[0],
+      awayTeam: teams[1],
       kickoffISO: new Date(event.startTime).toISOString(),
       league: event.type?.name || null,
       sgpMatchId: event.id != null ? String(event.id) : null,
@@ -69,6 +74,58 @@ function extractFixturesFromEventsApi(data) {
     results.push(fixture);
   }
   return results;
+}
+
+/**
+ * In-play fixtures from the .../events/v1/live payload. Same shape as an
+ * upcoming fixture (teams, kickoffISO, league, sgpMatchId) plus:
+ *   live: true
+ *   odds.oneX2       live 1X2 prices
+ *   liveLine         the lowest Over/Under line still on offer, e.g.
+ *                    { point: 2.5, over, under }. SG Pools opens the next
+ *                    half-goal line above the current total, so
+ *                    `point - 0.5` is a rough count of goals scored so far.
+ */
+function extractLiveFixtures(events) {
+  if (!Array.isArray(events)) return [];
+  const out = [];
+  for (const event of events) {
+    if (!event || !event.startTime) continue;
+    const teams = eventTeams(event);
+    if (!teams) continue;
+    const fixture = toFixture({
+      homeTeam: teams[0],
+      awayTeam: teams[1],
+      kickoffISO: new Date(event.startTime).toISOString(),
+      league: (event.type?.name || '').replace(/\s*\(live\)\s*$/i, '').trim() || null,
+      sgpMatchId: event.id != null ? String(event.id) : null,
+    });
+    if (!fixture) continue;
+    fixture.live = true;
+
+    const oneX2 = oneX2OddsFromEvent(event);
+    if (oneX2) fixture.odds = { oneX2, ou25: null };
+
+    let lowest = null;
+    for (const m of event.markets || []) {
+      if (m.minorCode !== 'HL' || !/total goals over\/under/i.test(m.name || '')) continue;
+      if (/halftime/i.test(m.name || '')) continue;
+      const point = Number(m.handicapValue);
+      if (!Number.isFinite(point)) continue;
+      const o = {};
+      for (const out2 of m.outcomes || []) {
+        const dec = Number(out2.prices && out2.prices[0] && out2.prices[0].decimal);
+        if (!(dec > 1)) continue;
+        if (out2.minorCode === 'H') o.over = dec;
+        else if (out2.minorCode === 'L') o.under = dec;
+      }
+      if (o.over && o.under && (!lowest || point < lowest.point)) lowest = { point, ...o };
+    }
+    if (lowest) fixture.liveLine = lowest;
+
+    out.push(fixture);
+  }
+  return out;
 }
 
 // Singapore Pools displays local (Asia/Singapore, UTC+8) times with no
@@ -199,6 +256,7 @@ function summarizeEventShapes(data, maxResults = 3) {
 module.exports = {
   toFixture,
   extractFixturesFromEventsApi,
+  extractLiveFixtures,
   extractFixturesFromJson,
   parseRenderedHtml,
   coerceSgTimeToISO,

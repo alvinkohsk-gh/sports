@@ -17,6 +17,7 @@
   </header>
 
   <main id="app">
+    <section id="inplay" class="inplay" hidden></section>
     <div id="best-bet" class="best-bet" hidden></div>
     <div id="empty" class="empty" hidden>No open Singapore Pools matches right now.</div>
     <div id="matches" class="matches"></div>
@@ -24,6 +25,11 @@
       Picks are pulled from several prediction/tipster sites (Forebet, PredictZ, WinDrawWin, WhoScored, Sports
       Mole, MatchOutlook, EaglePredict, FootyStats, Statarea, FootballPredictions) and tallied by majority vote — this is not a guarantee of outcome, just
       what those sites currently predict.
+      <br /><br />
+      <strong>In play now:</strong> matches Singapore Pools currently has live, with the consensus pick that was
+      made <em>before</em> kickoff shown against the live 1X2 price. SG Pools' live feed carries no clock or
+      score, so the minute is wall-clock time since kickoff and "goals so far" is inferred from the lowest
+      Over/Under line still on offer — both approximate, and up to ~15 min stale between snapshots.
       <br /><br />
       <strong>Odds &amp; value:</strong> "Singapore Pools odds" are their live 1X2 and Over/Under 2.5 prices; "margin"
       is the bookmaker's built-in edge on that market. A <span style="color:var(--ok)">VALUE</span> flag means the

@@ -1,4 +1,4 @@
-const { fetchOpenFixtures } = require('../scrapers/singaporePools');
+const { fetchOpenFixtures, getInPlayFixtures } = require('../scrapers/singaporePools');
 const { fetchAllTipsterPicks } = require('../scrapers/tipsters');
 const { attachTipsterConsensus } = require('./tipsterConsensus');
 const { attachTopPick, pickBestBetOverall } = require('./tipsterRanking');
@@ -7,6 +7,7 @@ const { getMockSgpFixtures, getMockTipsterPicks } = require('../mock/mockData');
 
 const state = {
   matches: [],
+  inPlay: [],
   bestBet: null,
   bestValue: null,
   lastUpdated: null,
@@ -24,8 +25,12 @@ function toMatch(fixture) {
     awayTeam: fixture.awayTeam,
     league: fixture.league,
     kickoffISO: fixture.kickoffISO,
-    sgPoolsOpen: true,
+    sgPoolsOpen: !fixture.live,
+    live: !!fixture.live,
     odds: fixture.odds || null,
+    // rough goals-so-far from the lowest live Over/Under line still open
+    liveLine: fixture.liveLine || null,
+    goalsSoFar: fixture.liveLine ? Math.max(0, Math.round(fixture.liveLine.point - 0.5)) : null,
   };
 }
 
@@ -74,6 +79,17 @@ async function refresh({ mockMode }) {
   state.matches = attachTopPick(withTipsters);
   state.bestBet = pickBestBetOverall(state.matches);
   state.bestValue = pickBestValue(state.matches);
+
+  // In-play: the same tipster consensus (made pre-match) attached to the
+  // matches SG Pools currently has live. No value assessment — the odds
+  // here have already moved with the run of play.
+  const inPlayFixtures = mockMode ? [] : getInPlayFixtures();
+  const inPlay = attachTipsterConsensus(
+    inPlayFixtures.map(toMatch).sort((a, b) => new Date(a.kickoffISO) - new Date(b.kickoffISO)),
+    tipsterPicks
+  );
+  state.inPlay = attachTopPick(inPlay);
+
   state.lastUpdated = new Date().toISOString();
   state.lastError = errors.length ? errors.join(' | ') : null;
   state.sgpFixtureCount = sgpFixtures.length;

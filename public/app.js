@@ -2,8 +2,10 @@ const REFRESH_MS = 15000;
 const matchesEl = document.getElementById('matches');
 const emptyEl = document.getElementById('empty');
 const statusEl = document.getElementById('status');
+const inplayEl = document.getElementById('inplay');
 
 let currentMatches = [];
+let currentInPlay = [];
 
 function formatCountdown(ms) {
   if (ms <= 0) return { text: 'LIVE / KICKED OFF', cls: 'live' };
@@ -183,9 +185,69 @@ function tickCountdowns() {
     const kickoff = new Date(card.dataset.kickoff).getTime();
     const { text, cls } = formatCountdown(kickoff - now);
     const el = card.querySelector('[data-countdown]');
-    el.textContent = text;
-    el.className = `countdown ${cls}`;
+    if (el) {
+      el.textContent = text;
+      el.className = `countdown ${cls}`;
+    }
   });
+  document.querySelectorAll('.card.live [data-liveclock]').forEach((el) => {
+    el.textContent = liveClock(el.closest('.card').dataset.kickoff);
+  });
+}
+
+// Rough elapsed since kickoff — SG Pools' live feed carries no clock, so
+// this is wall-clock time and doesn't know about half-time or stoppage.
+function liveClock(kickoffISO) {
+  const mins = Math.floor((Date.now() - new Date(kickoffISO).getTime()) / 60000);
+  if (mins < 1) return 'kicking off';
+  if (mins <= 47) return `~${mins}'`;
+  if (mins <= 63) return `HT / ~${mins}'`;
+  if (mins <= 100) return `~${mins}'`;
+  return `~${mins}' (may have ended)`;
+}
+
+function renderInPlayCard(m) {
+  const div = document.createElement('div');
+  div.className = 'card live';
+  div.id = `match-${m.id}`;
+  div.dataset.kickoff = m.kickoffISO;
+  const odds = m.odds && m.odds.oneX2;
+  const oddsRow = odds
+    ? `<div class="section-label">Live SG Pools 1X2: <b>${Number(odds.home).toFixed(2)}</b> / <b>${Number(odds.draw).toFixed(2)}</b> / <b>${Number(odds.away).toFixed(2)}</b></div>`
+    : '';
+  const goals = m.goalsSoFar != null ? ` · ~${m.goalsSoFar} goal${m.goalsSoFar === 1 ? '' : 's'} so far` : '';
+  div.innerHTML = `
+    <span class="badge live-badge">● LIVE</span>
+    <div class="league">${m.league || ''}</div>
+    <div class="teams">${m.homeTeam} vs ${m.awayTeam}</div>
+    <div class="live-clock" data-liveclock>${liveClock(m.kickoffISO)}</div>
+    <div class="kickoff-time">Kicked off ${new Date(m.kickoffISO).toLocaleString()}${goals}</div>
+    ${renderPick(m.topPick)}
+    ${renderTipsters(m.tipsterConsensus)}
+    ${oddsRow}
+  `;
+  return div;
+}
+
+function renderInPlay(list) {
+  currentInPlay = list || [];
+  // drop anything that must be long finished (a stale snapshot can still
+  // list a match that ended ~10 min ago)
+  const live = currentInPlay.filter(
+    (m) => (Date.now() - new Date(m.kickoffISO).getTime()) / 60000 < 135
+  );
+  if (!inplayEl) return;
+  if (!live.length) {
+    inplayEl.hidden = true;
+    inplayEl.innerHTML = '';
+    return;
+  }
+  inplayEl.hidden = false;
+  inplayEl.innerHTML = `<h2 class="inplay-head">● In play now <span>(${live.length}) — picks made before kickoff; time/score approximate</span></h2><div class="matches" id="inplay-grid"></div>`;
+  const grid = inplayEl.querySelector('#inplay-grid');
+  live
+    .sort((a, b) => new Date(a.kickoffISO) - new Date(b.kickoffISO))
+    .forEach((m) => grid.appendChild(renderInPlayCard(m)));
 }
 
 async function fetchMatches() {
@@ -193,6 +255,7 @@ async function fetchMatches() {
     const res = await fetch('/api/matches');
     const data = await res.json();
     currentMatches = data.matches || [];
+    renderInPlay(data.inPlay || []);
     renderMatches(currentMatches);
     renderBestBet(data.bestBet);
 

@@ -13,6 +13,7 @@ router.get('/matches', async (req, res) => {
   if (snapshotIsFresh(snap)) {
     res.json({
       matches: snap.matches,
+      inPlay: snap.inPlay || [],
       bestBet: snap.bestBet,
       bestValue: snap.bestValue || null,
       lastUpdated: snap.lastUpdated,
@@ -28,6 +29,7 @@ router.get('/matches', async (req, res) => {
   const state = await ensureFreshState();
   res.json({
     matches: state.matches,
+    inPlay: state.inPlay || [],
     bestBet: state.bestBet,
     bestValue: state.bestValue || null,
     lastUpdated: state.lastUpdated,
