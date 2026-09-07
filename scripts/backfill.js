@@ -17,6 +17,7 @@ const path = require('path');
 const { fetchArchivePredictions } = require('../src/results/archives');
 const { summarize } = require('../src/results/accuracy');
 const { matchKey } = require('../src/results/history');
+const { normalizeTeamName } = require('../src/services/matcher');
 
 const DIR = process.argv[2] || '.';
 const REPO = process.env.SNAPSHOT_REPO || 'alvinkohsk-gh/sports';
@@ -40,9 +41,47 @@ async function loadPublished(file, fallback) {
   return fallback;
 }
 
+// The archive pages carry a site's WHOLE results list (all competitions);
+// keep only fixtures Singapore Pools offers, matched on the normalized
+// team pair (order-insensitive) against the current snapshot + the rolling
+// history (both SG Pools-sourced). If we can't load either, keep all
+// rows rather than write nothing.
+function sgPoolsPairSet(history, snapshot) {
+  const pairs = new Set();
+  const add = (h, a) => {
+    const hn = normalizeTeamName(h);
+    const an = normalizeTeamName(a);
+    if (hn && an) {
+      pairs.add(`${hn}|${an}`);
+      pairs.add(`${an}|${hn}`);
+    }
+  };
+  for (const e of history.entries || []) {
+    const [h, a] = String(e.matchKey || '').split('|');
+    if (h && a) {
+      pairs.add(`${h}|${a}`);
+      pairs.add(`${a}|${h}`);
+    }
+  }
+  for (const m of snapshot.matches || []) add(m.homeTeam, m.awayTeam);
+  for (const f of snapshot.rawSgpFixtures || []) add(f.homeTeam, f.awayTeam);
+  return pairs;
+}
+
 (async () => {
-  const rows = await fetchArchivePredictions();
-  console.error(`[backfill] archive rows with a result: ${rows.length}`);
+  const [allRows, history, snapshot] = await Promise.all([
+    fetchArchivePredictions(),
+    loadPublished('history.json', { entries: [] }),
+    loadPublished('snapshot.json', { matches: [] }),
+  ]);
+  const sgPairs = sgPoolsPairSet(history, snapshot);
+  const rows = sgPairs.size
+    ? allRows.filter((r) => sgPairs.has(`${normalizeTeamName(r.homeTeam)}|${normalizeTeamName(r.awayTeam)}`))
+    : allRows;
+  console.error(
+    `[backfill] archive rows with a result: ${allRows.length}; ` +
+      `${sgPairs.size ? `${rows.length} on the SG Pools board` : 'SG Pools board unknown — keeping all'}`
+  );
 
   const bySrc = {};
   const samples = [];
