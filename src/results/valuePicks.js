@@ -6,7 +6,9 @@ const { findResult, outcome1x2, GRADE_MIN_AGE_MS, GRADE_MAX_AGE_MS } = require('
 // Keyed by fixture + market + selection; the odd/EV kept are the last ones
 // seen before kickoff (the pick as it stood when it was actually bettable).
 const PRUNE_AFTER_MS = 6 * 24 * 60 * 60 * 1000;
-const KEEP_SETTLED_MS = 6 * 24 * 60 * 60 * 1000;
+// Settled picks are kept ~5 weeks so the Value Picks page can show a
+// record over an arbitrary date range.
+const KEEP_SETTLED_MS = 35 * 24 * 60 * 60 * 1000;
 
 function flaggedOutcomes(match) {
   const v = match.value;

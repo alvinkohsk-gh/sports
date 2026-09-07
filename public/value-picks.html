@@ -10,6 +10,25 @@
     .subnav a { color: var(--accent); text-decoration: none; font-size: 13px; }
     .subnav a.current { color: var(--text); font-weight: 700; }
 
+    .rangebar {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
+      padding: 12px 14px; margin-bottom: 16px;
+      border: 1px solid var(--card-border); border-radius: 12px; background: var(--card);
+    }
+    .rangebar label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .rangebar input[type="date"] {
+      background: rgba(148,163,184,0.12); color: var(--text);
+      border: 1px solid var(--card-border); border-radius: 6px; padding: 4px 8px; font-size: 12px;
+      color-scheme: dark;
+    }
+    .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+    .presets button {
+      background: rgba(148,163,184,0.12); color: var(--text);
+      border: 1px solid var(--card-border); border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer;
+    }
+    .presets button.active { background: rgba(56,189,248,0.18); color: var(--accent); border-color: rgba(56,189,248,0.5); }
+    .range-note { font-size: 12px; color: var(--muted); margin-left: auto; }
+
     .summary {
       display: flex; flex-wrap: wrap; gap: 10px 24px;
       padding: 14px 16px; margin-bottom: 20px;
@@ -50,6 +69,7 @@
       .vp-open { grid-template-columns: 1fr 1fr; }
       .vp-open .metric.fair { display: none; }
       table.settled .hide-sm { display: none; }
+      .range-note { margin-left: 0; width: 100%; }
     }
   </style>
 </head>
@@ -65,13 +85,22 @@
   </header>
 
   <main>
+    <div class="rangebar">
+      <label>From <input type="date" id="from" /></label>
+      <label>To <input type="date" id="to" /></label>
+      <div class="presets" id="presets">
+        <button data-preset="today">Today</button>
+        <button data-preset="yesterday">Yesterday</button>
+        <button data-preset="7">Last 7d</button>
+        <button data-preset="30">Last 30d</button>
+        <button data-preset="all" class="active">All</button>
+      </div>
+      <span class="range-note" id="range-note"></span>
+    </div>
+
     <div class="summary" id="summary" hidden></div>
 
-    <div id="empty" class="empty" hidden>
-      No value picks yet. A pick is logged whenever the Singapore Pools price on a market implies a
-      lower win chance than the tipster consensus (positive expected value by that reference). Its
-      result shows here once the match finishes.
-    </div>
+    <div id="empty" class="empty" hidden></div>
 
     <h2 class="sec" id="open-head" hidden>Open — waiting on kickoff</h2>
     <div class="vp-list" id="open"></div>
@@ -92,13 +121,13 @@
       than the tipster consensus does — i.e. positive expected value <em>by that reference</em>. The
       consensus is softer than a true sharp line, so this is "the crowd disagrees with the price", not
       a guaranteed edge. Record and ROI assume a flat 1-unit stake per pick and settle at the odd shown
-      (the last price seen before kickoff). Results come from Forebet; picks it doesn't cover stay
-      "open". Past performance says nothing about future results. Gamble responsibly.
+      (the last price seen before kickoff). Picks are filtered by kickoff date in your local time.
+      Results come from Forebet; picks it doesn't cover stay "open". Past performance says nothing about
+      future results. Gamble responsibly.
     </p>
   </main>
 
   <script>
-    const MKT_ORDER = { '1X2': 0, 'O/U 2.5': 1 };
     const statusEl = document.getElementById('status');
     const summaryEl = document.getElementById('summary');
     const emptyEl = document.getElementById('empty');
@@ -106,37 +135,60 @@
     const openHead = document.getElementById('open-head');
     const settledEl = document.getElementById('settled');
     const settledHead = document.getElementById('settled-head');
+    const fromEl = document.getElementById('from');
+    const toEl = document.getElementById('to');
+    const presetsEl = document.getElementById('presets');
+    const rangeNoteEl = document.getElementById('range-note');
 
     const pct = (v) => (v == null ? '—' : `${(v * 100).toFixed(0)}%`);
     const signedPct = (v) => (v == null ? '—' : `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}%`);
     const signedU = (v) => (v == null ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(2)}`);
     const fmtKO = (iso) =>
       new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    // local calendar day of an ISO instant, as YYYY-MM-DD
+    const localDay = (x) => new Date(x).toLocaleDateString('en-CA');
+    const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
 
-    function renderSummary(s) {
-      if (!s || !s.settledCount) {
-        summaryEl.hidden = true;
-        return;
-      }
+    let allOpen = [];
+    let allSettled = [];
+    let lastUpdated = null;
+    let activePreset = 'all';
+
+    function summarize(settled) {
+      const won = settled.filter((p) => p.won).length;
+      const staked = settled.length;
+      const returned = settled.reduce((s, p) => s + (p.won ? p.odd : 0), 0);
+      const profit = returned - staked;
+      return {
+        settledCount: staked,
+        won,
+        winRate: staked ? won / staked : null,
+        profitUnits: profit,
+        roi: staked ? profit / staked : null,
+        avgOdd: staked ? settled.reduce((s, p) => s + p.odd, 0) / staked : null,
+      };
+    }
+
+    function renderSummary(s, openCount, singleDay) {
       summaryEl.hidden = false;
       const roiCls = s.roi > 0 ? 'pos' : s.roi < 0 ? 'neg' : '';
       const plCls = s.profitUnits > 0 ? 'pos' : s.profitUnits < 0 ? 'neg' : '';
-      summaryEl.innerHTML = `
-        <div class="stat"><span class="lab">Record</span><span class="val">${s.won}–${s.settledCount - s.won}</span></div>
-        <div class="stat"><span class="lab">Win rate</span><span class="val">${pct(s.winRate)}</span></div>
-        <div class="stat"><span class="lab">ROI (flat 1u)</span><span class="val ${roiCls}">${signedPct(s.roi)}</span></div>
-        <div class="stat"><span class="lab">P/L</span><span class="val ${plCls}">${signedU(s.profitUnits)} u</span></div>
-        <div class="stat"><span class="lab">Avg odd</span><span class="val">${s.avgOdd == null ? '—' : s.avgOdd.toFixed(2)}</span></div>
-        <div class="stat"><span class="lab">Open</span><span class="val">${s.openCount}</span></div>`;
+      const recordStat = `<div class="stat"><span class="lab">Record</span><span class="val">${s.won}–${s.settledCount - s.won}</span></div>`;
+      if (singleDay && !s.settledCount) {
+        summaryEl.innerHTML = recordStat + `<div class="stat"><span class="lab">Open</span><span class="val">${openCount}</span></div>`;
+        return;
+      }
+      summaryEl.innerHTML =
+        recordStat +
+        `<div class="stat"><span class="lab">Win rate</span><span class="val">${pct(s.winRate)}</span></div>` +
+        `<div class="stat"><span class="lab">ROI (flat 1u)</span><span class="val ${roiCls}">${signedPct(s.roi)}</span></div>` +
+        `<div class="stat"><span class="lab">P/L</span><span class="val ${plCls}">${signedU(s.profitUnits)} u</span></div>` +
+        `<div class="stat"><span class="lab">Avg odd</span><span class="val">${s.avgOdd == null ? '—' : s.avgOdd.toFixed(2)}</span></div>` +
+        `<div class="stat"><span class="lab">Open</span><span class="val">${openCount}</span></div>`;
     }
 
     function renderOpen(picks) {
-      if (!picks.length) {
-        openHead.hidden = true;
-        openEl.innerHTML = '';
-        return;
-      }
-      openHead.hidden = false;
+      openHead.hidden = picks.length === 0;
       openEl.innerHTML = picks
         .map(
           (p) => `
@@ -155,18 +207,12 @@
     }
 
     function renderSettled(picks) {
-      if (!picks.length) {
-        settledHead.hidden = true;
-        settledEl.hidden = true;
-        return;
-      }
-      settledHead.hidden = false;
-      settledEl.hidden = false;
+      settledHead.hidden = picks.length === 0;
+      settledEl.hidden = picks.length === 0;
+      if (!picks.length) return;
       settledEl.querySelector('tbody').innerHTML = picks
         .map((p) => {
-          const res = p.won
-            ? '<span class="res-win">WON ✓</span>'
-            : '<span class="res-lose">LOST ✗</span>';
+          const res = p.won ? '<span class="res-win">WON ✓</span>' : '<span class="res-lose">LOST ✗</span>';
           const pl = `<span class="${p.profitUnits >= 0 ? 'pl-pos' : 'pl-neg'}">${signedU(p.profitUnits)}</span>`;
           return `
           <tr>
@@ -183,30 +229,79 @@
         .join('');
     }
 
+    function apply() {
+      const from = fromEl.value || '0000-01-01';
+      const to = toEl.value || '9999-12-31';
+      const inRange = (p) => {
+        const d = localDay(p.kickoffISO);
+        return d >= from && d <= to;
+      };
+      const open = allOpen.filter(inRange).sort((a, b) => b.ev - a.ev);
+      const settled = allSettled.filter(inRange).sort((a, b) => Date.parse(b.kickoffISO) - Date.parse(a.kickoffISO));
+      const singleDay = fromEl.value && fromEl.value === toEl.value;
+      const s = summarize(settled);
+
+      const total = open.length + settled.length;
+      emptyEl.hidden = total > 0;
+      emptyEl.textContent = allOpen.length + allSettled.length === 0
+        ? 'No value picks logged yet. A pick is recorded whenever the SG Pools price on a market implies a lower win chance than the tipster consensus; its result shows here once the match finishes.'
+        : 'No value picks in this date range.';
+      summaryEl.hidden = total === 0;
+      if (total) renderSummary(s, open.length, singleDay);
+      renderOpen(open);
+      renderSettled(settled);
+
+      const label = fromEl.value && toEl.value
+        ? (singleDay ? fromEl.value : `${fromEl.value} → ${toEl.value}`)
+        : 'all dates';
+      rangeNoteEl.textContent =
+        `${label} · ${settled.length} settled` +
+        (s.settledCount ? ` · ${s.won}–${s.settledCount - s.won} · ROI ${signedPct(s.roi)}` : '') +
+        ` · ${open.length} open`;
+      statusEl.textContent = lastUpdated ? `updated ${new Date(lastUpdated).toLocaleString()}` : '';
+    }
+
+    function setPreset(name) {
+      activePreset = name;
+      [...presetsEl.children].forEach((b) => b.classList.toggle('active', b.dataset.preset === name));
+      const today = new Date();
+      if (name === 'all') { fromEl.value = ''; toEl.value = ''; }
+      else if (name === 'today') { fromEl.value = toEl.value = localDay(today); }
+      else if (name === 'yesterday') { fromEl.value = toEl.value = localDay(addDays(today, -1)); }
+      else if (name === '7') { fromEl.value = localDay(addDays(today, -6)); toEl.value = localDay(today); }
+      else if (name === '30') { fromEl.value = localDay(addDays(today, -29)); toEl.value = localDay(today); }
+      apply();
+    }
+
+    presetsEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (btn) setPreset(btn.dataset.preset);
+    });
+    [fromEl, toEl].forEach((el) =>
+      el.addEventListener('change', () => {
+        activePreset = '';
+        [...presetsEl.children].forEach((b) => b.classList.remove('active'));
+        apply();
+      })
+    );
+
     async function load() {
       try {
         const res = await fetch('/api/value-picks');
         if (res.status === 503) {
           statusEl.textContent = 'No value-pick data yet';
           emptyEl.hidden = false;
+          emptyEl.textContent = 'No value picks logged yet — the first ones appear after the next scrape.';
           return;
         }
         const data = await res.json();
-        const open = (data.open || []).slice().sort((a, b) => b.ev - a.ev);
-        const settled = (data.settled || [])
-          .slice()
-          .sort((a, b) => Date.parse(b.kickoffISO) - Date.parse(a.kickoffISO));
-
-        emptyEl.hidden = open.length + settled.length > 0;
-        renderSummary(data.summary);
-        renderOpen(open);
-        renderSettled(settled);
-
-        const s = data.summary || {};
-        statusEl.textContent =
-          `${s.openCount || 0} open · ${s.settledCount || 0} settled` +
-          (s.settledCount ? ` · ROI ${signedPct(s.roi)}` : '') +
-          (data.updatedAt ? ` · updated ${new Date(data.updatedAt).toLocaleString()}` : '');
+        allOpen = data.open || [];
+        allSettled = data.settled || [];
+        lastUpdated = data.updatedAt || null;
+        if (data.availableDates) {
+          fromEl.min = toEl.min = data.availableDates.min;
+        }
+        apply();
       } catch (err) {
         statusEl.textContent = `Failed to load: ${err.message}`;
       }

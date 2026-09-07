@@ -235,6 +235,13 @@ implies a higher win probability than the price does", not a guaranteed
 edge. SG Pools juices 1X2 markets far more than O/U (often ~13% vs ~9%
 margin), so value surfaces on totals more often.
 
+Every flagged pick is logged (`src/results/valuePicks.js`, ~5 weeks
+retention) and graded against the Forebet results once its match
+finishes. `GET /api/value-picks` returns the open + settled picks and a
+flat-1-unit record (win rate, ROI, P/L); `?from=YYYY-MM-DD&to=YYYY-MM-DD`
+filters by kickoff day. `public/value-picks.html` is a page for it with a
+date-range picker (a single day gives just that day's record).
+
 ## Notes on matching
 
 - Kickoff times from Singapore Pools are assumed to be Singapore time
