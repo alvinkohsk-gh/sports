@@ -40,6 +40,8 @@ const SITE_LABELS = {
   windrawwin: 'WinDrawWin',
   whoscored: 'WhoScored',
   sportsmole: 'Sports Mole',
+  matchoutlook: 'MatchOutlook',
+  eaglepredict: 'EaglePredict',
 };
 
 function renderTipsters(tipsterConsensus) {

@@ -1,17 +1,18 @@
 # SG Pools Tipster Predictions
 
-Shows predictions from five prediction/tipster sites (1X2 and Over/Under
-total goals), filtered to only the matches currently open for betting on
-singaporepools.com.sg, with a live countdown to kickoff for each match.
+Shows predictions from several prediction/tipster sites (1X2 and
+Over/Under total goals), filtered to only the matches currently open for
+betting on singaporepools.com.sg, with a live countdown to kickoff for
+each match.
 
 ## How it works
 
 1. `src/scrapers/singaporePools.js` fetches Singapore Pools' open football
    fixtures (team names + kickoff time).
-2. `src/scrapers/tipsters/` fetches picks from five prediction/tipster
+2. `src/scrapers/tipsters/` fetches picks from the prediction/tipster
    sites in parallel (Forebet, PredictZ, WinDrawWin, WhoScored, Sports
-   Mole) — see "Tipster sources" below for per-site detail and how
-   verified each one is.
+   Mole, MatchOutlook, EaglePredict) — see "Tipster sources" below for
+   per-site detail and how verified each one is.
 3. `src/services/tipsterConsensus.js` attaches each match's tipster picks
    by fuzzy team-name matching (`src/services/matcher.js`).
 4. `src/services/tipsterRanking.js` picks each match's strongest tipster
@@ -52,7 +53,9 @@ shared headless browser.
 | PredictZ | Structured table | Same source as above |
 | WinDrawWin | Structured table | Same source as above |
 | WhoScored | Prose preview articles | No reference scraper found — generic heuristic extraction (regex for "Team A vs Team B" + a scoreline, a draw phrase, or win/lose phrasing tied to one of the two team names in nearby text) |
-| Sports Mole | Prose preview articles | Reads the hub for fixture links, then fetches each per-match article and parses its "Sports Mole predicts: A x-y B" line (falls back to the closing paragraphs). Capped at `SPORTSMOLE_MAX_ARTICLES` (default 40). |
+| Sports Mole | Prose preview articles | Reads the hub for fixture links, then fetches each per-match article and parses its "We say: A x-y B" verdict (falls back to "Sports Mole predicts:" / the closing paragraphs). Capped at `SPORTSMOLE_MAX_ARTICLES` (default 40). |
+| MatchOutlook | Structured `.match-section` list | One "Best Bet" per match — a 1X2 outcome (→ pick) or an over/under line (→ totalsPick); double chances (1X/X2/12) give neither. Plain HTTP, no FlareSolverr needed. |
+| EaglePredict | Structured table (best-effort) | Behind Cloudflare's terminal block (like WhoScored) — often unsolvable, so may contribute nothing. Generic table-row extraction; selectors need tightening from a real `debug-tipsters/eaglepredict.html` capture. |
 
 The first three give a clean discrete pick (home/draw/away) reliably; the
 last two are best-effort. `inferPickFromProse` (`src/scrapers/tipsters/
