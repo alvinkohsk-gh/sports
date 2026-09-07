@@ -1,14 +1,19 @@
 const cheerio = require('cheerio');
-const { fetchHtml } = require('../scrapers/tipsters/fetchHtml');
+const { fetchHtmlScrolled } = require('../scrapers/tipsters/fetchHtml');
 
 // Forebet is a results/stats site as much as a tips site — its today and
-// "for yesterday" pages carry the full-time score for played matches. Used
-// as the actual-result source for the accuracy dashboard (a key-free
-// results API with the league coverage Singapore Pools needs doesn't
-// exist; Forebet covers hundreds).
+// yesterday pages carry the full-time score for played matches. Used as
+// the actual-result source for the accuracy dashboard (a key-free results
+// API with the league coverage Singapore Pools needs doesn't exist;
+// Forebet covers hundreds).
+//
+// Both pages lazy-load the bulk of their rows behind a "More" button
+// (see fetchHtmlScrolled) — without clicking through it, only ~44 of
+// 130+ matches are in the HTML and most finished games (incl. the big
+// European leagues) are missing, leaving their predictions ungraded.
 const PAGES = [
   'https://www.forebet.com/en/football-tips-and-predictions-for-today',
-  'https://www.forebet.com/en/football-predictions-for-yesterday',
+  'https://www.forebet.com/en/football-predictions-from-yesterday',
 ];
 
 const SCORE_RE = /^\s*(\d{1,2})\s*[-:]\s*(\d{1,2})\s*$/;
@@ -68,8 +73,9 @@ function extractResults(html) {
 async function fetchForebetResults() {
   const all = [];
   for (const url of PAGES) {
+    const site = url.includes('yesterday') ? 'forebet-results-yesterday' : 'forebet-results';
     try {
-      const html = await fetchHtml('forebet-results', url);
+      const html = await fetchHtmlScrolled(site, url);
       all.push(...extractResults(html));
     } catch (err) {
       console.error(`[results:forebet] ${url} failed:`, err.message || err);

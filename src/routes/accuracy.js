@@ -124,6 +124,33 @@ router.get('/accuracy', async (req, res) => {
 
   const days = sgSamples.map((s) => dayOf(s.kickoffISO)).filter((d) => DAY_RE.test(d)).sort();
 
+  // Finished SG Pools matches we have picks for but couldn't grade (no
+  // matching Forebet result). Emitted as `pending` rows so the Results
+  // table shows every finished game, not just the graded subset — they
+  // don't count toward the per-site accuracy.
+  const gradedKeys = new Set(sgSamples.map((s) => `${s.matchKey}::${s.site}`));
+  const nowMs = Date.now();
+  const pending = [];
+  for (const e of historyCache.data?.entries || []) {
+    const ageH = (nowMs - (Date.parse(e.kickoffISO) || nowMs)) / 3600000;
+    if (ageH < 2 || ageH > 24 * 40) continue; // finished, within retention
+    if (gradedKeys.has(`${e.matchKey}::${e.site}`)) continue;
+    if (!e.pick && !e.totalsPick) continue;
+    pending.push({
+      matchKey: e.matchKey,
+      site: e.site,
+      kickoffISO: e.kickoffISO,
+      league: e.league || null,
+      fixture: `${e.homeTeam} vs ${e.awayTeam}`,
+      score: null,
+      pick: e.pick || null,
+      oneX2Correct: null,
+      ou: e.totalsPick ? `${e.totalsPick.selection} ${e.totalsPick.point}` : null,
+      ouCorrect: null,
+      pending: true,
+    });
+  }
+
   res.json({
     updatedAt: acc.updatedAt || null,
     range: { from, to },
@@ -150,6 +177,7 @@ router.get('/accuracy', async (req, res) => {
         ou: s.ou || null,
         ouCorrect: s.ouCorrect ?? null,
       })),
+    pending: pending.slice(0, 3000),
   });
 });
 

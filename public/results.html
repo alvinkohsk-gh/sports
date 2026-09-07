@@ -62,8 +62,9 @@
     .pill[class*="site-"] { border-color: color-mix(in srgb, var(--site-color) 55%, transparent); color: var(--site-color); }
     .pill .res { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; }
     .pill .res .sel { font-size: 12px; }
-    .pill .tick, .pill .cross { font-size: 17px; font-weight: 700; line-height: 1; }
-    .pill .tick { color: var(--ok); } .pill .cross { color: var(--urgent); }
+    .pill .tick, .pill .cross, .pill .dash { font-size: 17px; font-weight: 700; line-height: 1; }
+    .pill .tick { color: var(--ok); } .pill .cross { color: var(--urgent); } .pill .dash { color: var(--muted); }
+    .pill.pending { opacity: 0.72; }
   </style>
 </head>
 <body>
@@ -151,17 +152,21 @@
     }
 
     function pillFor(s) {
-      const mark = (ok) => (ok ? '<span class="tick">✔</span>' : '<span class="cross">✘</span>');
+      const mark = (ok) =>
+        ok === null || ok === undefined
+          ? '<span class="dash">·</span>'
+          : ok
+          ? '<span class="tick">✔</span>'
+          : '<span class="cross">✘</span>';
       const bit = (sel, ok) => `<span class="res"><span class="sel">${sel}</span>${mark(ok)}</span>`;
       const bits = [];
-      if (s.oneX2Correct !== null && s.oneX2Correct !== undefined)
-        bits.push(bit(s.pick ? s.pick[0].toUpperCase() : '?', s.oneX2Correct));
-      if (s.ouCorrect !== null && s.ouCorrect !== undefined)
-        bits.push(bit((s.ou || '').split(' ')[0][0].toUpperCase(), s.ouCorrect));
-      return `<span class="pill site-${s.site}">${label(s.site)}${bits.join('')}</span>`;
+      if (s.pick) bits.push(bit(s.pick[0].toUpperCase(), s.oneX2Correct));
+      if (s.ou) bits.push(bit(s.ou.split(' ')[0][0].toUpperCase(), s.ouCorrect));
+      return `<span class="pill site-${s.site}${s.pending ? ' pending' : ''}">${label(s.site)}${bits.join('')}</span>`;
     }
 
     let allSamples = [];
+    let allPending = [];
     let lastUpdated = null;
     let selectedSite = null; // click a card to show only that site's picks
 
@@ -187,19 +192,19 @@
       return per;
     }
 
-    function render(perSite, samples, singleDay) {
+    function render(perSite, tableSamples, singleDay) {
       const sites = Object.entries(perSite).sort(
         (a, b) => (b[1].overall ?? -1) - (a[1].overall ?? -1) || b[1].graded - a[1].graded
       );
 
-      if (!sites.length) {
+      if (!sites.length && !tableSamples.length) {
         gridEl.innerHTML = '';
         recentEl.hidden = true;
         noteEl.textContent = '';
         emptyEl.hidden = false;
-        emptyEl.textContent = allSamples.length
-          ? 'No graded predictions for fixtures on the Singapore Pools board in this date range.'
-          : 'No graded predictions yet — this fills in as SG Pools fixtures finish.';
+        emptyEl.textContent = allSamples.length + allPending.length
+          ? 'No finished Singapore Pools fixtures in this date range.'
+          : 'No results yet — this fills in as SG Pools fixtures finish.';
         return;
       }
       emptyEl.hidden = true;
@@ -221,43 +226,52 @@
         .join('');
 
       const byMatch = new Map();
-      for (const s of samples) {
+      for (const s of tableSamples) {
         if (selectedSite && s.site !== selectedSite) continue;
         if (!byMatch.has(s.matchKey))
-          byMatch.set(s.matchKey, { fixture: s.fixture, score: s.score, kickoffISO: s.kickoffISO, picks: [] });
-        byMatch.get(s.matchKey).picks.push(s);
+          byMatch.set(s.matchKey, { fixture: s.fixture, score: null, kickoffISO: s.kickoffISO, picks: [] });
+        const row = byMatch.get(s.matchKey);
+        if (s.score) row.score = s.score;
+        row.picks.push(s);
       }
       const matchRows = [...byMatch.values()].sort((a, b) => new Date(b.kickoffISO) - new Date(a.kickoffISO));
+      let pendingMatches = 0;
       recentEl.hidden = matchRows.length === 0;
       recentEl.querySelector('tbody').innerHTML = matchRows
-        .slice(0, 80)
-        .map(
-          (m) => `
+        .slice(0, 100)
+        .map((m) => {
+          if (!m.score) pendingMatches += 1;
+          return `
           <tr>
             <td>${new Date(m.kickoffISO).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
             <td>${m.fixture}</td>
-            <td>${m.score}</td>
-            <td><div class="pillrow">${m.picks.map(pillFor).join('')}</div></td>
-          </tr>`
-        )
+            <td>${m.score || '<span class="dash">result pending</span>'}</td>
+            <td><div class="pillrow">${m.picks
+              .slice()
+              .sort((a, b) => (a.pending === b.pending ? 0 : a.pending ? 1 : -1))
+              .map(pillFor)
+              .join('')}</div></td>
+          </tr>`;
+        })
         .join('');
-      const extra = matchRows.length > 80 ? `Showing the 80 most recent of ${matchRows.length} matches. ` : '';
-      noteEl.textContent = selectedSite
-        ? `${extra}Filtered to ${label(selectedSite)} — click its card again (or "show all") to clear.`
-        : `${extra}Click a site card to filter the table to just that site's picks.`;
+      const parts = [];
+      if (matchRows.length > 100) parts.push(`Showing the 100 most recent of ${matchRows.length} matches.`);
+      if (selectedSite) parts.push(`Filtered to ${label(selectedSite)} — click its card again (or "show all") to clear.`);
+      else parts.push(`Click a site card to filter the table to just that site's picks.`);
+      if (pendingMatches) parts.push(`${pendingMatches} match${pendingMatches === 1 ? '' : 'es'} finished but not gradable — Forebet has no result for them yet (·).`);
+      noteEl.textContent = parts.join(' ');
     }
 
     function apply() {
       const from = fromEl.value || '0000-01-01';
       const to = toEl.value || '9999-12-31';
-      const samples = allSamples.filter((s) => {
-        const d = localDay(s.kickoffISO);
-        return d >= from && d <= to;
-      });
+      const inRange = (s) => { const d = localDay(s.kickoffISO); return d >= from && d <= to; };
+      const graded = allSamples.filter(inRange);
+      const pending = allPending.filter(inRange);
       const singleDay = fromEl.value && fromEl.value === toEl.value;
-      const perSite = computePerSite(samples);
+      const perSite = computePerSite(graded);
       if (selectedSite && !perSite[selectedSite]) selectedSite = null; // nothing for it in this range
-      render(perSite, samples, singleDay);
+      render(perSite, graded.concat(pending), singleDay);
 
       const rangeLabel = fromEl.value && toEl.value
         ? (singleDay ? fromEl.value : `${fromEl.value} → ${toEl.value}`)
@@ -266,7 +280,7 @@
         .filter(([, b]) => b.graded >= MIN_BEST)
         .sort((a, b) => (b[1].overall ?? -1) - (a[1].overall ?? -1))[0];
       rangeNoteEl.innerHTML =
-        `${rangeLabel} · ${samples.length} graded pick${samples.length === 1 ? '' : 's'}` +
+        `${rangeLabel} · ${graded.length} graded pick${graded.length === 1 ? '' : 's'}` +
         (best ? ` · best: ${label(best[0])} ${Math.round(best[1].overall * 100)}%` : '') +
         (selectedSite ? ` · <b>${label(selectedSite)} only</b> <button class="clear-site" id="clear-site">show all</button>` : '');
       const clearBtn = document.getElementById('clear-site');
@@ -321,6 +335,7 @@
         }
         const data = await res.json();
         allSamples = data.samples || [];
+        allPending = data.pending || [];
         lastUpdated = data.updatedAt || null;
         if (data.availableDates) fromEl.min = toEl.min = data.availableDates.min;
         apply();
