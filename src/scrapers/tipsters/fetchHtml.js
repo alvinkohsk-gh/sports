@@ -4,6 +4,15 @@ const path = require('path');
 const axios = require('axios');
 const { withSharedPage, IS_SERVERLESS } = require('../browser');
 
+// Forebet / PredictZ / WinDrawWin sit behind Cloudflare's "Just a moment…"
+// managed challenge, which auto-redirects to the real page after a few
+// seconds of client-side JS. Wait that out rather than returning the
+// interstitial. Only off-serverless (the GitHub Actions snapshot job, see
+// scripts/scrape-snapshot.js) — on Vercel the extra 10-15s/site would just
+// push the fallback scrape past maxDuration, and the snapshot is the real
+// data path there anyway.
+const WAIT_OUT_CLOUDFLARE = !IS_SERVERLESS;
+
 const DEBUG = String(process.env.TIPSTERS_DEBUG || 'false').toLowerCase() === 'true';
 // Vercel's filesystem is read-only outside /tmp, so debug dumps go there
 // when running serverless (won't be visible without a way to read /tmp —
@@ -61,9 +70,24 @@ async function fetchHtml(site, url) {
       // page in the refresh's serial queue eats into the same 60s function
       // budget — shortened from 2000ms now that image/media/font/ad
       // requests are blocked and there's much less left to settle.
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
       await page.waitForTimeout(500);
-      const html = await page.content();
+      let html = await page.content();
+
+      if (WAIT_OUT_CLOUDFLARE && looksLikeChallengePage(html)) {
+        if (DEBUG) console.log(`[tipsters:${site}] Cloudflare challenge — waiting for it to clear`);
+        await page
+          .waitForFunction(
+            () => !/just a moment|cf-browser-verification|challenge-platform/i.test(
+              document.title + ' ' + (document.body ? document.body.innerText.slice(0, 400) : '')
+            ),
+            { timeout: 20000 }
+          )
+          .catch(() => {});
+        await page.waitForTimeout(1500);
+        html = await page.content();
+      }
+
       dumpDebug(site, html);
       return html;
     },

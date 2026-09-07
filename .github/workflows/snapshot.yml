@@ -1,0 +1,57 @@
+name: Scrape tipster snapshot
+
+# Runs the scrape off the request path and publishes the result JSON to the
+# orphan `data-snapshot` branch. The Vercel app fetches
+# raw.githubusercontent.com/<repo>/data-snapshot/snapshot.json and serves
+# that, so live user requests never wait on (or time out on) the scrape.
+on:
+  schedule:
+    - cron: '*/15 * * * *' # every 15 min (GitHub may delay under load)
+  workflow_dispatch: {}
+
+concurrency:
+  group: tipster-snapshot
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Scrape
+        run: node scripts/scrape-snapshot.js snapshot.json
+
+      - name: Publish snapshot.json to data-snapshot branch
+        run: |
+          set -euo pipefail
+          test -s snapshot.json
+          work="$(mktemp -d)"
+          cp snapshot.json "$work/"
+          # A vercel.json that disables deployments, so Vercel never builds a
+          # preview off this branch when the workflow force-pushes it.
+          printf '{ "git": { "deploymentEnabled": false } }\n' > "$work/vercel.json"
+          cd "$work"
+          git init -q
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q -b data-snapshot
+          git add snapshot.json vercel.json
+          git commit -q -m "snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          # Force-push a single-commit orphan branch so history doesn't grow.
+          git push -q --force \
+            "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
+            data-snapshot

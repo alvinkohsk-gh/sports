@@ -13,6 +13,47 @@ const MOCK_MODE = String(process.env.MOCK_MODE || 'false').toLowerCase() === 'tr
 // than this.
 const CACHE_TTL_MS = Number(process.env.CACHE_TTL_MS || 60000);
 
+// Primary data source in production: a pre-built snapshot published every
+// ~15 min by GitHub Actions (see scripts/scrape-snapshot.js and
+// .github/workflows/snapshot.yml). Scraping on the request path is
+// unreliable on Vercel — @sparticuz/chromium-min runs --single-process and
+// crashes under load, and the Cloudflare-protected tipster sites 403
+// Vercel's datacenter IPs — so the live scrape below is only a fallback
+// for when the snapshot is missing or stale.
+const SNAPSHOT_URL =
+  process.env.SNAPSHOT_URL ||
+  'https://raw.githubusercontent.com/alvinkohsk-gh/sports/data-snapshot/snapshot.json';
+const SNAPSHOT_MAX_AGE_MS = Number(process.env.SNAPSHOT_MAX_AGE_MS || 45 * 60 * 1000);
+const SNAPSHOT_REFETCH_MS = Number(process.env.SNAPSHOT_REFETCH_MS || 60 * 1000);
+
+let snapshotCache = { data: null, fetchedAt: 0 };
+
+async function getSnapshot() {
+  if (MOCK_MODE) return null;
+  if (snapshotCache.data && Date.now() - snapshotCache.fetchedAt < SNAPSHOT_REFETCH_MS) {
+    return snapshotCache.data;
+  }
+  try {
+    const res = await fetch(SNAPSHOT_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    snapshotCache = { data, fetchedAt: Date.now() };
+    return data;
+  } catch (err) {
+    console.error('[snapshot] fetch failed:', err.message);
+    return snapshotCache.data; // last good copy, or null
+  }
+}
+
+function snapshotAgeMs(snap) {
+  const ts = Date.parse((snap && (snap.generatedAt || snap.lastUpdated)) || '');
+  return Number.isFinite(ts) ? Date.now() - ts : Infinity;
+}
+
+function snapshotIsFresh(snap) {
+  return snap && Array.isArray(snap.matches) && snapshotAgeMs(snap) < SNAPSHOT_MAX_AGE_MS;
+}
+
 async function ensureFreshState() {
   const state = getState();
   const ageMs = state.lastUpdated ? Date.now() - new Date(state.lastUpdated).getTime() : Infinity;
@@ -27,6 +68,22 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.get('/api/matches', async (req, res) => {
+  const snap = await getSnapshot();
+  if (snapshotIsFresh(snap)) {
+    res.json({
+      matches: snap.matches,
+      bestBet: snap.bestBet,
+      lastUpdated: snap.lastUpdated,
+      lastError: snap.lastError,
+      mockMode: MOCK_MODE,
+      counts: snap.counts,
+      source: 'snapshot',
+      snapshotAgeSec: Math.round(snapshotAgeMs(snap) / 1000),
+    });
+    return;
+  }
+
+  // Snapshot missing or stale — fall back to an on-demand scrape.
   const state = await ensureFreshState();
   res.json({
     matches: state.matches,
@@ -38,25 +95,59 @@ app.get('/api/matches', async (req, res) => {
       sgpFixtures: state.sgpFixtureCount,
       tipsterPicks: state.tipsterPickCount,
     },
+    source: 'live',
+    staleSnapshotAgeSec: snap ? Math.round(snapshotAgeMs(snap) / 1000) : null,
   });
 });
+
+// Resolves the data the debug endpoints report on: the published snapshot
+// when it's fresh, otherwise a live on-demand scrape. Normalizes the two
+// shapes (snapshot has `counts`, live state has `sgpFixtureCount` etc.).
+async function debugSource() {
+  const snap = await getSnapshot();
+  if (snapshotIsFresh(snap)) {
+    return {
+      source: 'snapshot',
+      ageSec: Math.round(snapshotAgeMs(snap) / 1000),
+      lastUpdated: snap.lastUpdated,
+      lastError: snap.lastError,
+      matches: snap.matches || [],
+      rawSgpFixtures: snap.rawSgpFixtures || [],
+      rawTipsterPicks: snap.rawTipsterPicks || [],
+      tipsterPickCount: snap.counts?.tipsterPicks ?? (snap.rawTipsterPicks || []).length,
+    };
+  }
+  const state = await ensureFreshState();
+  return {
+    source: 'live',
+    ageSec: null,
+    lastUpdated: state.lastUpdated,
+    lastError: state.lastError,
+    matches: state.matches || [],
+    rawSgpFixtures: state.rawSgpFixtures || [],
+    rawTipsterPicks: state.rawTipsterPicks || [],
+    tipsterPickCount: state.tipsterPickCount ?? 0,
+  };
+}
 
 // Diagnostic view for "why are there no matches": shows each stage of the
 // pipeline separately (SG Pools fixtures found, tipster picks found) so a 0
 // can be traced to the right stage without re-running anything or reading
 // server logs.
 app.get('/api/debug', async (req, res) => {
-  const state = await ensureFreshState();
+  const d = await debugSource();
   res.json({
     mockMode: MOCK_MODE,
-    lastUpdated: state.lastUpdated,
-    lastError: state.lastError,
+    source: d.source,
+    snapshotAgeSec: d.ageSec,
+    lastUpdated: d.lastUpdated,
+    lastError: d.lastError,
     stageCounts: {
-      sgpFixturesFound: state.rawSgpFixtures?.length ?? 0,
-      tipsterPicksFound: state.tipsterPickCount ?? 0,
-      matchesShown: state.matches?.length ?? 0,
+      sgpFixturesFound: d.rawSgpFixtures.length,
+      tipsterPicksFound: d.tipsterPickCount,
+      matchesShown: d.matches.length,
     },
-    sampleSgpFixtures: (state.rawSgpFixtures || []).slice(0, 5),
+    sampleSgpFixtures: d.rawSgpFixtures.slice(0, 5),
   });
 });
 
@@ -67,17 +158,18 @@ app.get('/api/debug', async (req, res) => {
 // by a scrape returning nothing (site has 0 picks) or by prose parsing
 // leaving pick=null (attached but unclassified).
 app.get('/api/debug/tipsters', async (req, res) => {
-  const state = await ensureFreshState();
-  const raw = state.rawTipsterPicks || [];
+  const d = await debugSource();
   const bySite = {};
-  for (const p of raw) {
+  for (const p of d.rawTipsterPicks) {
     (bySite[p.site] = bySite[p.site] || []).push({ homeTeam: p.homeTeam, awayTeam: p.awayTeam, pick: p.pick });
   }
   res.json({
-    lastUpdated: state.lastUpdated,
-    rawPickCount: raw.length,
+    source: d.source,
+    snapshotAgeSec: d.ageSec,
+    lastUpdated: d.lastUpdated,
+    rawPickCount: d.rawTipsterPicks.length,
     rawPicksBySite: bySite,
-    fixtures: (state.matches || []).map((m) => ({
+    fixtures: d.matches.map((m) => ({
       fixture: `${m.homeTeam} vs ${m.awayTeam}`,
       attachedPicks: m.tipsterConsensus.picks.map((p) => `${p.site}:${p.pick ?? '?'}`),
       majorityPick: m.tipsterConsensus.majorityPick,

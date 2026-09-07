@@ -5,5 +5,10 @@
       "maxDuration": 60,
       "memory": 2048
     }
+  },
+  "git": {
+    "deploymentEnabled": {
+      "data-snapshot": false
+    }
   }
 }

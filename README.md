@@ -24,6 +24,19 @@ singaporepools.com.sg, with a live countdown to kickoff for each match.
 7. `public/` is a static page that polls that endpoint every 15s and runs a
    client-side countdown clock per match, ticking every second.
 
+**In production the scrape runs off the request path.** Scraping inside a
+Vercel function is unreliable — `@sparticuz/chromium-min` runs
+`--single-process` and crashes under load, and the Cloudflare-protected
+tipster sites 403 Vercel's datacenter IPs. So `.github/workflows/
+snapshot.yml` runs `scripts/scrape-snapshot.js` every ~15 min on a GitHub
+Actions runner (real Chromium, no 60s limit, an IP the sites don't
+blanket-block) and force-pushes the result JSON to the orphan
+`data-snapshot` branch. `src/app.js` fetches
+`raw.githubusercontent.com/<repo>/data-snapshot/snapshot.json` and serves
+that; it only falls back to an on-demand scrape when the snapshot is
+missing or older than `SNAPSHOT_MAX_AGE_MS` (45 min). `GET /api/matches`
+reports which path served it via a `source: "snapshot" | "live"` field.
+
 ## Tipster sources
 
 | Site | Data shape | Verification |
@@ -181,6 +194,8 @@ outcome. Displayed with a disclaimer in the UI.
 | `PORT` | Local server port (default 3000) |
 | `SGPOOLS_POLL_MS` | Refresh interval for the background loop (local/long-running only) |
 | `CACHE_TTL_MS` | On-demand refresh staleness threshold (serverless) |
+| `SNAPSHOT_URL` | Where to read the pre-built scrape snapshot (default: this repo's `data-snapshot` branch on raw.githubusercontent.com) |
+| `SNAPSHOT_MAX_AGE_MS` | Max snapshot age before `/api/matches` falls back to an on-demand scrape (default 45 min) |
 | `MOCK_MODE` | `true` to run entirely on bundled sample data |
 | `SGPOOLS_DEBUG` | `true` for verbose SG Pools scraper logs + HTML/screenshot dump |
 | `TIPSTERS_DEBUG` | `true` to save each tipster site's fetched HTML for inspection |
