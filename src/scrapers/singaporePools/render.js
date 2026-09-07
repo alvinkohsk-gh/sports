@@ -84,6 +84,27 @@ async function renderWithBrowser() {
     // Shortened from 2000ms — same reasoning as the timeout above.
     await page.waitForTimeout(500);
 
+    // If the events payload came back thin (the GitHub runner IP gets
+    // rate-limited by api.singaporepools.com and served a near-empty
+    // fixture list), reload once after a pause — the throttle is a short
+    // sliding window, so the retry often lands a full payload. Both
+    // captures are kept; index.js takes the largest.
+    const eventsSeen = () =>
+      capturedJson.reduce(
+        (n, c) => Math.max(n, Array.isArray(c.body && c.body.events) ? c.body.events.length : 0),
+        0
+      );
+    if (eventsSeen() < 15) {
+      if (DEBUG) console.log(`[singaporePools] only ${eventsSeen()} events seen — reloading once`);
+      await page.waitForTimeout(6000);
+      await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 }).catch(() => {});
+      await page
+        .waitForSelector('[data-testid="general_loader_indicator"]', { state: 'detached', timeout: 8000 })
+        .catch(() => {});
+      await page.waitForTimeout(800);
+      if (DEBUG) console.log(`[singaporePools] after reload: ${eventsSeen()} events seen`);
+    }
+
     const html = await page.content();
 
     // The page auto-loads the 1X2 (betType=MR) events but not the

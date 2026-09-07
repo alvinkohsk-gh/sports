@@ -73,7 +73,7 @@ async function loadPublished(file, fallback) {
   // served a near-empty fixture list) nuking a healthy live board: if the
   // fixture count collapsed while the tipster scrape is clearly fine, keep
   // the previous snapshot rather than publishing the broken one.
-  if (snapshot.matches.length < 5 && snapshot.counts.tipsterPicks > 50) {
+  if (snapshot.matches.length < 15 && snapshot.counts.tipsterPicks > 50) {
     console.error(
       `[scrape-snapshot] only ${snapshot.matches.length} SG Pools fixtures but ` +
         `${snapshot.counts.tipsterPicks} tipster picks — treating as a transient SG Pools failure, not publishing`

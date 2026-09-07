@@ -23,12 +23,18 @@ function extractFixtures(rendered) {
   // (api.singaporepools.com/football/events/v1/{upcoming-event,live} —
   // confirmed via production capture), then the generic key-matching walk
   // for any other shape, then fall back to rendered-text patterns.
+  //
+  // Take the *largest* result across all captured responses, not the first
+  // non-empty one: a throttled runner sometimes gets a near-empty
+  // upcoming-event payload alongside (or before) a full one on reload.
+  let best = [];
   for (const { body } of rendered.capturedJson) {
     const fixtures = extractFixturesFromEventsApi(body);
-    if (fixtures.length) {
-      if (DEBUG) console.log(`[singaporePools] extracted ${fixtures.length} fixtures from the events API`);
-      return fixtures;
-    }
+    if (fixtures.length > best.length) best = fixtures;
+  }
+  if (best.length) {
+    if (DEBUG) console.log(`[singaporePools] extracted ${best.length} fixtures from the events API`);
+    return best;
   }
   for (const { body } of rendered.capturedJson) {
     const fixtures = extractFixturesFromJson(body);
