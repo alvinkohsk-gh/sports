@@ -5,6 +5,7 @@ const { fetchWhoScoredTips } = require('./whoscored');
 const { fetchSportsMoleTips } = require('./sportsmole');
 const { fetchMatchOutlookTips } = require('./matchoutlook');
 const { fetchEaglePredictTips } = require('./eaglepredict');
+const { fetchFootyStatsTips } = require('./footystats');
 
 const SOURCES = [
   { site: 'forebet', fetch: fetchForebetTips },
@@ -14,6 +15,7 @@ const SOURCES = [
   { site: 'sportsmole', fetch: fetchSportsMoleTips },
   { site: 'matchoutlook', fetch: fetchMatchOutlookTips },
   { site: 'eaglepredict', fetch: fetchEaglePredictTips },
+  { site: 'footystats', fetch: fetchFootyStatsTips },
 ];
 
 // All 5 sources share one browser page (see browser.js — only one page is

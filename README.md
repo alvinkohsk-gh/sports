@@ -11,7 +11,7 @@ each match.
    fixtures (team names + kickoff time).
 2. `src/scrapers/tipsters/` fetches picks from the prediction/tipster
    sites in parallel (Forebet, PredictZ, WinDrawWin, WhoScored, Sports
-   Mole, MatchOutlook, EaglePredict) — see "Tipster sources" below for
+   Mole, MatchOutlook, EaglePredict, FootyStats) — see "Tipster sources" below for
    per-site detail and how verified each one is.
 3. `src/services/tipsterConsensus.js` attaches each match's tipster picks
    by fuzzy team-name matching (`src/services/matcher.js`).
@@ -56,6 +56,7 @@ shared headless browser.
 | Sports Mole | Prose preview articles | Reads the hub for fixture links, then fetches each per-match article and parses its "We say: A x-y B" verdict (falls back to "Sports Mole predicts:" / the closing paragraphs). Capped at `SPORTSMOLE_MAX_ARTICLES` (default 40). |
 | MatchOutlook | Structured `.match-section` list | One "Best Bet" per match — a 1X2 outcome (→ pick) or an over/under line (→ totalsPick); double chances (1X/X2/12) give neither. Plain HTTP, no FlareSolverr needed. |
 | EaglePredict | Structured table (best-effort) | Behind Cloudflare's terminal block (like WhoScored) — often unsolvable, so may contribute nothing. Generic table-row extraction; selectors need tightening from a real `debug-tipsters/eaglepredict.html` capture. |
+| FootyStats | `.betWrapper` tip list | One market per block ("Home Win", "Over 2.5 Goals", "BTTS Yes", …); 1X2 outcomes → `pick`, over/under lines → `totalsPick`, everything else ignored. A fixture can appear in several blocks. Plain HTTP. |
 
 The first three give a clean discrete pick (home/draw/away) reliably; the
 last two are best-effort. `inferPickFromProse` (`src/scrapers/tipsters/

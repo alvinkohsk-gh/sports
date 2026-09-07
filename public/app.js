@@ -42,6 +42,7 @@ const SITE_LABELS = {
   sportsmole: 'Sports Mole',
   matchoutlook: 'MatchOutlook',
   eaglepredict: 'EaglePredict',
+  footystats: 'FootyStats',
 };
 
 function renderTipsters(tipsterConsensus) {
