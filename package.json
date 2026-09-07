@@ -6,7 +6,8 @@
   "type": "commonjs",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "MOCK_MODE=true node src/server.js"
+    "dev": "MOCK_MODE=true node src/server.js",
+    "test": "node --test"
   },
   "dependencies": {
     "@sparticuz/chromium-min": "149.0.0",

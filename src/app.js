@@ -65,6 +65,33 @@ app.get('/api/debug', async (req, res) => {
 // can be written from what the site actually returns, without needing
 // filesystem access to Vercel's /tmp (where the DEBUG-mode dump otherwise
 // goes and stays unreachable from outside the function).
+// Shows the tipster-matching stage directly: every raw pick each site
+// returned, and for each Singapore Pools fixture which of those picks got
+// attached. Use this to tell "no consensus" caused by a name-matching
+// miss (picks exist for the fixture but 0 attached) apart from one caused
+// by a scrape returning nothing (site has 0 picks) or by prose parsing
+// leaving pick=null (attached but unclassified).
+app.get('/api/debug/tipsters', async (req, res) => {
+  const state = await ensureFreshState();
+  const raw = state.rawTipsterPicks || [];
+  const bySite = {};
+  for (const p of raw) {
+    (bySite[p.site] = bySite[p.site] || []).push({ homeTeam: p.homeTeam, awayTeam: p.awayTeam, pick: p.pick });
+  }
+  res.json({
+    lastUpdated: state.lastUpdated,
+    rawPickCount: raw.length,
+    rawPicksBySite: bySite,
+    fixtures: (state.matches || []).map((m) => ({
+      fixture: `${m.homeTeam} vs ${m.awayTeam}`,
+      attachedPicks: m.tipsterConsensus.picks.map((p) => `${p.site}:${p.pick ?? '?'}`),
+      majorityPick: m.tipsterConsensus.majorityPick,
+      majorityCount: m.tipsterConsensus.majorityCount,
+      totalTipsters: m.tipsterConsensus.totalTipsters,
+    })),
+  });
+});
+
 app.get('/api/debug/sgpools-raw', async (req, res) => {
   await ensureFreshState();
   const capture = getLastCapture();

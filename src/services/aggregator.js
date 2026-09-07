@@ -54,6 +54,7 @@ async function refresh({ mockMode }) {
   state.tipsterPickCount = tipsterPicks.length;
   // Kept for /api/debug so a stage can be diagnosed without re-running anything.
   state.rawSgpFixtures = sgpFixtures;
+  state.rawTipsterPicks = tipsterPicks;
   return state;
 }
 
