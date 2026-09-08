@@ -1,4 +1,5 @@
 const { teamsMatch } = require('./matcher');
+const { siteWeight } = require('./tipsterWeights');
 
 /**
  * Attaches tipster picks to each match by fuzzy team-name matching
@@ -6,8 +7,14 @@ const { teamsMatch } = require('./matcher');
  * separately over/under), not a probability, so this tallies "how many
  * tipsters agree" per match rather than blending picks into one number —
  * `tipsterRanking.js` then turns that tally into each match's top pick.
+ *
+ * `siteWeights` (from tipsterWeights.computeSiteWeights, keyed by site with
+ * a per-market weight) additionally produces a *weighted* tally alongside
+ * the raw one — value.js uses the weighted numbers to shape its consensus
+ * probability, while the raw `tally`/`totalsTally` stay plain integer vote
+ * counts so the UI's "X/Y tipsters agree" chips stay legible.
  */
-function attachTipsterConsensus(matches, tips) {
+function attachTipsterConsensus(matches, tips, siteWeights = {}) {
   return matches.map((match) => {
     const picksForMatch = tips.filter(
       (t) =>
@@ -27,20 +34,30 @@ function attachTipsterConsensus(matches, tips) {
           rawText,
           sourceUrl,
         })),
-        ...tallyOneXTwo(picksForMatch),
-        ...tallyTotals(picksForMatch, sgLinePoint),
+        ...tallyOneXTwo(picksForMatch, siteWeights),
+        ...tallyTotals(picksForMatch, sgLinePoint, siteWeights),
       },
     };
   });
 }
 
-function tallyOneXTwo(picksForMatch) {
+function tallyOneXTwo(picksForMatch, siteWeights) {
   const tally = { home: 0, draw: 0, away: 0, unclassified: 0 };
+  const weightedTally = { home: 0, draw: 0, away: 0 };
   for (const p of picksForMatch) {
-    if (p.pick === 'home') tally.home += 1;
-    else if (p.pick === 'draw') tally.draw += 1;
-    else if (p.pick === 'away') tally.away += 1;
-    else tally.unclassified += 1;
+    const w = siteWeight(siteWeights, p.site, 'oneX2');
+    if (p.pick === 'home') {
+      tally.home += 1;
+      weightedTally.home += w;
+    } else if (p.pick === 'draw') {
+      tally.draw += 1;
+      weightedTally.draw += w;
+    } else if (p.pick === 'away') {
+      tally.away += 1;
+      weightedTally.away += w;
+    } else {
+      tally.unclassified += 1;
+    }
   }
 
   const classifiedTotal = tally.home + tally.draw + tally.away;
@@ -48,6 +65,7 @@ function tallyOneXTwo(picksForMatch) {
 
   return {
     tally,
+    weightedTally,
     majorityPick: classifiedTotal > 0 ? majorityPick : null,
     majorityCount,
     totalTipsters: picksForMatch.length,
@@ -69,19 +87,24 @@ function resolveTotalsPickAtPoint(totalsPick, linePoint) {
   return totalsPick.point === linePoint ? totalsPick.selection : null;
 }
 
-function tallyTotals(picksForMatch, linePoint) {
+function tallyTotals(picksForMatch, linePoint, siteWeights) {
   const withTotals = picksForMatch
     .map((p) => ({ p, selection: resolveTotalsPickAtPoint(p.totalsPick, linePoint) }))
     .filter((x) => x.selection);
 
   const totalsTally = { over: 0, under: 0 };
-  for (const { selection } of withTotals) totalsTally[selection] += 1;
+  const weightedTotalsTally = { over: 0, under: 0 };
+  for (const { p, selection } of withTotals) {
+    totalsTally[selection] += 1;
+    weightedTotalsTally[selection] += siteWeight(siteWeights, p.site, 'totals');
+  }
 
   const [totalsMajorityPick, totalsMajorityCount] = topOf(totalsTally, ['over', 'under']);
   const majorityPoint = Number.isFinite(linePoint) ? linePoint : mostCommonPoint(withTotals, totalsMajorityPick);
 
   return {
     totalsTally,
+    weightedTotalsTally,
     totalsMajorityPick: withTotals.length > 0 ? totalsMajorityPick : null,
     totalsMajorityCount,
     totalsMajorityPoint: majorityPoint,

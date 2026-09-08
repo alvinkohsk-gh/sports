@@ -42,3 +42,26 @@ test('tipsterConsensus: falls back to the pick\'s own point when the SG Pools li
   assert.deepEqual(withConsensus.tipsterConsensus.totalsTally, { over: 2, under: 0 });
   assert.equal(withConsensus.tipsterConsensus.totalsMajorityPoint, 2.5);
 });
+
+test('tipsterConsensus: weightedTally applies per-site weights while the raw tally stays a plain vote count', () => {
+  const tips = [
+    { site: 'sharp', homeTeam: MATCH.homeTeam, awayTeam: MATCH.awayTeam, pick: 'home', totalsPick: null },
+    { site: 'cold', homeTeam: MATCH.homeTeam, awayTeam: MATCH.awayTeam, pick: 'away', totalsPick: null },
+  ];
+  const siteWeights = { sharp: { oneX2: 1.8, totals: 1 }, cold: { oneX2: 0.5, totals: 1 } };
+  const match = { ...MATCH, odds: null };
+  const [withConsensus] = attachTipsterConsensus([match], tips, siteWeights);
+
+  assert.deepEqual(withConsensus.tipsterConsensus.tally, { home: 1, draw: 0, away: 1, unclassified: 0 });
+  assert.deepEqual(withConsensus.tipsterConsensus.weightedTally, { home: 1.8, draw: 0, away: 0.5 });
+  // raw majority stays a tie (1 vs 1) even though the weighted score favors home
+  assert.equal(withConsensus.tipsterConsensus.majorityCount, 1);
+});
+
+test('tipsterConsensus: an unweighted call (no siteWeights arg) leaves weightedTally equal to the raw tally', () => {
+  const tips = [tip('a', { selection: 'over', point: 2.5, total: 3 })];
+  const match = { ...MATCH, odds: { ou: { point: 2.5, over: 1.9, under: 1.9 } } };
+  const [withConsensus] = attachTipsterConsensus([match], tips);
+
+  assert.deepEqual(withConsensus.tipsterConsensus.weightedTotalsTally, { over: 1, under: 0 });
+});

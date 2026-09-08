@@ -96,3 +96,36 @@ test('assessValue: tolerates a missing O/U market', () => {
   assert.equal(v.ou, null);
   assert.ok(v.oneX2);
 });
+
+test('assessValue: uses weightedTally for the reference probability but tally for the MIN_VOTES gate', () => {
+  const sgOdds = { oneX2: { home: 1.97, draw: 2.95, away: 3.5 } };
+  // Only 3 raw votes (below the default MIN_VOTES=4) but a heavily
+  // upweighted score above 4 — the gate must key off the raw count, so
+  // this market should NOT get a consensus even though the weighted sum
+  // clears the threshold.
+  const belowGate = assessValue(sgOdds, {
+    tally: { home: 2, draw: 1, away: 0 },
+    weightedTally: { home: 5, draw: 1, away: 0 },
+    totalsTally: {},
+  });
+  assert.equal(belowGate.oneX2.hasConsensus, false);
+
+  // Same raw vote count (5, clears MIN_VOTES) but weighted scores skew
+  // hard toward home — the reference probability should reflect the
+  // weighted shape, not a plain 3-2 split.
+  const weighted = assessValue(sgOdds, {
+    tally: { home: 3, draw: 0, away: 2 },
+    weightedTally: { home: 8, draw: 0, away: 0.5 },
+    totalsTally: {},
+  });
+  const unweighted = assessValue(sgOdds, {
+    tally: { home: 3, draw: 0, away: 2 },
+    totalsTally: {},
+  });
+  const homeOutWeighted = weighted.oneX2.outcomes.find((o) => o.key === 'home');
+  const homeOutUnweighted = unweighted.oneX2.outcomes.find((o) => o.key === 'home');
+  assert.ok(
+    homeOutWeighted.refProb > homeOutUnweighted.refProb,
+    `expected weighted refProb (${homeOutWeighted.refProb}) > unweighted (${homeOutUnweighted.refProb})`
+  );
+});
