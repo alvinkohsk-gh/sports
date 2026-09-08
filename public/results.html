@@ -113,9 +113,9 @@
       "Accuracy" here is simply: of the predictions a site made for matches that have since finished,
       how many were right — 1X2 (home/draw/away) and Over/Under total goals, scored separately.
       Only fixtures on the Singapore Pools board are counted, filtered by kickoff date in your local
-      time. 🏆 marks the most accurate site over the selected range (min 10 graded picks). Results
-      come from Forebet; matches it doesn't cover aren't graded. Past performance says nothing about
-      future results. Gamble responsibly.
+      time. 🏆 marks the most accurate site over the selected range (min 10 graded picks). Full-time
+      scores come from Flashscore (Forebet as a fallback); the rare match neither covers stays
+      "result pending". Past performance says nothing about future results. Gamble responsibly.
     </p>
   </main>
 
@@ -258,7 +258,7 @@
       if (matchRows.length > 100) parts.push(`Showing the 100 most recent of ${matchRows.length} matches.`);
       if (selectedSite) parts.push(`Filtered to ${label(selectedSite)} — click its card again (or "show all") to clear.`);
       else parts.push(`Click a site card to filter the table to just that site's picks.`);
-      if (pendingMatches) parts.push(`${pendingMatches} match${pendingMatches === 1 ? '' : 'es'} finished but not gradable — Forebet has no result for them yet (·).`);
+      if (pendingMatches) parts.push(`${pendingMatches} match${pendingMatches === 1 ? '' : 'es'} finished but not gradable yet — no full-time score available (·).`);
       noteEl.textContent = parts.join(' ');
     }
 

@@ -236,8 +236,11 @@ edge. SG Pools juices 1X2 markets far more than O/U (often ~13% vs ~9%
 margin), so value surfaces on totals more often.
 
 Every flagged pick is logged (`src/results/valuePicks.js`, ~5 weeks
-retention) and graded against the Forebet results once its match
-finishes. `GET /api/value-picks` returns the open + settled picks and a
+retention) and graded against the full-time score once its match
+finishes. Scores come from Flashscore's data feed
+(`src/results/flashscoreResults.js` — near-total league coverage), with
+Forebet's results pages and WinDrawWin's results table as fallbacks.
+`GET /api/value-picks` returns the open + settled picks and a
 flat-1-unit record (win rate, ROI, P/L); `?from=YYYY-MM-DD&to=YYYY-MM-DD`
 filters by kickoff day. `public/value-picks.html` is a page for it with a
 date-range picker (a single day gives just that day's record).
