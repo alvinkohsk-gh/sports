@@ -1,5 +1,5 @@
 const { renderWithBrowser, getLastCapture } = require('./render');
-const { parseOu25, fetchSgPoolsOu25 } = require('./odds');
+const { parseOu, fetchSgPoolsOu } = require('./odds');
 const {
   toFixture,
   extractFixturesFromEventsApi,
@@ -13,7 +13,7 @@ const {
 // fetchOpenFixtures(). The pieces:
 //   ./render.js    headless-browser render + JSON-response capture
 //   ./parsers.js   pure parsers (also lifts the 1X2 prices from the payload)
-//   ./odds.js      one extra call for the O/U 2.5 prices
+//   ./odds.js      one extra call for the O/U prices (whatever line SG Pools has posted)
 // This file decides which parser to trust, then attaches the O/U odds.
 
 const DEBUG = String(process.env.SGPOOLS_DEBUG || 'false').toLowerCase() === 'true';
@@ -74,23 +74,23 @@ async function fetchOpenFixtures() {
   }
 
   const fixtures = extractFixtures(rendered);
-  // fixtures may already carry `odds: { oneX2, ou25: null }` from the
-  // events payload (parsers.js). Add the O/U 2.5 line from the in-page
-  // fetch (render.js); only if that came back empty do we make a bare
-  // server-side call as a fallback.
-  let ou25ById = rendered.ouEvents ? parseOu25(rendered.ouEvents) : new Map();
-  if (ou25ById.size === 0) ou25ById = await fetchSgPoolsOu25();
+  // fixtures may already carry `odds: { oneX2, ou: null }` from the events
+  // payload (parsers.js). Add the O/U line — whatever point it's set at
+  // (1.5, 2.5, 3.5, ...) — from the in-page fetch (render.js); only if
+  // that came back empty do we make a bare server-side call as a fallback.
+  let ouById = rendered.ouEvents ? parseOu(rendered.ouEvents) : new Map();
+  if (ouById.size === 0) ouById = await fetchSgPoolsOu();
   let x12 = 0;
-  let ou = 0;
+  let ouCount = 0;
   for (const f of fixtures) {
     if (f.odds && f.odds.oneX2) x12 += 1;
-    const o = ou25ById.get(String(f.sgpMatchId));
+    const o = ouById.get(String(f.sgpMatchId));
     if (o) {
-      f.odds = { ...(f.odds || { oneX2: null }), ou25: o };
-      ou += 1;
+      f.odds = { ...(f.odds || { oneX2: null }), ou: o };
+      ouCount += 1;
     }
   }
-  if (DEBUG) console.log(`[singaporePools] odds: 1X2 on ${x12}/${fixtures.length}, O/U 2.5 on ${ou}`);
+  if (DEBUG) console.log(`[singaporePools] odds: 1X2 on ${x12}/${fixtures.length}, O/U on ${ouCount}`);
 
   lastInPlay = extractLiveFixtures(rendered.liveEvents);
   if (DEBUG) console.log(`[singaporePools] in-play: ${lastInPlay.length}`);

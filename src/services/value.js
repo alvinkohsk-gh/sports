@@ -89,9 +89,11 @@ function assessMarket(oddsByKey, countsByKey, labels) {
 }
 
 /**
- * @param sgOdds  { oneX2:{home,draw,away}, ou25:{over,under}|null }
- * @param consensus  a match's tipsterConsensus (needs `tally` and `totalsTally`)
- * @returns { oneX2, ou25, best } — `best` is the single highest-EV flagged
+ * @param sgOdds  { oneX2:{home,draw,away}, ou:{point,over,under}|null }
+ * @param consensus  a match's tipsterConsensus (needs `tally` and
+ *                    `totalsTally`, the latter already tallied against
+ *                    `sgOdds.ou.point` by tipsterConsensus.js)
+ * @returns { oneX2, ou, best } — `best` is the single highest-EV flagged
  *          outcome across both markets, tagged with its market, or null.
  */
 function assessValue(sgOdds, consensus) {
@@ -104,20 +106,21 @@ function assessValue(sgOdds, consensus) {
     { home: tally.home, draw: tally.draw, away: tally.away },
     { home: 'Home', draw: 'Draw', away: 'Away' }
   );
-  const ou25 = sgOdds.ou25
+  const ouPoint = sgOdds.ou ? sgOdds.ou.point : null;
+  const ou = sgOdds.ou
     ? assessMarket(
-        sgOdds.ou25,
+        { over: sgOdds.ou.over, under: sgOdds.ou.under },
         { over: totalsTally.over, under: totalsTally.under },
-        { over: 'Over 2.5', under: 'Under 2.5' }
+        { over: `Over ${ouPoint}`, under: `Under ${ouPoint}` }
       )
     : null;
 
   const candidates = [];
   if (oneX2 && oneX2.best) candidates.push({ market: '1X2', ...oneX2.best });
-  if (ou25 && ou25.best) candidates.push({ market: 'O/U 2.5', ...ou25.best });
+  if (ou && ou.best) candidates.push({ market: `O/U ${ouPoint}`, point: ouPoint, ...ou.best });
   candidates.sort((a, b) => b.ev - a.ev);
 
-  return { oneX2, ou25, best: candidates[0] || null };
+  return { oneX2, ou, best: candidates[0] || null };
 }
 
 module.exports = { assessValue, assessMarket, devig, consensusProbs, CONSENSUS_WEIGHT, MIN_EV_THRESHOLD };

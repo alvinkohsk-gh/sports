@@ -60,7 +60,7 @@ test('assessMarket: no consensus -> reference is the no-vig line -> nothing flag
 test('assessValue: picks the single highest-EV flagged outcome across 1X2 and O/U', () => {
   const sgOdds = {
     oneX2: { home: 1.97, draw: 2.95, away: 3.5 },
-    ou25: { over: 2.07, under: 1.65 },
+    ou: { point: 2.5, over: 2.07, under: 1.65 },
   };
   const consensus = {
     tally: { home: 6, draw: 1, away: 3 },
@@ -73,11 +73,26 @@ test('assessValue: picks the single highest-EV flagged outcome across 1X2 and O/
   assert.ok(v.best.ev >= v.oneX2.outcomes.reduce((mx, o) => Math.max(mx, o.ev), -Infinity));
 });
 
+test('assessValue: labels the O/U market with the actual SG Pools line, not always 2.5', () => {
+  const sgOdds = {
+    oneX2: { home: 1.97, draw: 2.95, away: 3.5 },
+    ou: { point: 1.5, over: 1.5, under: 2.6 },
+  };
+  const consensus = {
+    tally: { home: 1, draw: 1, away: 1 },
+    totalsTally: { over: 8, under: 2 },
+  };
+  const v = assessValue(sgOdds, consensus);
+  assert.equal(v.ou.outcomes.find((o) => o.key === 'over').label, 'Over 1.5');
+  assert.equal(v.ou.outcomes.find((o) => o.key === 'under').label, 'Under 1.5');
+  if (v.best) assert.equal(v.best.market, 'O/U 1.5');
+});
+
 test('assessValue: tolerates a missing O/U market', () => {
-  const v = assessValue({ oneX2: { home: 2.5, draw: 3.2, away: 2.8 }, ou25: null }, {
+  const v = assessValue({ oneX2: { home: 2.5, draw: 3.2, away: 2.8 }, ou: null }, {
     tally: { home: 5, draw: 3, away: 2 },
     totalsTally: {},
   });
-  assert.equal(v.ou25, null);
+  assert.equal(v.ou, null);
   assert.ok(v.oneX2);
 });

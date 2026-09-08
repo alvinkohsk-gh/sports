@@ -70,7 +70,7 @@ function extractFixturesFromEventsApi(data) {
     });
     if (!fixture) continue;
     const oneX2 = oneX2OddsFromEvent(event);
-    if (oneX2) fixture.odds = { oneX2, ou25: null };
+    if (oneX2) fixture.odds = { oneX2, ou: null };
     results.push(fixture);
   }
   return results;
@@ -104,7 +104,7 @@ function extractLiveFixtures(events) {
     fixture.live = true;
 
     const oneX2 = oneX2OddsFromEvent(event);
-    if (oneX2) fixture.odds = { oneX2, ou25: null };
+    if (oneX2) fixture.odds = { oneX2, ou: null };
 
     let lowest = null;
     for (const m of event.markets || []) {

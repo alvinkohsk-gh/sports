@@ -132,7 +132,7 @@ function inferTotalsPickFromProse(text) {
   const scoreline = text.match(/\b(\d)\s*-\s*(\d)\b/);
   if (scoreline) {
     const total = Number(scoreline[1]) + Number(scoreline[2]);
-    return { selection: total > 2.5 ? 'over' : 'under', point: 2.5 };
+    return { selection: total > 2.5 ? 'over' : 'under', point: 2.5, total };
   }
   return inferTotalsPick(text);
 }

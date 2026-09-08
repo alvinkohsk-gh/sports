@@ -14,10 +14,15 @@ function flaggedOutcomes(match) {
   const v = match.value;
   if (!v) return [];
   const out = [];
-  for (const [market, a] of [['1X2', v.oneX2], ['O/U 2.5', v.ou25]]) {
+  const ouPoint = match.odds && match.odds.ou ? match.odds.ou.point : null;
+  const markets = [
+    ['1X2', v.oneX2, null],
+    [ouPoint != null ? `O/U ${ouPoint}` : null, v.ou, ouPoint],
+  ];
+  for (const [market, a, point] of markets) {
     if (!a || !Array.isArray(a.outcomes)) continue;
     for (const o of a.outcomes) {
-      if (o.value) out.push({ market, ...o });
+      if (o.value) out.push({ market, point, ...o });
     }
   }
   return out;
@@ -51,6 +56,7 @@ function mergeValuePicks(existing, matches, capturedAtISO) {
         league: m.league || null,
         kickoffISO: m.kickoffISO,
         market: o.market,
+        point: o.point, // the O/U line this pick was priced against; null for 1X2
         selection: o.key, // home|draw|away|over|under
         label: o.label,
         odd: o.odd,
@@ -80,7 +86,9 @@ function mergeValuePicks(existing, matches, capturedAtISO) {
 function outcomeHit(pick, homeGoals, awayGoals) {
   const total = homeGoals + awayGoals;
   if (pick.market === '1X2') return pick.selection === outcome1x2(homeGoals, awayGoals);
-  if (pick.market === 'O/U 2.5') return (pick.selection === 'over') === total > 2.5;
+  if (typeof pick.market === 'string' && pick.market.startsWith('O/U') && Number.isFinite(pick.point)) {
+    return (pick.selection === 'over') === total > pick.point;
+  }
   return null;
 }
 

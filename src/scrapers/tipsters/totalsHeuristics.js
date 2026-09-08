@@ -16,7 +16,11 @@ function totalsFromScoreline(text) {
   const m = String(text).match(SCORELINE_RE);
   if (!m) return null;
   const total = Number(m[1]) + Number(m[2]);
-  return { selection: total > 2.5 ? 'over' : 'under', point: 2.5 };
+  // `total` is the actual predicted goal count, kept alongside the 2.5-line
+  // selection so callers that know the real SG Pools line (which may be
+  // 1.5 or 3.5, not always 2.5) can re-derive over/under against it instead
+  // of assuming 2.5.
+  return { selection: total > 2.5 ? 'over' : 'under', point: 2.5, total };
 }
 
 function inferTotalsPick(text) {

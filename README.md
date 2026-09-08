@@ -209,10 +209,15 @@ outcome. Displayed with a disclaimer in the UI.
 ## Odds & value detection
 
 Singapore Pools' fixture-events API also serves the prices — `src/scrapers/singaporePools/odds.js`
-pulls the **1X2** (`betType=MR`) and **Over/Under 2.5** (`betType=HL`,
-market `Total Goals Over/Under 2.5`) decimal odds and attaches them to each
-fixture as `match.odds` (about two-thirds of fixtures carry a 2.5 line;
-the rest are priced at 1.5 or 3.5 and get no O/U assessment).
+pulls the **1X2** (`betType=MR`) and **Over/Under** (`betType=HL`, market
+`Total Goals Over/Under <point>`) decimal odds and attaches them to each
+fixture as `match.odds`, reading whatever point SG Pools actually posted
+for that match (most are 2.5, some are 1.5 or 3.5) rather than assuming
+2.5. The tipster consensus and value assessment for the O/U market are
+then computed against that same point — a tipster's "over/under 2.5"
+opinion derived from a predicted scoreline is re-evaluated against the
+real line; an explicit "over/under 2.5" opinion is only counted when the
+real line is actually 2.5.
 
 `src/services/value.js` then assesses each priced market:
 
