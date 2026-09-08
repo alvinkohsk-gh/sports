@@ -89,7 +89,13 @@ function escapeHtml(s) {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-const OUTCOME_LABEL = { home: 'H', draw: 'D', away: 'A', over: 'O2.5', under: 'U2.5' };
+const OUTCOME_LABEL_BASE = { home: 'H', draw: 'D', away: 'A' };
+
+function outcomeLabel(key, ouPoint) {
+  if (key === 'over') return `O${ouPoint}`;
+  if (key === 'under') return `U${ouPoint}`;
+  return OUTCOME_LABEL_BASE[key] || key;
+}
 
 function signedPct(v) {
   if (v == null) return '—';
@@ -98,7 +104,7 @@ function signedPct(v) {
 }
 
 // One market's odds row, highlighting any outcome flagged as value.
-function renderOddsRow(label, assessment, rawOdds, keys) {
+function renderOddsRow(label, assessment, rawOdds, keys, ouPoint) {
   if (!assessment && !rawOdds) return '';
   const cells = keys
     .map((k) => {
@@ -110,7 +116,7 @@ function renderOddsRow(label, assessment, rawOdds, keys) {
         ? `no-vig ${pct(oc.noVigProb)} · reference ${pct(oc.refProb)} · EV ${signedPct(oc.ev)}` +
           (isVal ? ` · stake ¼-Kelly ${pct(oc.quarterKelly)} of bank` : '')
         : '';
-      return `<span class="odds-cell${isVal ? ' is-value' : ''}" title="${escapeHtml(tip)}"><span class="o-lab">${OUTCOME_LABEL[k]}</span>${Number(odd).toFixed(2)}</span>`;
+      return `<span class="odds-cell${isVal ? ' is-value' : ''}" title="${escapeHtml(tip)}"><span class="o-lab">${outcomeLabel(k, ouPoint)}</span>${Number(odd).toFixed(2)}</span>`;
     })
     .join('');
   if (!cells) return '';
@@ -122,9 +128,10 @@ function renderOdds(match) {
   const v = match.value;
   const o = match.odds;
   if (!v && !o) return '';
+  const ouPoint = o && o.ou ? o.ou.point : null;
   const rows = [
     renderOddsRow('1X2', v && v.oneX2, o && o.oneX2, ['home', 'draw', 'away']),
-    renderOddsRow('O/U 2.5', v && v.ou25, o && o.ou25, ['over', 'under']),
+    renderOddsRow(ouPoint != null ? `O/U ${ouPoint}` : 'O/U', v && v.ou, o && o.ou, ['over', 'under'], ouPoint),
   ].join('');
   if (!rows) return '';
 

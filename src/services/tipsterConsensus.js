@@ -15,6 +15,8 @@ function attachTipsterConsensus(matches, tips) {
         (teamsMatch(t.homeTeam, match.awayTeam) && teamsMatch(t.awayTeam, match.homeTeam))
     );
 
+    const sgLinePoint = match.odds && match.odds.ou ? match.odds.ou.point : null;
+
     return {
       ...match,
       tipsterConsensus: {
@@ -26,7 +28,7 @@ function attachTipsterConsensus(matches, tips) {
           sourceUrl,
         })),
         ...tallyOneXTwo(picksForMatch),
-        ...tallyTotals(picksForMatch),
+        ...tallyTotals(picksForMatch, sgLinePoint),
       },
     };
   });
@@ -52,18 +54,31 @@ function tallyOneXTwo(picksForMatch) {
   };
 }
 
-function tallyTotals(picksForMatch) {
-  const withTotals = picksForMatch.filter((p) => p.totalsPick);
+// Resolves one tipster's totals pick against `linePoint` — the point SG
+// Pools is actually offering for this match (may be 1.5, 2.5, 3.5, ...).
+// A pick derived from a predicted scoreline (`total` = the actual goal
+// count) can be re-evaluated against any point. A pick that only states an
+// explicit line (e.g. "Over 2.5") is a real opinion on that specific
+// market and isn't comparable to a different line, so it's excluded unless
+// its point matches. When `linePoint` isn't known yet, fall back to the
+// pick's own point/selection as before.
+function resolveTotalsPickAtPoint(totalsPick, linePoint) {
+  if (!totalsPick) return null;
+  if (!Number.isFinite(linePoint)) return totalsPick.selection;
+  if (Number.isFinite(totalsPick.total)) return totalsPick.total > linePoint ? 'over' : 'under';
+  return totalsPick.point === linePoint ? totalsPick.selection : null;
+}
+
+function tallyTotals(picksForMatch, linePoint) {
+  const withTotals = picksForMatch
+    .map((p) => ({ p, selection: resolveTotalsPickAtPoint(p.totalsPick, linePoint) }))
+    .filter((x) => x.selection);
+
   const totalsTally = { over: 0, under: 0 };
-  for (const p of withTotals) {
-    if (p.totalsPick.selection === 'over') totalsTally.over += 1;
-    else if (p.totalsPick.selection === 'under') totalsTally.under += 1;
-  }
+  for (const { selection } of withTotals) totalsTally[selection] += 1;
 
   const [totalsMajorityPick, totalsMajorityCount] = topOf(totalsTally, ['over', 'under']);
-  // Most tipster O/U content is about the 2.5 line; use whichever point
-  // shows up most often among the picks that agreed with the majority.
-  const majorityPoint = mostCommonPoint(withTotals, totalsMajorityPick);
+  const majorityPoint = Number.isFinite(linePoint) ? linePoint : mostCommonPoint(withTotals, totalsMajorityPick);
 
   return {
     totalsTally,
@@ -86,9 +101,11 @@ function topOf(tally, keys) {
   return [bestKey, bestCount];
 }
 
-function mostCommonPoint(picksWithTotals, selection) {
+// Fallback for when the SG Pools line isn't known yet: whichever point
+// shows up most often among the picks that agreed with the majority.
+function mostCommonPoint(resolvedWithTotals, selection) {
   if (!selection) return null;
-  const points = picksWithTotals.filter((p) => p.totalsPick.selection === selection).map((p) => p.totalsPick.point);
+  const points = resolvedWithTotals.filter((x) => x.selection === selection).map((x) => x.p.totalsPick.point);
   if (!points.length) return null;
   const counts = new Map();
   for (const pt of points) counts.set(pt, (counts.get(pt) || 0) + 1);
