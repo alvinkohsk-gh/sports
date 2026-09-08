@@ -57,19 +57,32 @@
     .vp-open .metric .l { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
     .vp-open .metric.ev { color: var(--ok); font-weight: 700; }
 
+    .tscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     table.settled { width: 100%; border-collapse: collapse; font-size: 12px; }
     table.settled th, table.settled td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--card-border); }
-    table.settled th { color: var(--muted); font-weight: 600; }
+    table.settled th { color: var(--muted); font-weight: 600; white-space: nowrap; }
     table.settled td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    table.settled td:nth-child(2) { min-width: 130px; }
     .res-win { color: var(--ok); font-weight: 700; }
     .res-lose { color: var(--urgent); font-weight: 700; }
     .pl-pos { color: var(--ok); } .pl-neg { color: var(--urgent); }
 
-    @media (max-width: 620px) {
-      .vp-open { grid-template-columns: 1fr 1fr; }
-      .vp-open .metric.fair { display: none; }
-      table.settled .hide-sm { display: none; }
+    @media (max-width: 640px) {
+      h1 { font-size: 16px; }
+      .subnav { font-size: 12px; gap: 12px; }
+      .rangebar { gap: 8px 10px; padding: 12px; }
+      .rangebar label { flex: 1; min-width: 130px; }
+      .rangebar input[type="date"] { flex: 1; padding: 7px 8px; }
+      .presets { width: 100%; }
+      .presets button { flex: 1; min-width: 64px; padding: 7px 4px; }
       .range-note { margin-left: 0; width: 100%; }
+      .summary { gap: 10px 16px; padding: 12px 14px; }
+      .summary .stat .val { font-size: 16px; }
+      .vp-open { grid-template-columns: 1fr 1fr; row-gap: 6px; }
+      .vp-open .metric.fair { display: none; }
+      .tscroll { margin: 0 -14px; padding: 0 14px; }
+      table.settled { min-width: 560px; }
+      table.settled .hide-sm { display: none; }
     }
   </style>
 </head>
@@ -106,15 +119,17 @@
     <div class="vp-list" id="open"></div>
 
     <h2 class="sec" id="settled-head" hidden>Settled</h2>
-    <table class="settled" id="settled" hidden>
-      <thead>
-        <tr>
-          <th>Kickoff</th><th>Fixture</th><th class="hide-sm">League</th>
-          <th>Pick</th><th class="num">Odd</th><th class="num">Score</th><th>Result</th><th class="num">P/L (u)</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="tscroll" id="settled-wrap" hidden>
+      <table class="settled" id="settled">
+        <thead>
+          <tr>
+            <th>Kickoff</th><th>Fixture</th><th class="hide-sm">League</th>
+            <th>Pick</th><th class="num">Odd</th><th class="num">Score</th><th>Result</th><th class="num">P/L (u)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
 
     <p class="disclaimer">
       A value pick is flagged when SG Pools' de-vigged price on an outcome implies a lower probability
@@ -134,6 +149,7 @@
     const openEl = document.getElementById('open');
     const openHead = document.getElementById('open-head');
     const settledEl = document.getElementById('settled');
+    const settledWrap = document.getElementById('settled-wrap');
     const settledHead = document.getElementById('settled-head');
     const fromEl = document.getElementById('from');
     const toEl = document.getElementById('to');
@@ -208,7 +224,7 @@
 
     function renderSettled(picks) {
       settledHead.hidden = picks.length === 0;
-      settledEl.hidden = picks.length === 0;
+      settledWrap.hidden = picks.length === 0;
       settledEl.querySelector('tbody').innerHTML = picks
         .map((p) => {
           const res = p.won ? '<span class="res-win">WON ✓</span>' : '<span class="res-lose">LOST ✗</span>';
