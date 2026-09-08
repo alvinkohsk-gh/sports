@@ -23,8 +23,6 @@ const { fetchForebetResults } = require('../src/results/forebetResults');
 const { fetchArchivePredictions } = require('../src/results/archives');
 const { grade } = require('../src/results/accuracy');
 const { teamsMatch } = require('../src/services/matcher');
-const { attachTipsterConsensus } = require('../src/services/tipsterConsensus');
-const { attachTopPick } = require('../src/services/tipsterRanking');
 const { mergeValuePicks, gradeValuePicks, summarizeValuePicks } = require('../src/results/valuePicks');
 
 const OUT = process.argv[2] || 'snapshot.json';
@@ -47,11 +45,9 @@ async function loadPublished(file, fallback) {
   await refresh({ mockMode: false });
   const s = getState();
 
-  // In-play = SG Pools' own in-play fixtures, enriched with the real
-  // running score from Flashscore (SG Pools' live feed carries no score),
-  // PLUS any fixture our tipsters covered that Flashscore currently has
-  // live but SG Pools has dropped (it stops offering in-play odds at
-  // half-time / late on, so those matches would otherwise vanish).
+  // In-play = only fixtures Singapore Pools itself currently has live
+  // (odds still on offer), enriched with the real running score from
+  // Flashscore (SG Pools' own live feed carries no score/clock).
   const inPlay = s.inPlay || [];
   const sameFixture = (a, b) =>
     (teamsMatch(a.homeTeam, b.homeTeam) && teamsMatch(a.awayTeam, b.awayTeam)) ||
@@ -67,27 +63,7 @@ async function loadPublished(file, fallback) {
         matched += 1;
       }
     }
-    const extra = [];
-    for (const fx of fsLive) {
-      if (inPlay.some((m) => sameFixture(m, fx)) || extra.some((m) => sameFixture(m, fx))) continue;
-      const covered = (s.rawTipsterPicks || []).some((p) => sameFixture(p, fx));
-      if (!covered) continue;
-      extra.push({
-        id: `fs-${fx.homeTeam}-${fx.awayTeam}`.replace(/[^A-Za-z0-9]+/g, '').toLowerCase(),
-        homeTeam: fx.homeTeam,
-        awayTeam: fx.awayTeam,
-        league: fx.league || null,
-        kickoffISO: fx.kickoffISO || null,
-        live: true,
-        sgPoolsOpen: false,
-        liveScore: `${fx.homeGoals}-${fx.awayGoals}`,
-        liveStage: fx.stage,
-      });
-    }
-    if (extra.length) inPlay.push(...attachTopPick(attachTipsterConsensus(extra, s.rawTipsterPicks || [])));
-    console.error(
-      `[scrape-snapshot] in-play: ${inPlay.length} (${matched} SG Pools w/ FS score, ${extra.length} FS-only)`
-    );
+    console.error(`[scrape-snapshot] in-play: ${inPlay.length} (${matched} w/ FS score)`);
   } catch (err) {
     console.error('[scrape-snapshot] flashscore live failed:', err.message);
   }
