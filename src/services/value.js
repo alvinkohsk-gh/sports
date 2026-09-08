@@ -43,21 +43,28 @@ function devig(oddsByKey) {
   return { keys, implied, noVig, overround };
 }
 
-// smoothed vote share -> probability distribution over the same keys
-function consensusProbs(countsByKey, keys) {
+// smoothed vote share -> probability distribution over the same keys.
+// `countsByKey` may be per-tipster-accuracy-weighted (see
+// tipsterWeights.js) rather than raw vote counts, in which case
+// `voteCount` — the actual number of tipsters, unweighted — should be
+// passed separately so the MIN_VOTES gate still reads "enough opinions",
+// not "enough weighted score". Omit it to gate on the counts themselves
+// (old behavior, unaffected when countsByKey is already a raw tally).
+function consensusProbs(countsByKey, keys, voteCount) {
   let total = 0;
   for (const k of keys) total += Math.max(0, Number(countsByKey[k]) || 0);
-  if (total < MIN_VOTES) return null;
+  const gate = Number.isFinite(voteCount) ? voteCount : total;
+  if (gate < MIN_VOTES) return null;
   const probs = {};
   const denom = total + SMOOTHING * keys.length;
   for (const k of keys) probs[k] = ((Number(countsByKey[k]) || 0) + SMOOTHING) / denom;
   return probs;
 }
 
-function assessMarket(oddsByKey, countsByKey, labels) {
+function assessMarket(oddsByKey, countsByKey, labels, voteCount) {
   const d = devig(oddsByKey);
   if (!d) return null;
-  const consensus = consensusProbs(countsByKey, d.keys);
+  const consensus = consensusProbs(countsByKey, d.keys, voteCount);
 
   const outcomes = d.keys.map((k) => {
     const odd = Number(oddsByKey[k]);
@@ -90,9 +97,11 @@ function assessMarket(oddsByKey, countsByKey, labels) {
 
 /**
  * @param sgOdds  { oneX2:{home,draw,away}, ou:{point,over,under}|null }
- * @param consensus  a match's tipsterConsensus (needs `tally` and
- *                    `totalsTally`, the latter already tallied against
- *                    `sgOdds.ou.point` by tipsterConsensus.js)
+ * @param consensus  a match's tipsterConsensus (needs `tally`/`totalsTally`
+ *                    — raw vote counts — and, when tipster accuracy
+ *                    weighting is in play, `weightedTally`/
+ *                    `weightedTotalsTally`; falls back to the raw tallies
+ *                    when the weighted ones aren't present)
  * @returns { oneX2, ou, best } — `best` is the single highest-EV flagged
  *          outcome across both markets, tagged with its market, or null.
  */
@@ -100,18 +109,24 @@ function assessValue(sgOdds, consensus) {
   if (!sgOdds || !sgOdds.oneX2) return null;
   const tally = (consensus && consensus.tally) || {};
   const totalsTally = (consensus && consensus.totalsTally) || {};
+  const weightedTally = (consensus && consensus.weightedTally) || tally;
+  const weightedTotalsTally = (consensus && consensus.weightedTotalsTally) || totalsTally;
 
+  const oneX2VoteCount = (tally.home || 0) + (tally.draw || 0) + (tally.away || 0);
   const oneX2 = assessMarket(
     sgOdds.oneX2,
-    { home: tally.home, draw: tally.draw, away: tally.away },
-    { home: 'Home', draw: 'Draw', away: 'Away' }
+    { home: weightedTally.home, draw: weightedTally.draw, away: weightedTally.away },
+    { home: 'Home', draw: 'Draw', away: 'Away' },
+    oneX2VoteCount
   );
   const ouPoint = sgOdds.ou ? sgOdds.ou.point : null;
+  const totalsVoteCount = (totalsTally.over || 0) + (totalsTally.under || 0);
   const ou = sgOdds.ou
     ? assessMarket(
         { over: sgOdds.ou.over, under: sgOdds.ou.under },
-        { over: totalsTally.over, under: totalsTally.under },
-        { over: `Over ${ouPoint}`, under: `Under ${ouPoint}` }
+        { over: weightedTotalsTally.over, under: weightedTotalsTally.under },
+        { over: `Over ${ouPoint}`, under: `Under ${ouPoint}` },
+        totalsVoteCount
       )
     : null;
 

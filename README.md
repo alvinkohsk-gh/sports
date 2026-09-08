@@ -224,8 +224,15 @@ real line is actually 2.5.
 1. **implied prob** = `1 / decimal_odd`
 2. **margin / overround** = `Σ implied − 1` — the bookmaker's built-in edge
 3. **no-vig prob** = `implied / (1 + overround)` — SG Pools' own fair line
-4. **consensus prob** = smoothed tipster vote share (needs ≥ `VALUE_MIN_VOTES`
-   picks on that market, else the market is left unassessed)
+4. **consensus prob** = smoothed tipster vote share, weighted by each
+   site's own graded accuracy on that market (`src/services/
+   tipsterWeights.js` — a site that's actually beaten chance on 1X2 or
+   O/U, per `accuracy.json`, counts for more than a site that hasn't;
+   thin track records shrink toward a neutral weight of 1). Needs ≥
+   `VALUE_MIN_VOTES` raw votes on that market — unweighted — else the
+   market is left unassessed. The board's "X/Y tipsters agree" chips
+   always show the raw, unweighted count; only the EV math behind them
+   uses the weighted score.
 5. **reference prob** = `(1 − w)·no-vig + w·consensus`, `w = VALUE_CONSENSUS_WEIGHT`
 6. **EV per unit** = `reference · odd − 1`; **Kelly fraction** =
    `(reference·odd − 1) / (odd − 1)` (the UI shows ¼-Kelly)

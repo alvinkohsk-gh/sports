@@ -3,7 +3,24 @@ const { fetchAllTipsterPicks } = require('../scrapers/tipsters');
 const { attachTipsterConsensus } = require('./tipsterConsensus');
 const { attachTopPick, pickBestBetOverall } = require('./tipsterRanking');
 const { assessValue } = require('./value');
+const { computeSiteWeights } = require('./tipsterWeights');
+const { fetchBranchJson } = require('../snapshot');
 const { getMockSgpFixtures, getMockTipsterPicks } = require('../mock/mockData');
+
+// Per-site accuracy weighting (tipsterWeights.js) needs each tipster's
+// graded track record, published as accuracy.json alongside the snapshot.
+// Best-effort and cheap to re-fetch: a failure just leaves every site at
+// the neutral weight of 1, same as before this existed.
+async function getSiteWeights(mockMode) {
+  if (mockMode) return {};
+  try {
+    const accuracy = await fetchBranchJson('accuracy.json');
+    return computeSiteWeights(accuracy);
+  } catch (err) {
+    console.error('[aggregator] accuracy.json fetch failed, using neutral tipster weights:', err.message);
+    return {};
+  }
+}
 
 const state = {
   matches: [],
@@ -54,15 +71,19 @@ function pickBestValue(matches) {
 }
 
 // Each source is fetched independently (allSettled, not all) so that one
-// source failing can't blank out the other's results.
+// source failing can't blank out the other's results. Site weights are
+// fetched alongside them, best-effort — a failure there just falls back to
+// neutral weights, same as a missing/stale accuracy.json.
 async function refresh({ mockMode }) {
-  const [sgpResult, tipsterResult] = await Promise.allSettled([
+  const [sgpResult, tipsterResult, siteWeightsResult] = await Promise.allSettled([
     mockMode ? Promise.resolve(getMockSgpFixtures()) : fetchOpenFixtures(),
     mockMode ? Promise.resolve(getMockTipsterPicks()) : fetchAllTipsterPicks(),
+    getSiteWeights(mockMode),
   ]);
 
   const sgpFixtures = sgpResult.status === 'fulfilled' ? sgpResult.value : [];
   const tipsterPicks = tipsterResult.status === 'fulfilled' ? tipsterResult.value : [];
+  const siteWeights = siteWeightsResult.status === 'fulfilled' ? siteWeightsResult.value : {};
 
   const errors = [sgpResult, tipsterResult]
     .filter((r) => r.status === 'rejected')
@@ -72,7 +93,7 @@ async function refresh({ mockMode }) {
   }
 
   const matches = sgpFixtures.map(toMatch).sort((a, b) => new Date(a.kickoffISO) - new Date(b.kickoffISO));
-  const withTipsters = attachTipsterConsensus(matches, tipsterPicks);
+  const withTipsters = attachTipsterConsensus(matches, tipsterPicks, siteWeights);
   for (const m of withTipsters) {
     m.value = m.odds ? assessValue(m.odds, m.tipsterConsensus) : null;
   }
@@ -86,7 +107,8 @@ async function refresh({ mockMode }) {
   const inPlayFixtures = mockMode ? [] : getInPlayFixtures();
   const inPlay = attachTipsterConsensus(
     inPlayFixtures.map(toMatch).sort((a, b) => new Date(a.kickoffISO) - new Date(b.kickoffISO)),
-    tipsterPicks
+    tipsterPicks,
+    siteWeights
   );
   state.inPlay = attachTopPick(inPlay);
 
