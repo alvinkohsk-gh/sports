@@ -33,15 +33,19 @@ function parseFeed(text, mode = 'finished') {
     const ag = Number(cur.AH);
     if (cur.AB === wantStatus && cur.AE && cur.AF && Number.isFinite(hg) && Number.isFinite(ag)) {
       const ts = Number(cur.AD);
+      const iso = Number.isFinite(ts) ? new Date(ts * 1000).toISOString() : null;
       const row = {
         homeTeam: cur.AE,
         awayTeam: cur.AF,
         homeGoals: hg,
         awayGoals: ag,
-        dayISO: Number.isFinite(ts) ? new Date(ts * 1000).toISOString().slice(0, 10) : null,
+        dayISO: iso ? iso.slice(0, 10) : null,
         league: cur.ZA || league,
       };
-      if (mode === 'live') row.stage = LIVE_STAGE[cur.AC] || 'live';
+      if (mode === 'live') {
+        row.stage = LIVE_STAGE[cur.AC] || 'live';
+        row.kickoffISO = iso;
+      }
       out.push(row);
     }
     cur = null;
