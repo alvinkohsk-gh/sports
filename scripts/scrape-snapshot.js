@@ -19,6 +19,7 @@ const path = require('path');
 const { refresh, getState } = require('../src/services/aggregator');
 const { mergeHistory } = require('../src/results/history');
 const { fetchForebetResults } = require('../src/results/forebetResults');
+const { fetchArchivePredictions } = require('../src/results/archives');
 const { grade } = require('../src/results/accuracy');
 const { mergeValuePicks, gradeValuePicks, summarizeValuePicks } = require('../src/results/valuePicks');
 
@@ -91,12 +92,27 @@ async function loadPublished(file, fallback) {
 
   const history = mergeHistory(prevHistory, snapshot.matches, nowISO);
 
+  // Actual FT scores, from Forebet's results pages plus WinDrawWin's
+  // "yesterday results" table (archives.js) — Forebet's page lazy-loads
+  // and misses a lot of the finished European leagues, so the second
+  // source fills those in.
   let results = [];
   try {
     results = await fetchForebetResults();
   } catch (err) {
     console.error('[scrape-snapshot] forebet results failed:', err.message);
   }
+  try {
+    const arch = await fetchArchivePredictions();
+    for (const r of arch) {
+      if (Number.isFinite(r.homeGoals) && Number.isFinite(r.awayGoals)) {
+        results.push({ homeTeam: r.homeTeam, awayTeam: r.awayTeam, dayISO: r.dayISO || null, homeGoals: r.homeGoals, awayGoals: r.awayGoals });
+      }
+    }
+  } catch (err) {
+    console.error('[scrape-snapshot] archive results failed:', err.message);
+  }
+  console.error(`[scrape-snapshot] FT-score rows: ${results.length}`);
 
   const graded = grade(history, results, prevAccuracy.samples || [], { windowHours: 48 });
   const accuracy = { ...graded.summary, samples: graded.samples };
