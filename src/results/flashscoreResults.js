@@ -14,25 +14,35 @@ const FSIGN = process.env.FLASHSCORE_FSIGN || 'SW9D1eZo';
 const DAY_OFFSETS = [0, -1, -2]; // covers the 2–60h grading window
 const TIMEOUT_MS = Number(process.env.FLASHSCORE_TIMEOUT_MS) || 15000;
 
-function parseFeed(text) {
+// AC = stage code for a live match
+const LIVE_STAGE = { '11': 'HT', '12': '1st half', '13': '2nd half', '40': 'extra time', '41': 'extra time', '50': 'penalties' };
+
+/**
+ * @param mode 'finished' (default — AB "3", returns FT rows) or 'live'
+ *             (AB "2", returns rows with the running score + stage).
+ */
+function parseFeed(text, mode = 'finished') {
   const out = [];
   if (typeof text !== 'string' || !text.includes('÷')) return out;
+  const wantStatus = mode === 'live' ? '2' : '3';
   let league = null;
   let cur = null;
   const flush = () => {
     if (!cur) return;
     const hg = Number(cur.AG);
     const ag = Number(cur.AH);
-    if (cur.AB === '3' && cur.AE && cur.AF && Number.isFinite(hg) && Number.isFinite(ag)) {
+    if (cur.AB === wantStatus && cur.AE && cur.AF && Number.isFinite(hg) && Number.isFinite(ag)) {
       const ts = Number(cur.AD);
-      out.push({
+      const row = {
         homeTeam: cur.AE,
         awayTeam: cur.AF,
         homeGoals: hg,
         awayGoals: ag,
         dayISO: Number.isFinite(ts) ? new Date(ts * 1000).toISOString().slice(0, 10) : null,
         league: cur.ZA || league,
-      });
+      };
+      if (mode === 'live') row.stage = LIVE_STAGE[cur.AC] || 'live';
+      out.push(row);
     }
     cur = null;
   };
@@ -53,9 +63,8 @@ function parseFeed(text) {
   return out;
 }
 
-async function fetchOne(dayOffset) {
-  const url = `${HOST}/f_1_${dayOffset}_3_en_1`;
-  const { data } = await axios.get(url, {
+async function fetchFeedText(dayOffset) {
+  const { data } = await axios.get(`${HOST}/f_1_${dayOffset}_3_en_1`, {
     timeout: TIMEOUT_MS,
     responseType: 'text',
     headers: {
@@ -65,7 +74,7 @@ async function fetchOne(dayOffset) {
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
     },
   });
-  return parseFeed(typeof data === 'string' ? data : String(data));
+  return typeof data === 'string' ? data : String(data);
 }
 
 /**
@@ -77,7 +86,7 @@ async function fetchFlashscoreResults() {
   const byKey = new Map();
   for (const d of DAY_OFFSETS) {
     try {
-      for (const r of await fetchOne(d)) {
+      for (const r of parseFeed(await fetchFeedText(d), 'finished')) {
         byKey.set(`${r.homeTeam}|${r.awayTeam}|${r.dayISO}`, r);
       }
     } catch (err) {
@@ -87,4 +96,18 @@ async function fetchFlashscoreResults() {
   return [...byKey.values()];
 }
 
-module.exports = { fetchFlashscoreResults, parseFeed };
+/**
+ * In-progress matches with their running score + stage
+ * ([{ homeTeam, awayTeam, homeGoals, awayGoals, stage, league }]). Today's
+ * feed only. Never throws.
+ */
+async function fetchFlashscoreLive() {
+  try {
+    return parseFeed(await fetchFeedText(0), 'live');
+  } catch (err) {
+    console.error('[results:flashscore] live feed failed:', err.response?.status || err.message || err);
+    return [];
+  }
+}
+
+module.exports = { fetchFlashscoreResults, fetchFlashscoreLive, parseFeed };

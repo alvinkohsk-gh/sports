@@ -58,7 +58,11 @@ main { padding: 20px 24px 60px; max-width: 1100px; margin: 0 auto; }
 .inplay-head span { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--muted); font-size: 12px; }
 .card.live { border-color: rgba(248, 113, 113, 0.5); background: linear-gradient(180deg, rgba(248,113,113,0.06), var(--card)); }
 .badge.live-badge { background: rgba(248, 113, 113, 0.15); color: var(--urgent); }
-.card.live .live-clock { font-size: 18px; font-weight: 700; color: var(--urgent); font-variant-numeric: tabular-nums; }
+.card.live .live-clock { font-size: 15px; font-weight: 700; color: var(--urgent); font-variant-numeric: tabular-nums; }
+.card.live .live-score {
+  font-size: 30px; font-weight: 800; letter-spacing: 2px;
+  font-variant-numeric: tabular-nums; color: var(--text); margin: 2px 0;
+}
 
 .card {
   background: var(--card);

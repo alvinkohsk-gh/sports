@@ -18,10 +18,11 @@ const fs = require('fs');
 const path = require('path');
 const { refresh, getState } = require('../src/services/aggregator');
 const { mergeHistory } = require('../src/results/history');
-const { fetchFlashscoreResults } = require('../src/results/flashscoreResults');
+const { fetchFlashscoreResults, fetchFlashscoreLive } = require('../src/results/flashscoreResults');
 const { fetchForebetResults } = require('../src/results/forebetResults');
 const { fetchArchivePredictions } = require('../src/results/archives');
 const { grade } = require('../src/results/accuracy');
+const { teamsMatch } = require('../src/services/matcher');
 const { mergeValuePicks, gradeValuePicks, summarizeValuePicks } = require('../src/results/valuePicks');
 
 const OUT = process.argv[2] || 'snapshot.json';
@@ -44,13 +45,38 @@ async function loadPublished(file, fallback) {
   await refresh({ mockMode: false });
   const s = getState();
 
+  // SG Pools' live feed carries no score, so pull the running score +
+  // stage for each in-play fixture from Flashscore's live feed.
+  const inPlay = s.inPlay || [];
+  if (inPlay.length) {
+    try {
+      const fsLive = await fetchFlashscoreLive();
+      let matched = 0;
+      for (const m of inPlay) {
+        const fx = fsLive.find(
+          (r) =>
+            (teamsMatch(m.homeTeam, r.homeTeam) && teamsMatch(m.awayTeam, r.awayTeam)) ||
+            (teamsMatch(m.homeTeam, r.awayTeam) && teamsMatch(m.awayTeam, r.homeTeam))
+        );
+        if (fx) {
+          m.liveScore = `${fx.homeGoals}-${fx.awayGoals}`;
+          m.liveStage = fx.stage;
+          matched += 1;
+        }
+      }
+      console.error(`[scrape-snapshot] in-play: ${inPlay.length}, live score matched ${matched} via Flashscore`);
+    } catch (err) {
+      console.error('[scrape-snapshot] flashscore live failed:', err.message);
+    }
+  }
+
   const nowISO = new Date().toISOString();
   const snapshot = {
     generatedAt: nowISO,
     matches: s.matches || [],
     bestBet: s.bestBet || null,
     bestValue: s.bestValue || null,
-    inPlay: s.inPlay || [],
+    inPlay,
     lastUpdated: s.lastUpdated || null,
     lastError: s.lastError || null,
     counts: { sgpFixtures: s.sgpFixtureCount ?? 0, tipsterPicks: s.tipsterPickCount ?? 0 },

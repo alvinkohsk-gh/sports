@@ -215,13 +215,20 @@ function renderInPlayCard(m) {
   const oddsRow = odds
     ? `<div class="section-label">Live SG Pools 1X2: <b>${Number(odds.home).toFixed(2)}</b> / <b>${Number(odds.draw).toFixed(2)}</b> / <b>${Number(odds.away).toFixed(2)}</b></div>`
     : '';
-  const goals = m.goalsSoFar != null ? ` · ~${m.goalsSoFar} goal${m.goalsSoFar === 1 ? '' : 's'} so far` : '';
+  // Real running score from Flashscore when we could match it; otherwise
+  // the O/U-line estimate ("~N goals so far").
+  const scoreRow = m.liveScore
+    ? `<div class="live-score">${m.liveScore.replace('-', ' - ')}</div>
+       <div class="kickoff-time">${m.liveStage ? m.liveStage + ' · ' : ''}kicked off ${new Date(m.kickoffISO).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · score via Flashscore</div>`
+    : `<div class="kickoff-time">Kicked off ${new Date(m.kickoffISO).toLocaleString()}${
+        m.goalsSoFar != null ? ` · ~${m.goalsSoFar} goal${m.goalsSoFar === 1 ? '' : 's'} so far (est.)` : ''
+      }</div>`;
   div.innerHTML = `
     <span class="badge live-badge">● LIVE</span>
     <div class="league">${m.league || ''}</div>
     <div class="teams">${m.homeTeam} vs ${m.awayTeam}</div>
     <div class="live-clock" data-liveclock>${liveClock(m.kickoffISO)}</div>
-    <div class="kickoff-time">Kicked off ${new Date(m.kickoffISO).toLocaleString()}${goals}</div>
+    ${scoreRow}
     ${renderPick(m.topPick)}
     ${renderTipsters(m.tipsterConsensus)}
     ${oddsRow}
