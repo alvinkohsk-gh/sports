@@ -34,6 +34,13 @@ body {
 .topbar h1 { font-size: 18px; margin: 0; }
 .status { font-size: 13px; color: var(--muted); }
 
+.tipster-filter { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.tipster-filter select {
+  background: var(--card); color: var(--text);
+  border: 1px solid var(--card-border); border-radius: 6px;
+  padding: 4px 8px; font-size: 13px; color-scheme: dark;
+}
+
 main { padding: 20px 24px 60px; max-width: 1100px; margin: 0 auto; }
 
 .matches {
