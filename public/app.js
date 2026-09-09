@@ -53,11 +53,12 @@ function renderTipsters(tipsterConsensus) {
   if (!tipsterConsensus || tipsterConsensus.totalTipsters === 0) {
     return '<div class="section-label">Tipster picks: none found</div>';
   }
+  const cfMark = (p) => (p.carriedForward ? '<sup class="cf-mark" title="pre-match pick — this site stopped listing the fixture after kick-off">ᴾ</sup>' : '');
   const chips = tipsterConsensus.picks
     .map((p) => {
       const label = SITE_LABELS[p.site] || p.site;
       const pickText = p.pick ? p.pick.toUpperCase() : '?';
-      return `<span class="tip-chip site-${p.site}" title="${escapeHtml(p.rawText || '')}">${label}: <span class="tc-pick">${pickText}</span></span>`;
+      return `<span class="tip-chip site-${p.site}${p.carriedForward ? ' carried' : ''}" title="${escapeHtml(p.rawText || '')}">${label}${cfMark(p)}: <span class="tc-pick">${pickText}</span></span>`;
     })
     .join('');
   const majority = tipsterConsensus.majorityPick
@@ -69,7 +70,7 @@ function renderTipsters(tipsterConsensus) {
     .map((p) => {
       const label = SITE_LABELS[p.site] || p.site;
       const sel = p.totalsPick.selection.toUpperCase();
-      return `<span class="tip-chip site-${p.site}" title="${escapeHtml(p.rawText || '')}">${label}: <span class="tc-pick">${sel} ${p.totalsPick.point}</span></span>`;
+      return `<span class="tip-chip site-${p.site}${p.carriedForward ? ' carried' : ''}" title="${escapeHtml(p.rawText || '')}">${label}${cfMark(p)}: <span class="tc-pick">${sel} ${p.totalsPick.point}</span></span>`;
     })
     .join('');
   const ouMajority = tipsterConsensus.totalsMajorityPick
@@ -257,7 +258,10 @@ function renderInPlay(list) {
     return;
   }
   inplayEl.hidden = false;
-  inplayEl.innerHTML = `<h2 class="inplay-head">● In play now <span>(${live.length}) — picks made before kickoff; time/score approximate</span></h2><div class="matches" id="inplay-grid"></div>`;
+  const anyCarried = live.some((m) => (m.tipsterConsensus?.picks || []).some((p) => p.carriedForward));
+  inplayEl.innerHTML = `<h2 class="inplay-head">● In play now <span>(${live.length}) — picks made before kickoff; time/score approximate${
+    anyCarried ? '; <b>ᴾ</b> = pre-match pick from a site that stopped listing the live match' : ''
+  }</span></h2><div class="matches" id="inplay-grid"></div>`;
   const grid = inplayEl.querySelector('#inplay-grid');
   live
     .sort((a, b) => new Date(a.kickoffISO) - new Date(b.kickoffISO))

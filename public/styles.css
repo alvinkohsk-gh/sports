@@ -163,6 +163,9 @@ main { padding: 20px 24px 60px; max-width: 1100px; margin: 0 auto; }
   color: var(--site-color);
 }
 .tip-chip .tc-pick { color: var(--text); font-weight: 700; }
+/* a pick carried in from before kick-off (this site dropped the fixture once live) */
+.tip-chip.carried { border-style: dashed; opacity: 0.85; }
+.tip-chip .cf-mark { font-size: 8px; opacity: 0.75; margin-left: 1px; }
 
 /* ---- odds + value ---- */
 .odds-block { margin-top: 8px; }

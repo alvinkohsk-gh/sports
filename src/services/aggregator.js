@@ -4,6 +4,7 @@ const { attachTipsterConsensus } = require('./tipsterConsensus');
 const { attachTopPick, pickBestBetOverall } = require('./tipsterRanking');
 const { assessValue } = require('./value');
 const { computeSiteWeights } = require('./tipsterWeights');
+const { carryForwardInPlayPicks } = require('./inPlayCarryForward');
 const { fetchBranchJson } = require('../snapshot');
 const { getMockSgpFixtures, getMockTipsterPicks } = require('../mock/mockData');
 
@@ -19,6 +20,20 @@ async function getSiteWeights(mockMode) {
   } catch (err) {
     console.error('[aggregator] accuracy.json fetch failed, using neutral tipster weights:', err.message);
     return {};
+  }
+}
+
+// Rolling prediction history — used only to carry a site's last pre-match
+// pick into the in-play consensus for fixtures that site has since dropped
+// (see inPlayCarryForward.js). Best-effort: a failure just means the live
+// consensus reflects whatever's still being scraped, same as before.
+async function getHistory(mockMode) {
+  if (mockMode) return { entries: [] };
+  try {
+    return await fetchBranchJson('history.json');
+  } catch (err) {
+    console.error('[aggregator] history.json fetch failed, no in-play carry-forward:', err.message);
+    return { entries: [] };
   }
 }
 
@@ -75,15 +90,17 @@ function pickBestValue(matches) {
 // fetched alongside them, best-effort — a failure there just falls back to
 // neutral weights, same as a missing/stale accuracy.json.
 async function refresh({ mockMode }) {
-  const [sgpResult, tipsterResult, siteWeightsResult] = await Promise.allSettled([
+  const [sgpResult, tipsterResult, siteWeightsResult, historyResult] = await Promise.allSettled([
     mockMode ? Promise.resolve(getMockSgpFixtures()) : fetchOpenFixtures(),
     mockMode ? Promise.resolve(getMockTipsterPicks()) : fetchAllTipsterPicks(),
     getSiteWeights(mockMode),
+    getHistory(mockMode),
   ]);
 
   const sgpFixtures = sgpResult.status === 'fulfilled' ? sgpResult.value : [];
   const tipsterPicks = tipsterResult.status === 'fulfilled' ? tipsterResult.value : [];
   const siteWeights = siteWeightsResult.status === 'fulfilled' ? siteWeightsResult.value : {};
+  const history = historyResult.status === 'fulfilled' ? historyResult.value : { entries: [] };
 
   const errors = [sgpResult, tipsterResult]
     .filter((r) => r.status === 'rejected')
@@ -103,13 +120,14 @@ async function refresh({ mockMode }) {
 
   // In-play: the same tipster consensus (made pre-match) attached to the
   // matches SG Pools currently has live. No value assessment — the odds
-  // here have already moved with the run of play.
-  const inPlayFixtures = mockMode ? [] : getInPlayFixtures();
-  const inPlay = attachTipsterConsensus(
-    inPlayFixtures.map(toMatch).sort((a, b) => new Date(a.kickoffISO) - new Date(b.kickoffISO)),
-    tipsterPicks,
-    siteWeights
-  );
+  // here have already moved with the run of play. Sites that stop listing
+  // a fixture once it kicks off (Statarea et al.) are re-hydrated from
+  // history.json so the live consensus doesn't thin out mid-match.
+  const inPlayMatches = (mockMode ? [] : getInPlayFixtures())
+    .map(toMatch)
+    .sort((a, b) => new Date(a.kickoffISO) - new Date(b.kickoffISO));
+  const inPlayTips = carryForwardInPlayPicks(inPlayMatches, tipsterPicks, history);
+  const inPlay = attachTipsterConsensus(inPlayMatches, inPlayTips, siteWeights);
   state.inPlay = attachTopPick(inPlay);
 
   state.lastUpdated = new Date().toISOString();

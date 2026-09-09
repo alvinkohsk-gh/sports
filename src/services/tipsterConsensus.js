@@ -27,12 +27,13 @@ function attachTipsterConsensus(matches, tips, siteWeights = {}) {
     return {
       ...match,
       tipsterConsensus: {
-        picks: picksForMatch.map(({ site, pick, totalsPick, rawText, sourceUrl }) => ({
+        picks: picksForMatch.map(({ site, pick, totalsPick, rawText, sourceUrl, carriedForward }) => ({
           site,
           pick,
           totalsPick,
           rawText,
           sourceUrl,
+          ...(carriedForward ? { carriedForward: true } : {}),
         })),
         ...tallyOneXTwo(picksForMatch, siteWeights),
         ...tallyTotals(picksForMatch, sgLinePoint, siteWeights),
