@@ -2,18 +2,22 @@ const express = require('express');
 const { fetchBranchJson } = require('../snapshot');
 const { SNAPSHOT_REFETCH_MS } = require('../config');
 
-// GET /api/value-picks — the rolling log of VALUE-flagged picks, built by
-// scripts/scrape-snapshot.js and published to the data-snapshot branch as
-// value-picks.json. Splits open (not yet played) from settled (graded
-// against a Forebet result) and returns a flat-1-unit-staking summary.
+// GET /api/value-picks and GET /api/statarea-picks — rolling logs of
+// VALUE-flagged picks built by scripts/scrape-snapshot.js and published to
+// the data-snapshot branch. Both share the exact same shape and query
+// params; the only difference is which file (and which per-match
+// assessment) fed them — value-picks.json is the full 10-source tipster
+// consensus, statarea-picks.json is statarea's own picks scored the same
+// way (see src/services/statareaValue.js). Splits open (not yet played)
+// from settled (graded against a Forebet result) and returns a
+// flat-1-unit-staking summary.
 //
 // Optional `from` / `to` (YYYY-MM-DD) filter both lists by the pick's
-// kickoff calendar day (UTC). Omit both for everything. The Value Picks
-// page also does its own local-date filtering for the range picker; this
-// is here for direct API use.
+// kickoff calendar day (UTC). Omit both for everything. The pages also do
+// their own local-date filtering for the range picker; this is here for
+// direct API use.
 const router = express.Router();
 
-let cache = { data: null, fetchedAt: 0 };
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const dayOf = (iso) => String(iso || '').slice(0, 10);
 
@@ -42,44 +46,51 @@ function summarize(settled) {
   };
 }
 
-router.get('/value-picks', async (req, res) => {
-  let vp = cache.data;
-  if (!vp || Date.now() - cache.fetchedAt > SNAPSHOT_REFETCH_MS) {
-    try {
-      vp = await fetchBranchJson('value-picks.json');
-      cache = { data: vp, fetchedAt: Date.now() };
-    } catch (err) {
-      if (!vp) {
-        res.status(503).json({ error: 'value-picks data not available yet', detail: err.message });
-        return;
+function registerPicksRoute(routePath, file) {
+  let cache = { data: null, fetchedAt: 0 };
+
+  router.get(routePath, async (req, res) => {
+    let vp = cache.data;
+    if (!vp || Date.now() - cache.fetchedAt > SNAPSHOT_REFETCH_MS) {
+      try {
+        vp = await fetchBranchJson(file);
+        cache = { data: vp, fetchedAt: Date.now() };
+      } catch (err) {
+        if (!vp) {
+          res.status(503).json({ error: `${file} data not available yet`, detail: err.message });
+          return;
+        }
       }
     }
-  }
 
-  const all = Array.isArray(vp.picks) ? vp.picks : [];
-  const from = DAY_RE.test(req.query.from) ? req.query.from : null;
-  const to = DAY_RE.test(req.query.to) ? req.query.to : null;
-  const inRange = (p) => {
-    const d = dayOf(p.kickoffISO);
-    return (!from || d >= from) && (!to || d <= to);
-  };
-  const picks = from || to ? all.filter(inRange) : all;
+    const all = Array.isArray(vp.picks) ? vp.picks : [];
+    const from = DAY_RE.test(req.query.from) ? req.query.from : null;
+    const to = DAY_RE.test(req.query.to) ? req.query.to : null;
+    const inRange = (p) => {
+      const d = dayOf(p.kickoffISO);
+      return (!from || d >= from) && (!to || d <= to);
+    };
+    const picks = from || to ? all.filter(inRange) : all;
 
-  const open = picks.filter((p) => !p.settled).sort((a, b) => b.ev - a.ev);
-  const settled = picks
-    .filter((p) => p.settled)
-    .sort((a, b) => Date.parse(b.kickoffISO) - Date.parse(a.kickoffISO));
+    const open = picks.filter((p) => !p.settled).sort((a, b) => b.ev - a.ev);
+    const settled = picks
+      .filter((p) => p.settled)
+      .sort((a, b) => Date.parse(b.kickoffISO) - Date.parse(a.kickoffISO));
 
-  const days = all.map((p) => dayOf(p.kickoffISO)).filter((d) => DAY_RE.test(d)).sort();
+    const days = all.map((p) => dayOf(p.kickoffISO)).filter((d) => DAY_RE.test(d)).sort();
 
-  res.json({
-    updatedAt: vp.updatedAt || null,
-    range: { from, to },
-    availableDates: days.length ? { min: days[0], max: days[days.length - 1] } : null,
-    open,
-    settled,
-    summary: { openCount: open.length, ...summarize(settled) },
+    res.json({
+      updatedAt: vp.updatedAt || null,
+      range: { from, to },
+      availableDates: days.length ? { min: days[0], max: days[days.length - 1] } : null,
+      open,
+      settled,
+      summary: { openCount: open.length, ...summarize(settled) },
+    });
   });
-});
+}
+
+registerPicksRoute('/value-picks', 'value-picks.json');
+registerPicksRoute('/statarea-picks', 'statarea-picks.json');
 
 module.exports = router;

@@ -136,4 +136,4 @@ function mostCommonPoint(resolvedWithTotals, selection) {
   return [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
 }
 
-module.exports = { attachTipsterConsensus };
+module.exports = { attachTipsterConsensus, resolveTotalsPickAtPoint };

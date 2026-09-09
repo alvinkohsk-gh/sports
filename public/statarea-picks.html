@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Value Picks — SG Pools Tipster Predictions</title>
+  <title>Statarea Picks — SG Pools Tipster Predictions</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
     .subnav { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
@@ -88,12 +88,12 @@
 </head>
 <body>
   <header class="topbar">
-    <h1>Value Picks</h1>
+    <h1>Statarea Picks</h1>
     <div class="subnav">
       <span class="status" id="status">Loading…</span>
       <a href="index.html">&larr; Board</a>
-      <a href="value-picks.html" class="current">Value Picks</a>
-      <a href="statarea-picks.html">Statarea Picks</a>
+      <a href="value-picks.html">Value Picks</a>
+      <a href="statarea-picks.html" class="current">Statarea Picks</a>
       <a href="results.html">Results</a>
     </div>
   </header>
@@ -133,13 +133,15 @@
     </div>
 
     <p class="disclaimer">
-      A value pick is flagged when SG Pools' de-vigged price on an outcome implies a lower probability
-      than the tipster consensus does — i.e. positive expected value <em>by that reference</em>. The
-      consensus is softer than a true sharp line, so this is "the crowd disagrees with the price", not
-      a guaranteed edge. Record and ROI assume a flat 1-unit stake per pick and settle at the odd shown
-      (the last price seen before kickoff). Picks are filtered by kickoff date in your local time.
-      Full-time scores come from Flashscore (Forebet as a fallback); a pick with no score yet stays "open". Past performance says nothing about
-      future results. Gamble responsibly.
+      Same method as the board's <a href="value-picks.html" style="color:var(--accent)">Value Picks</a>, scoped
+      to statarea's own picks only. SG Pools' de-vigged price on a market is compared against a probability
+      derived from statarea's single pick, weighted by statarea's own graded accuracy on that market (a site
+      that's actually beaten chance counts for more; a thin track record shrinks toward a neutral read) — a
+      pick is flagged here when that still implies positive expected value. Record and ROI assume a flat
+      1-unit stake per pick and settle at the odd shown (the last price seen before kickoff). Picks are
+      filtered by kickoff date in your local time. Full-time scores come from Flashscore (Forebet as a
+      fallback); a pick with no score yet stays "open". Past performance says nothing about future results.
+      Gamble responsibly.
     </p>
   </main>
 
@@ -260,8 +262,8 @@
       const total = open.length + settled.length;
       emptyEl.hidden = total > 0;
       emptyEl.textContent = allOpen.length + allSettled.length === 0
-        ? 'No value picks logged yet. A pick is recorded whenever the SG Pools price on a market implies a lower win chance than the tipster consensus; its result shows here once the match finishes.'
-        : 'No value picks in this date range.';
+        ? 'No statarea picks logged yet. A pick is recorded whenever statarea has a classified pick on a match and SG Pools’ price implies a lower win chance than statarea’s (accuracy-weighted) read does; its result shows here once the match finishes.'
+        : 'No statarea picks in this date range.';
       summaryEl.hidden = total === 0;
       if (total) renderSummary(s, open.length, singleDay);
       renderOpen(open);
@@ -303,11 +305,11 @@
 
     async function load() {
       try {
-        const res = await fetch('/api/value-picks');
+        const res = await fetch('/api/statarea-picks');
         if (res.status === 503) {
-          statusEl.textContent = 'No value-pick data yet';
+          statusEl.textContent = 'No statarea-pick data yet';
           emptyEl.hidden = false;
-          emptyEl.textContent = 'No value picks logged yet — the first ones appear after the next scrape.';
+          emptyEl.textContent = 'No statarea picks logged yet — the first ones appear after the next scrape.';
           return;
         }
         const data = await res.json();

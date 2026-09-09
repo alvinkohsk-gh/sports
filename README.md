@@ -257,6 +257,23 @@ flat-1-unit record (win rate, ROI, P/L); `?from=YYYY-MM-DD&to=YYYY-MM-DD`
 filters by kickoff day. `public/value-picks.html` is a page for it with a
 date-range picker (a single day gives just that day's record).
 
+### Single-site value: `public/statarea-picks.html`
+
+Same method, scoped to one tipster site instead of the full consensus.
+`src/services/statareaValue.js` reuses `assessMarket` verbatim, but the
+"vote tally" it feeds in is just statarea's own pick for that match,
+scaled by statarea's own graded-accuracy weight (`tipsterWeights.js`)
+instead of a multi-site vote count — there's no `VALUE_MIN_VOTES` gate,
+since with one possible vote "enough opinions weighed in" isn't a
+meaningful check. `scripts/scrape-snapshot.js` computes this per match as
+`match.statareaValue` and logs flagged picks to `statarea-picks.json`
+through the same `mergeValuePicks`/`gradeValuePicks`/`summarizeValuePicks`
+pipeline (now parameterized by which per-match field to read), served at
+`GET /api/statarea-picks` with the same query params and response shape
+as `/api/value-picks`. Swapping in another site only needs a new
+`assess<Site>Value` wrapper — the merge/grade/summarize/route/page layers
+are all generic.
+
 ## Notes on matching
 
 - Kickoff times from Singapore Pools are assumed to be Singapore time
