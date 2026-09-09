@@ -2,10 +2,11 @@
  * Runs the full scrape (Singapore Pools fixtures + all tipster sites +
  * consensus matching) once, then folds the picks into a rolling prediction
  * history and grades finished predictions against Forebet results. Writes:
- *   snapshot.json     — current board (src/app.js serves this)
- *   history.json      — rolling per-(fixture,site) picks, ~6 days
- *   accuracy.json     — graded samples + per-site accuracy summary
- *   value-picks.json  — rolling log of VALUE-flagged picks, graded once played
+ *   snapshot.json        — current board (src/app.js serves this)
+ *   history.json         — rolling per-(fixture,site) picks, ~6 days
+ *   accuracy.json        — graded samples + per-site accuracy summary
+ *   value-picks.json     — rolling log of VALUE-flagged picks (full consensus)
+ *   statarea-picks.json  — same, but scored on statarea's picks alone
  *
  * Meant to run OUTSIDE the request path — in GitHub Actions on a schedule
  * (see .github/workflows/snapshot.yml). The Vercel app just serves these
@@ -24,6 +25,7 @@ const { fetchArchivePredictions } = require('../src/results/archives');
 const { grade } = require('../src/results/accuracy');
 const { teamsMatch } = require('../src/services/matcher');
 const { mergeValuePicks, gradeValuePicks, summarizeValuePicks } = require('../src/results/valuePicks');
+const { assessStatareaValue } = require('../src/services/statareaValue');
 
 const OUT = process.argv[2] || 'snapshot.json';
 const DIR = process.argv[3] || path.dirname(OUT) || '.';
@@ -82,6 +84,14 @@ async function loadPublished(file, fallback) {
     rawTipsterPicks: s.rawTipsterPicks || [],
   };
 
+  // Same EV method as the board's value picks, scored on statarea's own
+  // pick alone rather than the full tipster consensus — see
+  // src/services/statareaValue.js.
+  for (const m of snapshot.matches) {
+    const statareaTip = (m.tipsterConsensus && m.tipsterConsensus.picks || []).find((p) => p.site === 'statarea');
+    m.statareaValue = m.odds && statareaTip ? assessStatareaValue(m.odds, statareaTip, s.siteWeights) : null;
+  }
+
   const bySite = {};
   for (const p of snapshot.rawTipsterPicks) {
     const b = (bySite[p.site] = bySite[p.site] || { picks: 0, classified: 0, totals: 0 });
@@ -108,11 +118,12 @@ async function loadPublished(file, fallback) {
     process.exit(1);
   }
 
-  // ---- prediction history + accuracy grading + value-pick log ----
-  const [prevHistory, prevAccuracy, prevValuePicks] = await Promise.all([
+  // ---- prediction history + accuracy grading + value-pick log(s) ----
+  const [prevHistory, prevAccuracy, prevValuePicks, prevStatareaPicks] = await Promise.all([
     loadPublished('history.json', { entries: [] }),
     loadPublished('accuracy.json', { samples: [] }),
     loadPublished('value-picks.json', { picks: [] }),
+    loadPublished('statarea-picks.json', { picks: [] }),
   ]);
 
   const history = mergeHistory(prevHistory, snapshot.matches, nowISO);
@@ -153,11 +164,16 @@ async function loadPublished(file, fallback) {
   const vpGraded = gradeValuePicks(vpMerged, results);
   const valuePicks = { ...vpGraded, summary: summarizeValuePicks(vpGraded) };
 
+  const spMerged = mergeValuePicks(prevStatareaPicks, snapshot.matches, nowISO, 'statareaValue');
+  const spGraded = gradeValuePicks(spMerged, results);
+  const statareaPicks = { ...spGraded, summary: summarizeValuePicks(spGraded) };
+
   fs.mkdirSync(DIR, { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify(snapshot, null, 1));
   fs.writeFileSync(path.join(DIR, 'history.json'), JSON.stringify(history));
   fs.writeFileSync(path.join(DIR, 'accuracy.json'), JSON.stringify(accuracy));
   fs.writeFileSync(path.join(DIR, 'value-picks.json'), JSON.stringify(valuePicks));
+  fs.writeFileSync(path.join(DIR, 'statarea-picks.json'), JSON.stringify(statareaPicks));
 
   console.error(
     `[scrape-snapshot] ${snapshot.matches.length} matches, ` +
@@ -167,7 +183,10 @@ async function loadPublished(file, fallback) {
       `+${graded.newlyGraded} graded (${graded.summary.gradedSamples} in 48h window) | ` +
       `value picks: ${valuePicks.picks.length} logged, ${valuePicks.summary.open} open, ` +
       `${valuePicks.summary.settled} settled (+${vpGraded.newlyGraded} new), ` +
-      `ROI ${valuePicks.summary.roi == null ? 'n/a' : (valuePicks.summary.roi * 100).toFixed(1) + '%'}`
+      `ROI ${valuePicks.summary.roi == null ? 'n/a' : (valuePicks.summary.roi * 100).toFixed(1) + '%'} | ` +
+      `statarea picks: ${statareaPicks.picks.length} logged, ${statareaPicks.summary.open} open, ` +
+      `${statareaPicks.summary.settled} settled (+${spGraded.newlyGraded} new), ` +
+      `ROI ${statareaPicks.summary.roi == null ? 'n/a' : (statareaPicks.summary.roi * 100).toFixed(1) + '%'}`
   );
   process.exit(0);
 })().catch((err) => {

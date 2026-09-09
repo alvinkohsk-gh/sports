@@ -117,6 +117,10 @@ async function refresh({ mockMode }) {
   state.matches = attachTopPick(withTipsters);
   state.bestBet = pickBestBetOverall(state.matches);
   state.bestValue = pickBestValue(state.matches);
+  // Exposed so callers (e.g. scripts/scrape-snapshot.js building a
+  // single-site value log) can reuse this cycle's weights instead of
+  // re-fetching accuracy.json.
+  state.siteWeights = siteWeights;
 
   // In-play: the same tipster consensus (made pre-match) attached to the
   // matches SG Pools currently has live. No value assessment — the odds

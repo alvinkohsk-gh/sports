@@ -10,8 +10,8 @@ const PRUNE_AFTER_MS = 6 * 24 * 60 * 60 * 1000;
 // record over an arbitrary date range.
 const KEEP_SETTLED_MS = 35 * 24 * 60 * 60 * 1000;
 
-function flaggedOutcomes(match) {
-  const v = match.value;
+function flaggedOutcomes(match, valueKey = 'value') {
+  const v = match[valueKey];
   if (!v) return [];
   const out = [];
   const ouPoint = match.odds && match.odds.ou ? match.odds.ou.point : null;
@@ -32,8 +32,13 @@ function flaggedOutcomes(match) {
  * Fold the current board's value picks into the rolling log. A pick seen
  * before kickoff has its odd/EV refreshed; once kickoff passes we stop
  * updating it so the recorded price is the last pre-kickoff one.
+ *
+ * `valueKey` selects which per-match assessment to read — `'value'` (the
+ * default, full tipster-consensus EV) or `'statareaValue'` (a single
+ * site's own picks scored the same way, see statareaValue.js) — so this
+ * one merge/grade/summarize pipeline can back more than one rolling log.
  */
-function mergeValuePicks(existing, matches, capturedAtISO) {
+function mergeValuePicks(existing, matches, capturedAtISO, valueKey = 'value') {
   const now = Date.parse(capturedAtISO) || Date.now();
   const byKey = new Map();
   for (const p of existing.picks || []) byKey.set(p.key, p);
@@ -41,7 +46,7 @@ function mergeValuePicks(existing, matches, capturedAtISO) {
   for (const m of matches || []) {
     const mk = matchKey(m.homeTeam, m.awayTeam, m.kickoffISO);
     const kickoff = Date.parse(m.kickoffISO);
-    for (const o of flaggedOutcomes(m)) {
+    for (const o of flaggedOutcomes(m, valueKey)) {
       const key = `${mk}::${o.market}::${o.key}`;
       const prev = byKey.get(key);
       const preKickoff = !Number.isFinite(kickoff) || now < kickoff;
