@@ -7,7 +7,18 @@ name: Scrape tipster snapshot
 on:
   schedule:
     - cron: '*/15 * * * *' # every 15 min (GitHub may delay under load)
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      publish_debug:
+        description: >-
+          Also push debug-tipsters/*.html + debug-sgpools-raw.html to the
+          orphan `debug-capture` branch (force-pushed, single commit) —
+          lets a sandbox with no network path to the tipster sites itself
+          (only to github.com) pull real markup via `git fetch` instead of
+          the Actions artifact download, which such a sandbox often can't
+          reach either. Off by default so scheduled runs never do this.
+        type: boolean
+        default: false
 
 concurrency:
   group: tipster-snapshot
@@ -97,3 +108,22 @@ jobs:
           git push -q --force \
             "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
             data-snapshot
+
+      - name: Publish debug captures to debug-capture branch
+        if: ${{ always() && github.event.inputs.publish_debug == 'true' }}
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          [ -d debug-tipsters ] && cp -r debug-tipsters "$work/" || true
+          [ -s debug-sgpools-raw.html ] && cp debug-sgpools-raw.html "$work/" || true
+          printf '{ "git": { "deploymentEnabled": false } }\n' > "$work/vercel.json"
+          cd "$work"
+          git init -q
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q -b debug-capture
+          git add -A
+          git commit -q -m "debug capture $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push -q --force \
+            "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
+            debug-capture
