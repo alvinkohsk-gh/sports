@@ -20,6 +20,7 @@ const path = require('path');
 const { refresh, getState } = require('../src/services/aggregator');
 const { mergeHistory } = require('../src/results/history');
 const { fetchFlashscoreResults, fetchFlashscoreLive } = require('../src/results/flashscoreResults');
+const { fetchLivescoreLive } = require('../src/results/livescoreLive');
 const { fetchForebetResults } = require('../src/results/forebetResults');
 const { fetchArchivePredictions } = require('../src/results/archives');
 const { grade } = require('../src/results/accuracy');
@@ -66,6 +67,30 @@ async function loadPublished(file, fallback) {
       }
     }
     console.error(`[scrape-snapshot] in-play: ${inPlay.length} (${matched} w/ FS score)`);
+
+    // Fallback source (livescore.com) — only consulted, and only fetched at
+    // all, when Flashscore left at least one in-play fixture without a
+    // score; never races or overrides a Flashscore hit. UNVERIFIED (see
+    // src/results/livescoreLive.js) so a fetch/parse failure or a markup
+    // change this can't handle just yields [] and leaves those fixtures
+    // exactly as they were.
+    const stillUnmatched = inPlay.filter((m) => !m.liveScore);
+    if (stillUnmatched.length) {
+      try {
+        const lsLive = await fetchLivescoreLive();
+        let lsMatched = 0;
+        for (const m of stillUnmatched) {
+          const fx = lsLive.find((r) => sameFixture(m, r));
+          if (fx) {
+            m.liveScore = `${fx.homeGoals}-${fx.awayGoals}`;
+            lsMatched += 1;
+          }
+        }
+        console.error(`[scrape-snapshot] in-play fallback (livescore.com): ${lsMatched}/${stillUnmatched.length} filled`);
+      } catch (err) {
+        console.error('[scrape-snapshot] livescore.com fallback failed:', err.message);
+      }
+    }
   } catch (err) {
     console.error('[scrape-snapshot] flashscore live failed:', err.message);
   }
