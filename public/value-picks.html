@@ -29,6 +29,13 @@
     .presets button.active { background: rgba(56,189,248,0.22); color: #075985; border-color: #0284c7; }
     .range-note { font-size: 12px; color: #1e293b; margin-left: auto; }
 
+    .picks-section { margin-bottom: 36px; padding-bottom: 8px; border-bottom: 1px solid var(--card-border); }
+    .picks-section:last-of-type { border-bottom: none; }
+    .picks-section h2.section-title {
+      font-size: 16px; margin: 0 0 4px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    }
+    .picks-section .section-sub { font-size: 12px; color: var(--muted); font-weight: 400; }
+
     .summary {
       display: flex; flex-wrap: wrap; gap: 10px 24px;
       padding: 14px 16px; margin-bottom: 20px;
@@ -112,46 +119,61 @@
       <span class="range-note" id="range-note"></span>
     </div>
 
-    <div class="summary" id="summary" hidden></div>
+    <section class="picks-section" data-section="all">
+      <h2 class="section-title">All Tipsters <span class="section-sub">every flagged pick, full 10-source consensus</span></h2>
+      <div class="summary" data-summary hidden></div>
+      <div data-empty class="empty" hidden></div>
+      <h2 class="sec" data-open-head hidden>Open — waiting on kickoff</h2>
+      <div class="vp-list" data-open></div>
+      <h2 class="sec" data-settled-head hidden>Settled</h2>
+      <div class="tscroll" data-settled-wrap hidden>
+        <table class="settled" data-settled>
+          <thead>
+            <tr>
+              <th>Kickoff</th><th>Fixture</th><th class="hide-sm">League</th>
+              <th>Pick</th><th class="num">Odd</th><th class="num">Score</th><th>Result</th><th class="num">P/L (u)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
 
-    <div id="empty" class="empty" hidden></div>
-
-    <h2 class="sec" id="open-head" hidden>Open — waiting on kickoff</h2>
-    <div class="vp-list" id="open"></div>
-
-    <h2 class="sec" id="settled-head" hidden>Settled</h2>
-    <div class="tscroll" id="settled-wrap" hidden>
-      <table class="settled" id="settled">
-        <thead>
-          <tr>
-            <th>Kickoff</th><th>Fixture</th><th class="hide-sm">League</th>
-            <th>Pick</th><th class="num">Odd</th><th class="num">Score</th><th>Result</th><th class="num">P/L (u)</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
+    <section class="picks-section" data-section="statarea">
+      <h2 class="section-title">Statarea Only <span class="section-sub">same criteria, scored on statarea's own picks alone</span></h2>
+      <div class="summary" data-summary hidden></div>
+      <div data-empty class="empty" hidden></div>
+      <h2 class="sec" data-open-head hidden>Open — waiting on kickoff</h2>
+      <div class="vp-list" data-open></div>
+      <h2 class="sec" data-settled-head hidden>Settled</h2>
+      <div class="tscroll" data-settled-wrap hidden>
+        <table class="settled" data-settled>
+          <thead>
+            <tr>
+              <th>Kickoff</th><th>Fixture</th><th class="hide-sm">League</th>
+              <th>Pick</th><th class="num">Odd</th><th class="num">Score</th><th>Result</th><th class="num">P/L (u)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
 
     <p class="disclaimer">
       A value pick is flagged when SG Pools' de-vigged price on an outcome implies a lower probability
-      than the tipster consensus does — i.e. positive expected value <em>by that reference</em>. The
-      consensus is softer than a true sharp line, so this is "the crowd disagrees with the price", not
-      a guaranteed edge. Record and ROI assume a flat 1-unit stake per pick and settle at the odd shown
-      (the last price seen before kickoff). Picks are filtered by kickoff date in your local time.
-      Full-time scores come from Flashscore (Forebet as a fallback); a pick with no score yet stays "open". Past performance says nothing about
-      future results. Gamble responsibly.
+      than the reference does — i.e. positive expected value <em>by that reference</em>. "All Tipsters"
+      uses the full tipster consensus (softer than a true sharp line); "Statarea Only" uses the same EV
+      method scored on statarea's picks alone, weighted by statarea's own graded accuracy. Either way this
+      is "the crowd (or one site) disagrees with the price", not a guaranteed edge. Record and ROI assume a
+      flat 1-unit stake per pick and settle at the odd shown (the last price seen before kickoff). Picks are
+      filtered by kickoff date in your local time. Full-time scores come from Flashscore (Forebet as a
+      fallback); a pick with no score yet stays "open". Past performance says nothing about future results.
+      Gamble responsibly.
     </p>
   </main>
 
   <script>
     const statusEl = document.getElementById('status');
-    const summaryEl = document.getElementById('summary');
-    const emptyEl = document.getElementById('empty');
-    const openEl = document.getElementById('open');
-    const openHead = document.getElementById('open-head');
-    const settledEl = document.getElementById('settled');
-    const settledWrap = document.getElementById('settled-wrap');
-    const settledHead = document.getElementById('settled-head');
     const fromEl = document.getElementById('from');
     const toEl = document.getElementById('to');
     const presetsEl = document.getElementById('presets');
@@ -165,11 +187,6 @@
     // local calendar day of an ISO instant, as YYYY-MM-DD
     const localDay = (x) => new Date(x).toLocaleDateString('en-CA');
     const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
-
-    let allOpen = [];
-    let allSettled = [];
-    let lastUpdated = null;
-    let activePreset = 'all';
 
     function summarize(settled) {
       const won = settled.filter((p) => p.won).length;
@@ -186,99 +203,170 @@
       };
     }
 
-    function renderSummary(s, openCount, singleDay) {
-      summaryEl.hidden = false;
-      const roiCls = s.roi > 0 ? 'pos' : s.roi < 0 ? 'neg' : '';
-      const plCls = s.profitUnits > 0 ? 'pos' : s.profitUnits < 0 ? 'neg' : '';
-      const recordStat = `<div class="stat"><span class="lab">Record</span><span class="val">${s.won}–${s.settledCount - s.won}</span></div>`;
-      if (singleDay && !s.settledCount) {
-        summaryEl.innerHTML = recordStat + `<div class="stat"><span class="lab">Open</span><span class="val">${openCount}</span></div>`;
-        return;
-      }
-      summaryEl.innerHTML =
-        recordStat +
-        `<div class="stat"><span class="lab">Win rate</span><span class="val">${pct(s.winRate)}</span></div>` +
-        `<div class="stat"><span class="lab">ROI (flat 1u)</span><span class="val ${roiCls}">${signedPct(s.roi)}</span></div>` +
-        `<div class="stat"><span class="lab">P/L</span><span class="val ${plCls}">${signedU(s.profitUnits)} u</span></div>` +
-        `<div class="stat"><span class="lab">Avg odd</span><span class="val">${s.avgOdd == null ? '—' : s.avgOdd.toFixed(2)}</span></div>` +
-        `<div class="stat"><span class="lab">Open</span><span class="val">${openCount}</span></div>`;
-    }
-
-    function renderOpen(picks) {
-      openHead.hidden = picks.length === 0;
-      openEl.innerHTML = picks
-        .map(
-          (p) => `
-        <div class="vp-open">
-          <div>
-            <div class="m">${p.fixture}</div>
-            <div class="sub">${p.league || ''} · ${fmtKO(p.kickoffISO)}</div>
-          </div>
-          <div class="pick">${p.market}<br />${p.label} @ ${p.odd.toFixed(2)}</div>
-          <div class="metric ev"><span class="l">EV</span>${signedPct(p.ev)}</div>
-          <div class="metric fair"><span class="l">fair / price</span>${pct(p.refProb)} / ${pct(p.impliedProb)}</div>
-          <div class="metric"><span class="l">¼-Kelly</span>${pct(p.quarterKelly)}</div>
-        </div>`
-        )
-        .join('');
-    }
-
-    function renderSettled(picks) {
-      settledHead.hidden = picks.length === 0;
-      settledWrap.hidden = picks.length === 0;
-      settledEl.querySelector('tbody').innerHTML = picks
-        .map((p) => {
-          const res = p.won ? '<span class="res-win">WON ✓</span>' : '<span class="res-lose">LOST ✗</span>';
-          const pl = `<span class="${p.profitUnits >= 0 ? 'pl-pos' : 'pl-neg'}">${signedU(p.profitUnits)}</span>`;
-          return `
-          <tr>
-            <td>${fmtKO(p.kickoffISO)}</td>
-            <td>${p.fixture}</td>
-            <td class="hide-sm">${p.league || ''}</td>
-            <td>${p.market} <strong>${p.label}</strong></td>
-            <td class="num">${p.odd.toFixed(2)}</td>
-            <td class="num">${p.score || '—'}</td>
-            <td>${res}</td>
-            <td class="num">${pl}</td>
-          </tr>`;
-        })
-        .join('');
-    }
-
-    function apply() {
-      const from = fromEl.value || '0000-01-01';
-      const to = toEl.value || '9999-12-31';
-      const inRange = (p) => {
-        const d = localDay(p.kickoffISO);
-        return d >= from && d <= to;
+    // One "section" wraps a single endpoint's data (all-tipsters or
+    // statarea-only) with its own DOM subtree, driven by the page's one
+    // shared date-range picker.
+    function makeSection(root, apiPath, emptyMessage) {
+      const el = {
+        root,
+        summary: root.querySelector('[data-summary]'),
+        empty: root.querySelector('[data-empty]'),
+        openHead: root.querySelector('[data-open-head]'),
+        open: root.querySelector('[data-open]'),
+        settledHead: root.querySelector('[data-settled-head]'),
+        settledWrap: root.querySelector('[data-settled-wrap]'),
+        settled: root.querySelector('[data-settled]'),
       };
-      const open = allOpen.filter(inRange).sort((a, b) => b.ev - a.ev);
-      const settled = allSettled.filter(inRange).sort((a, b) => Date.parse(b.kickoffISO) - Date.parse(a.kickoffISO));
-      const singleDay = fromEl.value && fromEl.value === toEl.value;
-      const s = summarize(settled);
+      const state = { allOpen: [], allSettled: [], lastUpdated: null, loaded: false, failed: false };
 
-      const total = open.length + settled.length;
-      emptyEl.hidden = total > 0;
-      emptyEl.textContent = allOpen.length + allSettled.length === 0
-        ? 'No value picks logged yet. A pick is recorded whenever the SG Pools price on a market implies a lower win chance than the tipster consensus; its result shows here once the match finishes.'
-        : 'No value picks in this date range.';
-      summaryEl.hidden = total === 0;
-      if (total) renderSummary(s, open.length, singleDay);
-      renderOpen(open);
-      renderSettled(settled);
+      function renderSummary(s, openCount, singleDay) {
+        el.summary.hidden = false;
+        const roiCls = s.roi > 0 ? 'pos' : s.roi < 0 ? 'neg' : '';
+        const plCls = s.profitUnits > 0 ? 'pos' : s.profitUnits < 0 ? 'neg' : '';
+        const recordStat = `<div class="stat"><span class="lab">Record</span><span class="val">${s.won}–${s.settledCount - s.won}</span></div>`;
+        if (singleDay && !s.settledCount) {
+          el.summary.innerHTML = recordStat + `<div class="stat"><span class="lab">Open</span><span class="val">${openCount}</span></div>`;
+          return;
+        }
+        el.summary.innerHTML =
+          recordStat +
+          `<div class="stat"><span class="lab">Win rate</span><span class="val">${pct(s.winRate)}</span></div>` +
+          `<div class="stat"><span class="lab">ROI (flat 1u)</span><span class="val ${roiCls}">${signedPct(s.roi)}</span></div>` +
+          `<div class="stat"><span class="lab">P/L</span><span class="val ${plCls}">${signedU(s.profitUnits)} u</span></div>` +
+          `<div class="stat"><span class="lab">Avg odd</span><span class="val">${s.avgOdd == null ? '—' : s.avgOdd.toFixed(2)}</span></div>` +
+          `<div class="stat"><span class="lab">Open</span><span class="val">${openCount}</span></div>`;
+      }
 
+      function renderOpen(picks) {
+        el.openHead.hidden = picks.length === 0;
+        el.open.innerHTML = picks
+          .map(
+            (p) => `
+          <div class="vp-open">
+            <div>
+              <div class="m">${p.fixture}</div>
+              <div class="sub">${p.league || ''} · ${fmtKO(p.kickoffISO)}</div>
+            </div>
+            <div class="pick">${p.market}<br />${p.label} @ ${p.odd.toFixed(2)}</div>
+            <div class="metric ev"><span class="l">EV</span>${signedPct(p.ev)}</div>
+            <div class="metric fair"><span class="l">fair / price</span>${pct(p.refProb)} / ${pct(p.impliedProb)}</div>
+            <div class="metric"><span class="l">¼-Kelly</span>${pct(p.quarterKelly)}</div>
+          </div>`
+          )
+          .join('');
+      }
+
+      function renderSettled(picks) {
+        el.settledHead.hidden = picks.length === 0;
+        el.settledWrap.hidden = picks.length === 0;
+        el.settled.querySelector('tbody').innerHTML = picks
+          .map((p) => {
+            const res = p.won ? '<span class="res-win">WON ✓</span>' : '<span class="res-lose">LOST ✗</span>';
+            const pl = `<span class="${p.profitUnits >= 0 ? 'pl-pos' : 'pl-neg'}">${signedU(p.profitUnits)}</span>`;
+            return `
+            <tr>
+              <td>${fmtKO(p.kickoffISO)}</td>
+              <td>${p.fixture}</td>
+              <td class="hide-sm">${p.league || ''}</td>
+              <td>${p.market} <strong>${p.label}</strong></td>
+              <td class="num">${p.odd.toFixed(2)}</td>
+              <td class="num">${p.score || '—'}</td>
+              <td>${res}</td>
+              <td class="num">${pl}</td>
+            </tr>`;
+          })
+          .join('');
+      }
+
+      function apply() {
+        const from = fromEl.value || '0000-01-01';
+        const to = toEl.value || '9999-12-31';
+        const inRange = (p) => {
+          const d = localDay(p.kickoffISO);
+          return d >= from && d <= to;
+        };
+        const open = state.allOpen.filter(inRange).sort((a, b) => b.ev - a.ev);
+        const settled = state.allSettled
+          .filter(inRange)
+          .sort((a, b) => Date.parse(b.kickoffISO) - Date.parse(a.kickoffISO));
+        const singleDay = fromEl.value && fromEl.value === toEl.value;
+        const s = summarize(settled);
+
+        const total = open.length + settled.length;
+        el.empty.hidden = total > 0 && state.loaded;
+        if (state.failed) {
+          el.empty.hidden = false;
+          el.empty.textContent = 'No data yet — the first picks appear after the next scrape.';
+        } else if (!state.loaded) {
+          el.empty.hidden = false;
+          el.empty.textContent = 'Loading…';
+        } else {
+          el.empty.textContent =
+            state.allOpen.length + state.allSettled.length === 0 ? emptyMessage : 'No picks in this date range.';
+        }
+        el.summary.hidden = total === 0;
+        if (total) renderSummary(s, open.length, singleDay);
+        renderOpen(open);
+        renderSettled(settled);
+
+        return { openCount: open.length, settledCount: settled.length, s };
+      }
+
+      async function load() {
+        try {
+          const res = await fetch(apiPath);
+          if (res.status === 503) {
+            state.failed = true;
+            apply();
+            return;
+          }
+          const data = await res.json();
+          state.allOpen = data.open || [];
+          state.allSettled = data.settled || [];
+          state.lastUpdated = data.updatedAt || null;
+          state.loaded = true;
+          state.failed = false;
+          if (data.availableDates) {
+            if (!fromEl.min || data.availableDates.min < fromEl.min) fromEl.min = toEl.min = data.availableDates.min;
+          }
+          apply();
+        } catch (err) {
+          state.failed = true;
+          apply();
+        }
+      }
+
+      return { load, apply, state };
+    }
+
+    const sections = [
+      makeSection(
+        document.querySelector('[data-section="all"]'),
+        '/api/value-picks',
+        'No value picks logged yet. A pick is recorded whenever the SG Pools price on a market implies a lower win chance than the tipster consensus; its result shows here once the match finishes.'
+      ),
+      makeSection(
+        document.querySelector('[data-section="statarea"]'),
+        '/api/statarea-picks',
+        "No statarea picks logged yet. A pick is recorded whenever statarea has a classified pick and SG Pools' price implies a lower win chance than statarea's (accuracy-weighted) read; its result shows here once the match finishes."
+      ),
+    ];
+
+    function applyAll() {
+      const results = sections.map((sec) => sec.apply());
       const label = fromEl.value && toEl.value
-        ? (singleDay ? fromEl.value : `${fromEl.value} → ${toEl.value}`)
+        ? (fromEl.value === toEl.value ? fromEl.value : `${fromEl.value} → ${toEl.value}`)
         : 'all dates';
-      rangeNoteEl.textContent =
-        `${label} · ${settled.length} settled` +
-        (s.settledCount ? ` · ${s.won}–${s.settledCount - s.won} · ROI ${signedPct(s.roi)}` : '') +
-        ` · ${open.length} open`;
-      statusEl.textContent = lastUpdated ? `updated ${new Date(lastUpdated).toLocaleString()}` : '';
+      rangeNoteEl.textContent = `${label}`;
+      const newest = sections
+        .map((sec) => sec.state.lastUpdated)
+        .filter(Boolean)
+        .sort()
+        .pop();
+      statusEl.textContent = newest ? `updated ${new Date(newest).toLocaleString()}` : '';
     }
 
     function setPreset(name) {
-      activePreset = name;
       [...presetsEl.children].forEach((b) => b.classList.toggle('active', b.dataset.preset === name));
       const today = new Date();
       if (name === 'all') { fromEl.value = ''; toEl.value = ''; }
@@ -286,7 +374,7 @@
       else if (name === 'yesterday') { fromEl.value = toEl.value = localDay(addDays(today, -1)); }
       else if (name === '7') { fromEl.value = localDay(addDays(today, -6)); toEl.value = localDay(today); }
       else if (name === '30') { fromEl.value = localDay(addDays(today, -29)); toEl.value = localDay(today); }
-      apply();
+      applyAll();
     }
 
     presetsEl.addEventListener('click', (e) => {
@@ -295,36 +383,18 @@
     });
     [fromEl, toEl].forEach((el) =>
       el.addEventListener('change', () => {
-        activePreset = '';
         [...presetsEl.children].forEach((b) => b.classList.remove('active'));
-        apply();
+        applyAll();
       })
     );
 
-    async function load() {
-      try {
-        const res = await fetch('/api/value-picks');
-        if (res.status === 503) {
-          statusEl.textContent = 'No value-pick data yet';
-          emptyEl.hidden = false;
-          emptyEl.textContent = 'No value picks logged yet — the first ones appear after the next scrape.';
-          return;
-        }
-        const data = await res.json();
-        allOpen = data.open || [];
-        allSettled = data.settled || [];
-        lastUpdated = data.updatedAt || null;
-        if (data.availableDates) {
-          fromEl.min = toEl.min = data.availableDates.min;
-        }
-        apply();
-      } catch (err) {
-        statusEl.textContent = `Failed to load: ${err.message}`;
-      }
+    async function loadAll() {
+      await Promise.all(sections.map((sec) => sec.load()));
+      applyAll();
     }
 
-    load();
-    setInterval(load, 60000);
+    loadAll();
+    setInterval(loadAll, 60000);
   </script>
 </body>
 </html>
