@@ -46,8 +46,20 @@
       Picks</a> page with its result once the match finishes. The consensus is <em>softer than a true sharp
       line</em>, so treat it as "the crowd disagrees with the price", not a guaranteed edge. "¼-Kelly" is a
       conservative stake fraction of your bankroll. Gamble responsibly and only what you can afford to lose.
+      <br /><br />
+      <strong>Match details:</strong> click a match card for its recent head-to-head meetings and each side's last
+      5 results, scraped from Forebet's match page. Only available for matches Forebet also covers, and only once
+      the periodic scrape has fetched that particular match (upcoming matches are prioritized, refreshed at most
+      once a day).
     </p>
   </main>
+
+  <div class="modal-overlay" id="match-modal" hidden>
+    <div class="modal-panel">
+      <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

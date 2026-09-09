@@ -194,6 +194,44 @@ curl -sS http://localhost:3000/api/debug | python3 -m json.tool
   the heuristic regex needs tuning to the actual article text
   (WhoScored/Sports Mole). This doesn't block matches from showing — it
   just means no tipster chips/pick for those matches.
+- `match-info.json` not populating (see below) → set `TIPSTERS_DEBUG=true`
+  and check `debug-tipsters/forebet-match.html` against
+  `src/scrapers/tipsters/forebetMatchInfo.js`'s `parseH2H`/`parseForm`.
+
+## Match details: H2H + recent form (click a card)
+
+Each match card on the board is clickable, opening a panel with the two
+teams' last 5 results and their recent head-to-head meetings, scraped from
+that match's own Forebet prediction page (not the list page forebet.js
+otherwise reads).
+
+- `src/scrapers/tipsters/forebet.js` now also captures each row's
+  Forebet match-page URL (`matchUrl`).
+- `src/scrapers/tipsters/forebetMatchInfo.js` fetches that page and parses
+  H2H/form. **These selectors are unverified** — unlike every other
+  scraper in this repo (each ported from, or checked against, real
+  markup), this sandbox had no network path to forebet.com to confirm
+  them against a live match page. They're structural-selector-first with
+  a text-anchored fallback, so a wrong guess degrades to "no data" rather
+  than throwing — but they likely need tuning once you can capture
+  `debug-tipsters/forebet-match.html` (`TIPSTERS_DEBUG=true`) from a real
+  GitHub Actions run and compare it against `parseH2H`/`parseForm`.
+- `src/results/matchInfo.js` attaches the result to each match as
+  `match.headToHead`, from a rolling cache (`match-info.json`, ~10 days)
+  refreshed at most once a day per match (H2H/form barely change inside a
+  day) and capped to `FOREBET_MATCHINFO_MAX_PER_RUN` (default 15) new
+  fetches per snapshot cycle, so one run can't blow the GitHub Actions job's
+  time budget or hammer Forebet. Matches more than 4 days out are skipped
+  for now — they'll be fetched once closer to kickoff.
+- No separate API route: `headToHead` rides along on each match object in
+  `GET /api/matches`, same as `odds`/`value`/`tipsterConsensus`. Only
+  populated via the published snapshot (the periodic GitHub Actions job) —
+  like `statareaValue`, it's not computed on the live on-demand-scrape
+  fallback path.
+- `public/app.js`'s `openMatchDetail`/`renderMatchDetail` render the panel
+  client-side from data already in the fetched match — no extra request on
+  click. A match Forebet doesn't cover, or hasn't been scraped yet, shows a
+  plain "no data yet" message instead of an empty panel.
 
 ## Top pick / "best bet"
 
@@ -299,6 +337,7 @@ are all generic.
 | `TIPSTERS_DEADLINE_MS` | Overall cap on the tipster-fetch phase (default 25 s; the snapshot job raises it since FlareSolverr solves take longer) |
 | `SPORTSMOLE_MAX_ARTICLES` | Max Sports Mole preview articles to fetch per run (default 40) |
 | `STATAREA_DAYS` | How many days of Statarea predictions to fetch, starting today (default 3) |
+| `FOREBET_MATCHINFO_MAX_PER_RUN` | Max new Forebet match-page (H2H/form) fetches per snapshot cycle (default 15) |
 | `SGPOOLS_ODDS_TIMEOUT_MS` | Timeout for each SG Pools odds API call (default 15 s) |
 | `VALUE_CONSENSUS_WEIGHT` | How much the tipster consensus pulls the reference probability off SG Pools' no-vig line, 0–1 (default 0.35) |
 | `VALUE_MIN_EV` | EV threshold for the VALUE flag (default 0.05 = +5%) |
