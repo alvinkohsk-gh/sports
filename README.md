@@ -198,24 +198,27 @@ curl -sS http://localhost:3000/api/debug | python3 -m json.tool
   and check `debug-tipsters/forebet-match.html` against
   `src/scrapers/tipsters/forebetMatchInfo.js`'s `parseH2H`/`parseForm`.
 
-## Match details: H2H + recent form (click a card)
+## Match details: H2H, form + recent fixtures (click a card)
 
 Each match card on the board is clickable, opening a panel with the two
-teams' last 5 results and their recent head-to-head meetings, scraped from
-that match's own Forebet prediction page (not the list page forebet.js
-otherwise reads).
+teams' last 5 results (form), their recent head-to-head meetings, and each
+team's own recent fixtures (home team's recent matches, away team's recent
+matches — separate from the H2H list, which is only meetings between these
+two teams), all scraped from that match's own Forebet prediction page (not
+the list page forebet.js otherwise reads).
 
 - `src/scrapers/tipsters/forebet.js` now also captures each row's
   Forebet match-page URL (`matchUrl`).
 - `src/scrapers/tipsters/forebetMatchInfo.js` fetches that page and parses
-  H2H/form. **These selectors are unverified** — unlike every other
-  scraper in this repo (each ported from, or checked against, real
+  H2H/form/fixtures. **These selectors are unverified** — unlike every
+  other scraper in this repo (each ported from, or checked against, real
   markup), this sandbox had no network path to forebet.com to confirm
   them against a live match page. They're structural-selector-first with
   a text-anchored fallback, so a wrong guess degrades to "no data" rather
   than throwing — but they likely need tuning once you can capture
   `debug-tipsters/forebet-match.html` (`TIPSTERS_DEBUG=true`) from a real
-  GitHub Actions run and compare it against `parseH2H`/`parseForm`.
+  GitHub Actions run and compare it against
+  `parseH2H`/`parseForm`/`parseTeamFixtures`.
 - `src/results/matchInfo.js` attaches the result to each match as
   `match.headToHead`, from a rolling cache (`match-info.json`, ~10 days)
   refreshed at most once a day per match (H2H/form barely change inside a

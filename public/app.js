@@ -203,6 +203,21 @@ function renderH2HTable(h2h) {
   return `<table class="h2h-table"><tbody>${rows}</tbody></table>`;
 }
 
+function renderFixturesTable(fixtures) {
+  if (!fixtures || !fixtures.length) return '<div class="detail-muted">No recent fixtures available.</div>';
+  const rows = fixtures
+    .map(
+      (r) => `
+      <tr>
+        <td>${r.date ? escapeHtml(r.date) : ''}</td>
+        <td class="num">${r.homeGoals} – ${r.awayGoals}</td>
+        <td>${r.opponent ? escapeHtml(r.opponent) : ''}</td>
+      </tr>`
+    )
+    .join('');
+  return `<table class="h2h-table"><tbody>${rows}</tbody></table>`;
+}
+
 function renderMatchDetail(match) {
   const hh = match.headToHead;
   return `
@@ -217,9 +232,17 @@ function renderMatchDetail(match) {
       <h3>Head-to-head</h3>
       ${renderH2HTable(hh && hh.h2h)}
     </div>
+    <div class="detail-section">
+      <h3>${escapeHtml(match.homeTeam)} — recent fixtures</h3>
+      ${renderFixturesTable(hh && hh.homeFixtures)}
+    </div>
+    <div class="detail-section">
+      <h3>${escapeHtml(match.awayTeam)} — recent fixtures</h3>
+      ${renderFixturesTable(hh && hh.awayFixtures)}
+    </div>
     ${
       !hh
-        ? '<p class="detail-note">No Forebet head-to-head/form data for this match yet — either Forebet doesn\'t cover it, or the periodic scrape hasn\'t fetched it yet (upcoming matches are prioritized).</p>'
+        ? '<p class="detail-note">No Forebet head-to-head/form/fixture data for this match yet — either Forebet doesn\'t cover it, or the periodic scrape hasn\'t fetched it yet (upcoming matches are prioritized).</p>'
         : `<p class="detail-note">Source: <a href="${hh.sourceUrl}" target="_blank" rel="noopener" style="color:var(--accent)">Forebet</a></p>`
     }
   `;

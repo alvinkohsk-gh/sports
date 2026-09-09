@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const cheerio = require('cheerio');
-const { parseH2H, parseForm } = require('../src/scrapers/tipsters/forebetMatchInfo');
+const { parseH2H, parseForm, parseTeamFixtures } = require('../src/scrapers/tipsters/forebetMatchInfo');
 
 // These fixtures encode this parser's own structural assumptions (see the
 // UNVERIFIED note in forebetMatchInfo.js) — they prove the parsing logic
@@ -52,4 +52,48 @@ test('parseForm: no matching badges -> empty array', () => {
   const $ = cheerio.load('<div><p>no form widgets on this page</p></div>');
   assert.deepEqual(parseForm($, 'home'), []);
   assert.deepEqual(parseForm($, 'away'), []);
+});
+
+test('parseTeamFixtures: reads two "Last matches" sections, home first then away', () => {
+  const html = `
+    <div>
+      <h4>Last 6 matches Team A</h4>
+      <table>
+        <tr><td>10.02.2024</td><td>Team A</td><td>2 - 0</td><td>Rival X</td></tr>
+        <tr><td>03.02.2024</td><td>Rival Y</td><td>1 - 1</td><td>Team A</td></tr>
+      </table>
+      <h4>Last 6 matches Team B</h4>
+      <table>
+        <tr><td>11.02.2024</td><td>Team B</td><td>0 - 3</td><td>Rival Z</td></tr>
+      </table>
+    </div>`;
+  const $ = cheerio.load(html);
+  const sections = parseTeamFixtures($);
+  assert.equal(sections.length, 2);
+  assert.equal(sections[0].length, 2);
+  assert.deepEqual(
+    { homeGoals: sections[0][0].homeGoals, awayGoals: sections[0][0].awayGoals, date: sections[0][0].date },
+    { homeGoals: 2, awayGoals: 0, date: '10.02.2024' }
+  );
+  assert.ok(sections[0][0].opponent.includes('Rival X'));
+  assert.equal(sections[1].length, 1);
+  assert.deepEqual(
+    { homeGoals: sections[1][0].homeGoals, awayGoals: sections[1][0].awayGoals, date: sections[1][0].date },
+    { homeGoals: 0, awayGoals: 3, date: '11.02.2024' }
+  );
+});
+
+test('parseTeamFixtures: does not pick up the H2H section', () => {
+  const html = `
+    <div>
+      <h3>H2H</h3>
+      <table><tr><td>12.03.2024</td><td>2 - 1</td></tr></table>
+    </div>`;
+  const $ = cheerio.load(html);
+  assert.deepEqual(parseTeamFixtures($), []);
+});
+
+test('parseTeamFixtures: no matching sections -> empty array, no throw', () => {
+  const $ = cheerio.load('<div><p>nothing relevant here</p></div>');
+  assert.deepEqual(parseTeamFixtures($), []);
 });
