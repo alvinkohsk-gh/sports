@@ -90,6 +90,9 @@ router.get('/accuracy', async (req, res) => {
 
   const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
   const dayOf = (iso) => String(iso || '').slice(0, 10);
+  // SG Pools tags in-play events "… (Live)"; strip it so a league doesn't
+  // split into two entries.
+  const cleanLeague = (l) => (l ? String(l).replace(/\s*\(live\)\s*$/i, '').trim() || null : null);
   const from = DAY_RE.test(req.query.from) ? req.query.from : null;
   const to = DAY_RE.test(req.query.to) ? req.query.to : null;
 
@@ -140,7 +143,7 @@ router.get('/accuracy', async (req, res) => {
       matchKey: e.matchKey,
       site: e.site,
       kickoffISO: e.kickoffISO,
-      league: e.league || null,
+      league: cleanLeague(e.league),
       fixture: `${e.homeTeam} vs ${e.awayTeam}`,
       score: null,
       pick: e.pick || null,
@@ -169,7 +172,7 @@ router.get('/accuracy', async (req, res) => {
         matchKey: s.matchKey,
         site: s.site,
         kickoffISO: s.kickoffISO,
-        league: s.league || null,
+        league: cleanLeague(s.league),
         fixture: s.fixture,
         score: s.score,
         pick: s.pick || null,
