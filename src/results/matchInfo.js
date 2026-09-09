@@ -45,7 +45,13 @@ async function attachMatchInfo(matches, forebetRows, prevCache, { nowMs = Date.n
 
     const key = matchKey(m.homeTeam, m.awayTeam, m.kickoffISO);
     const cached = byKey.get(key);
-    const fresh = cached && nowMs - (Date.parse(cached.fetchedAtISO) || 0) < TTL_MS;
+    // Only a cache entry that actually holds info counts as "fresh" and
+    // skips a re-fetch — a null result (fetch/parse failure, or a Forebet
+    // page whose markup didn't match the selectors) is retried every run
+    // instead of being stuck for a full TTL_MS, so a selector fix (or a
+    // transient site issue) recovers on the next cycle rather than
+    // waiting up to 24h.
+    const fresh = cached && cached.info && nowMs - (Date.parse(cached.fetchedAtISO) || 0) < TTL_MS;
 
     if (fresh) {
       if (cached.info) m.headToHead = cached.info;
