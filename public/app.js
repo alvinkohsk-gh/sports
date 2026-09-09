@@ -3,9 +3,11 @@ const matchesEl = document.getElementById('matches');
 const emptyEl = document.getElementById('empty');
 const statusEl = document.getElementById('status');
 const inplayEl = document.getElementById('inplay');
+const tipsterSelectEl = document.getElementById('tipster-select');
 
 let currentMatches = [];
 let currentInPlay = [];
+let selectedTipster = ''; // '' = all tipsters
 
 function formatCountdown(ms) {
   if (ms <= 0) return { text: 'LIVE / KICKED OFF', cls: 'live' };
@@ -49,34 +51,61 @@ const SITE_LABELS = {
   footballpredictions: 'FootballPredictions',
 };
 
-function renderTipsters(tipsterConsensus) {
+if (tipsterSelectEl) {
+  for (const [site, label] of Object.entries(SITE_LABELS)) {
+    const opt = document.createElement('option');
+    opt.value = site;
+    opt.textContent = label;
+    tipsterSelectEl.appendChild(opt);
+  }
+  tipsterSelectEl.addEventListener('change', () => {
+    selectedTipster = tipsterSelectEl.value;
+    renderMatches(currentMatches);
+    renderInPlay(currentInPlay);
+  });
+}
+
+// `filterSite` narrows a match's tipster section down to one site — used
+// when the board's tipster filter is active. The majority-vote line only
+// makes sense across multiple sites, so a filtered card shows that one
+// site's own pick(s) instead.
+function renderTipsters(tipsterConsensus, filterSite) {
   if (!tipsterConsensus || tipsterConsensus.totalTipsters === 0) {
     return '<div class="section-label">Tipster picks: none found</div>';
   }
   const cfMark = (p) => (p.carriedForward ? '<sup class="cf-mark" title="pre-match pick — this site stopped listing the fixture after kick-off">ᴾ</sup>' : '');
-  const chips = tipsterConsensus.picks
+  const allPicks = filterSite ? tipsterConsensus.picks.filter((p) => p.site === filterSite) : tipsterConsensus.picks;
+  if (filterSite && allPicks.length === 0) {
+    return `<div class="section-label">${SITE_LABELS[filterSite] || filterSite}: no pick for this match</div>`;
+  }
+
+  const chips = allPicks
     .map((p) => {
       const label = SITE_LABELS[p.site] || p.site;
       const pickText = p.pick ? p.pick.toUpperCase() : '?';
       return `<span class="tip-chip site-${p.site}${p.carriedForward ? ' carried' : ''}" title="${escapeHtml(p.rawText || '')}">${label}${cfMark(p)}: <span class="tc-pick">${pickText}</span></span>`;
     })
     .join('');
-  const majority = tipsterConsensus.majorityPick
-    ? `${tipsterConsensus.majorityCount}/${tipsterConsensus.totalTipsters} tipsters pick ${tipsterConsensus.majorityPick.toUpperCase()}`
-    : 'no clear majority';
+  const majority = filterSite
+    ? (allPicks[0].pick ? `${SITE_LABELS[filterSite] || filterSite} picks ${allPicks[0].pick.toUpperCase()}` : `${SITE_LABELS[filterSite] || filterSite}: no clear 1X2 pick`)
+    : tipsterConsensus.majorityPick
+      ? `${tipsterConsensus.majorityCount}/${tipsterConsensus.totalTipsters} tipsters pick ${tipsterConsensus.majorityPick.toUpperCase()}`
+      : 'no clear majority';
 
-  const ouChips = tipsterConsensus.picks
-    .filter((p) => p.totalsPick)
+  const ouPicks = allPicks.filter((p) => p.totalsPick);
+  const ouChips = ouPicks
     .map((p) => {
       const label = SITE_LABELS[p.site] || p.site;
       const sel = p.totalsPick.selection.toUpperCase();
       return `<span class="tip-chip site-${p.site}${p.carriedForward ? ' carried' : ''}" title="${escapeHtml(p.rawText || '')}">${label}${cfMark(p)}: <span class="tc-pick">${sel} ${p.totalsPick.point}</span></span>`;
     })
     .join('');
-  const ouMajority = tipsterConsensus.totalsMajorityPick
-    ? `${tipsterConsensus.totalsMajorityCount}/${tipsterConsensus.totalTotalsTipsters} tipsters pick ${tipsterConsensus.totalsMajorityPick.toUpperCase()} ${tipsterConsensus.totalsMajorityPoint}`
-    : 'no clear majority';
-  const ouSection = tipsterConsensus.totalTotalsTipsters
+  const ouMajority = filterSite
+    ? `${SITE_LABELS[filterSite] || filterSite} picks ${ouPicks[0].totalsPick.selection.toUpperCase()} ${ouPicks[0].totalsPick.point}`
+    : tipsterConsensus.totalsMajorityPick
+      ? `${tipsterConsensus.totalsMajorityCount}/${tipsterConsensus.totalTotalsTipsters} tipsters pick ${tipsterConsensus.totalsMajorityPick.toUpperCase()} ${tipsterConsensus.totalsMajorityPoint}`
+      : 'no clear majority';
+  const ouSection = ouPicks.length
     ? `<div class="section-label">Tipster O/U picks (${ouMajority})</div><div class="tip-chips">${ouChips}</div>`
     : '';
 
@@ -158,7 +187,7 @@ function renderCard(match) {
     <div class="countdown" data-countdown></div>
     <div class="kickoff-time">Kickoff: ${new Date(match.kickoffISO).toLocaleString()}</div>
     ${renderPick(match.topPick)}
-    ${renderTipsters(match.tipsterConsensus)}
+    ${renderTipsters(match.tipsterConsensus, selectedTipster)}
     ${renderOdds(match)}
   `;
   return div;
@@ -180,10 +209,18 @@ function renderBestBet(bestBet) {
     </div>
   `;
 }
+function coveredBy(match, site) {
+  return (match.tipsterConsensus?.picks || []).some((p) => p.site === site);
+}
+
 function renderMatches(matches) {
+  const shown = selectedTipster ? matches.filter((m) => coveredBy(m, selectedTipster)) : matches;
   matchesEl.innerHTML = '';
-  emptyEl.hidden = matches.length > 0;
-  matches.forEach((m) => matchesEl.appendChild(renderCard(m)));
+  emptyEl.hidden = shown.length > 0;
+  emptyEl.textContent = selectedTipster && matches.length > 0 && shown.length === 0
+    ? `${SITE_LABELS[selectedTipster] || selectedTipster} has no picks among the open matches right now.`
+    : 'No open Singapore Pools matches right now.';
+  shown.forEach((m) => matchesEl.appendChild(renderCard(m)));
   tickCountdowns();
 }
 
@@ -238,7 +275,7 @@ function renderInPlayCard(m) {
     <div class="live-clock" data-liveclock>${liveClock(m.kickoffISO)}</div>
     ${scoreRow}
     ${renderPick(m.topPick)}
-    ${renderTipsters(m.tipsterConsensus)}
+    ${renderTipsters(m.tipsterConsensus, selectedTipster)}
     ${oddsRow}
   `;
   return div;
@@ -248,9 +285,10 @@ function renderInPlay(list) {
   currentInPlay = list || [];
   // drop anything that must be long finished (a stale snapshot can still
   // list a match that ended ~10 min ago)
-  const live = currentInPlay.filter(
+  let live = currentInPlay.filter(
     (m) => (Date.now() - new Date(m.kickoffISO).getTime()) / 60000 < 135
   );
+  if (selectedTipster) live = live.filter((m) => coveredBy(m, selectedTipster));
   if (!inplayEl) return;
   if (!live.length) {
     inplayEl.hidden = true;
