@@ -63,12 +63,30 @@ function extractRows(html, sourceUrl) {
     // "3 - 2  3.50" (score + its odds). Over/Under 2.5 is derived from it.
     const exScore = row.find('.ex_sc').first().text().replace(/\s+/g, ' ').trim();
 
+    // Each row links to that match's own prediction page (H2H + recent
+    // form live there — see forebetMatchInfo.js). Try the schema.org
+    // itemprop="url" meta first (rows carry SportsEvent markup alongside
+    // itemprop="name"), else the row's own/nested <a href>.
+    const rawHref =
+      row.find('meta[itemprop="url"]').attr('content') ||
+      row.attr('href') ||
+      row.find('a').first().attr('href');
+    let matchUrl = null;
+    if (rawHref) {
+      try {
+        matchUrl = new URL(rawHref, sourceUrl).toString();
+      } catch {
+        matchUrl = null;
+      }
+    }
+
     rows.push({
       site: 'forebet',
       homeTeam: teams[0].trim(),
       awayTeam: teams[1].trim(),
       rawText: [predictionText, exScore].filter(Boolean).join(' | '),
       sourceUrl,
+      matchUrl,
       pick: inferPick(predictionText),
       totalsPick: totalsFromScoreline(exScore),
     });

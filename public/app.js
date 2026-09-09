@@ -4,6 +4,9 @@ const emptyEl = document.getElementById('empty');
 const statusEl = document.getElementById('status');
 const inplayEl = document.getElementById('inplay');
 const tipsterSelectEl = document.getElementById('tipster-select');
+const modalEl = document.getElementById('match-modal');
+const modalBodyEl = document.getElementById('modal-body');
+const modalCloseEl = document.getElementById('modal-close');
 
 let currentMatches = [];
 let currentInPlay = [];
@@ -175,11 +178,103 @@ function renderOdds(match) {
   return `<div class="odds-block"><div class="section-label">Singapore Pools odds</div>${rows}${badge}</div>`;
 }
 
+// ---- match detail modal: recent H2H + form (see src/results/matchInfo.js,
+// scraped from Forebet and attached to a match as `headToHead` by the
+// periodic snapshot job — only present for matches Forebet also covers
+// and that the scrape has already fetched). ----
+function renderFormBadges(form) {
+  if (!form || !form.length) return '<span class="detail-muted">no data</span>';
+  return form
+    .map((r) => `<span class="form-badge form-${String(r).toLowerCase()}" title="${escapeHtml(String(r))}">${escapeHtml(String(r))}</span>`)
+    .join('');
+}
+
+function renderH2HTable(h2h) {
+  if (!h2h || !h2h.length) return '<div class="detail-muted">No head-to-head data available.</div>';
+  const rows = h2h
+    .map(
+      (r) => `
+      <tr>
+        <td>${r.date ? escapeHtml(r.date) : ''}</td>
+        <td class="num">${r.homeGoals} – ${r.awayGoals}</td>
+      </tr>`
+    )
+    .join('');
+  return `<table class="h2h-table"><tbody>${rows}</tbody></table>`;
+}
+
+function renderFixturesTable(fixtures) {
+  if (!fixtures || !fixtures.length) return '<div class="detail-muted">No recent fixtures available.</div>';
+  const rows = fixtures
+    .map(
+      (r) => `
+      <tr>
+        <td>${r.date ? escapeHtml(r.date) : ''}</td>
+        <td class="num">${r.homeGoals} – ${r.awayGoals}</td>
+        <td>${r.opponent ? escapeHtml(r.opponent) : ''}</td>
+      </tr>`
+    )
+    .join('');
+  return `<table class="h2h-table"><tbody>${rows}</tbody></table>`;
+}
+
+function renderMatchDetail(match) {
+  const hh = match.headToHead;
+  return `
+    <h2>${escapeHtml(match.homeTeam)} vs ${escapeHtml(match.awayTeam)}</h2>
+    <div class="modal-sub">${escapeHtml(match.league || '')} · Kickoff ${new Date(match.kickoffISO).toLocaleString()}</div>
+    <div class="detail-section">
+      <h3>Recent form (last 5)</h3>
+      <div class="form-row"><span class="form-team">${escapeHtml(match.homeTeam)}</span>${renderFormBadges(hh && hh.homeForm)}</div>
+      <div class="form-row"><span class="form-team">${escapeHtml(match.awayTeam)}</span>${renderFormBadges(hh && hh.awayForm)}</div>
+    </div>
+    <div class="detail-section">
+      <h3>Head-to-head</h3>
+      ${renderH2HTable(hh && hh.h2h)}
+    </div>
+    <div class="detail-section">
+      <h3>${escapeHtml(match.homeTeam)} — recent fixtures</h3>
+      ${renderFixturesTable(hh && hh.homeFixtures)}
+    </div>
+    <div class="detail-section">
+      <h3>${escapeHtml(match.awayTeam)} — recent fixtures</h3>
+      ${renderFixturesTable(hh && hh.awayFixtures)}
+    </div>
+    ${
+      !hh
+        ? '<p class="detail-note">No Forebet head-to-head/form/fixture data for this match yet — either Forebet doesn\'t cover it, or the periodic scrape hasn\'t fetched it yet (upcoming matches are prioritized).</p>'
+        : `<p class="detail-note">Source: <a href="${hh.sourceUrl}" target="_blank" rel="noopener" style="color:var(--accent)">Forebet</a></p>`
+    }
+  `;
+}
+
+function openMatchDetail(match) {
+  if (!modalEl) return;
+  modalBodyEl.innerHTML = renderMatchDetail(match);
+  modalEl.hidden = false;
+}
+
+function closeMatchDetail() {
+  if (!modalEl) return;
+  modalEl.hidden = true;
+}
+
+if (modalCloseEl) modalCloseEl.addEventListener('click', closeMatchDetail);
+if (modalEl) {
+  modalEl.addEventListener('click', (e) => {
+    if (e.target === modalEl) closeMatchDetail(); // click outside the panel
+  });
+}
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && modalEl && !modalEl.hidden) closeMatchDetail();
+});
+
 function renderCard(match) {
   const div = document.createElement('div');
-  div.className = 'card';
+  div.className = 'card clickable';
   div.id = `match-${match.id}`;
   div.dataset.kickoff = match.kickoffISO;
+  div.addEventListener('click', () => openMatchDetail(match));
   div.innerHTML = `
     <span class="badge">Open on Singapore Pools</span>
     <div class="league">${match.league || ''}</div>
@@ -189,6 +284,7 @@ function renderCard(match) {
     ${renderPick(match.topPick)}
     ${renderTipsters(match.tipsterConsensus, selectedTipster)}
     ${renderOdds(match)}
+    <div class="card-hint">Tap for recent form &amp; head-to-head &rarr;</div>
   `;
   return div;
 }
@@ -253,9 +349,10 @@ function liveClock(kickoffISO) {
 
 function renderInPlayCard(m) {
   const div = document.createElement('div');
-  div.className = 'card live';
+  div.className = 'card live clickable';
   div.id = `match-${m.id}`;
   div.dataset.kickoff = m.kickoffISO;
+  div.addEventListener('click', () => openMatchDetail(m));
   const odds = m.odds && m.odds.oneX2;
   const oddsRow = odds
     ? `<div class="section-label">Live SG Pools 1X2: <b>${Number(odds.home).toFixed(2)}</b> / <b>${Number(odds.draw).toFixed(2)}</b> / <b>${Number(odds.away).toFixed(2)}</b></div>`

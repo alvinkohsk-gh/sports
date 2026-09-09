@@ -7,6 +7,7 @@
  *   accuracy.json        — graded samples + per-site accuracy summary
  *   value-picks.json     — rolling log of VALUE-flagged picks (full consensus)
  *   statarea-picks.json  — same, but scored on statarea's picks alone
+ *   match-info.json      — cached Forebet H2H + recent form per fixture
  *
  * Meant to run OUTSIDE the request path — in GitHub Actions on a schedule
  * (see .github/workflows/snapshot.yml). The Vercel app just serves these
@@ -26,6 +27,7 @@ const { grade } = require('../src/results/accuracy');
 const { teamsMatch } = require('../src/services/matcher');
 const { mergeValuePicks, gradeValuePicks, summarizeValuePicks } = require('../src/results/valuePicks');
 const { assessStatareaValue } = require('../src/services/statareaValue');
+const { attachMatchInfo } = require('../src/results/matchInfo');
 
 const OUT = process.argv[2] || 'snapshot.json';
 const DIR = process.argv[3] || path.dirname(OUT) || '.';
@@ -119,14 +121,28 @@ async function loadPublished(file, fallback) {
   }
 
   // ---- prediction history + accuracy grading + value-pick log(s) ----
-  const [prevHistory, prevAccuracy, prevValuePicks, prevStatareaPicks] = await Promise.all([
+  const [prevHistory, prevAccuracy, prevValuePicks, prevStatareaPicks, prevMatchInfo] = await Promise.all([
     loadPublished('history.json', { entries: [] }),
     loadPublished('accuracy.json', { samples: [] }),
     loadPublished('value-picks.json', { picks: [] }),
     loadPublished('statarea-picks.json', { picks: [] }),
+    loadPublished('match-info.json', { entries: [] }),
   ]);
 
   const history = mergeHistory(prevHistory, snapshot.matches, nowISO);
+
+  // H2H + recent form (Forebet) for each SG Pools fixture Forebet also
+  // covers — see src/results/matchInfo.js. Mutates snapshot.matches,
+  // attaching `headToHead` where available; cached/rate-limited so most
+  // cycles serve stored data instead of re-fetching every match.
+  const forebetRows = snapshot.rawTipsterPicks.filter((p) => p.site === 'forebet');
+  let matchInfoCache;
+  try {
+    matchInfoCache = await attachMatchInfo(snapshot.matches, forebetRows, prevMatchInfo);
+  } catch (err) {
+    console.error('[scrape-snapshot] match-info attach failed:', err.message || err);
+    matchInfoCache = prevMatchInfo;
+  }
 
   // Actual FT scores. Flashscore's feed is the primary source (near-total
   // league coverage); Forebet's results pages and WinDrawWin's "yesterday
@@ -174,6 +190,9 @@ async function loadPublished(file, fallback) {
   fs.writeFileSync(path.join(DIR, 'accuracy.json'), JSON.stringify(accuracy));
   fs.writeFileSync(path.join(DIR, 'value-picks.json'), JSON.stringify(valuePicks));
   fs.writeFileSync(path.join(DIR, 'statarea-picks.json'), JSON.stringify(statareaPicks));
+  fs.writeFileSync(path.join(DIR, 'match-info.json'), JSON.stringify(matchInfoCache));
+
+  const withMatchInfo = snapshot.matches.filter((m) => m.headToHead).length;
 
   console.error(
     `[scrape-snapshot] ${snapshot.matches.length} matches, ` +
@@ -186,7 +205,8 @@ async function loadPublished(file, fallback) {
       `ROI ${valuePicks.summary.roi == null ? 'n/a' : (valuePicks.summary.roi * 100).toFixed(1) + '%'} | ` +
       `statarea picks: ${statareaPicks.picks.length} logged, ${statareaPicks.summary.open} open, ` +
       `${statareaPicks.summary.settled} settled (+${spGraded.newlyGraded} new), ` +
-      `ROI ${statareaPicks.summary.roi == null ? 'n/a' : (statareaPicks.summary.roi * 100).toFixed(1) + '%'}`
+      `ROI ${statareaPicks.summary.roi == null ? 'n/a' : (statareaPicks.summary.roi * 100).toFixed(1) + '%'} | ` +
+      `match info: ${withMatchInfo}/${snapshot.matches.length} matches w/ H2H+form (${matchInfoCache.entries.length} cached)`
   );
   process.exit(0);
 })().catch((err) => {
