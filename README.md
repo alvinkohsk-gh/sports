@@ -210,15 +210,16 @@ the list page forebet.js otherwise reads).
 - `src/scrapers/tipsters/forebet.js` now also captures each row's
   Forebet match-page URL (`matchUrl`).
 - `src/scrapers/tipsters/forebetMatchInfo.js` fetches that page and parses
-  H2H/form/fixtures. **These selectors are unverified** — unlike every
-  other scraper in this repo (each ported from, or checked against, real
-  markup), this sandbox had no network path to forebet.com to confirm
-  them against a live match page. They're structural-selector-first with
-  a text-anchored fallback, so a wrong guess degrades to "no data" rather
-  than throwing — but they likely need tuning once you can capture
-  `debug-tipsters/forebet-match.html` (`TIPSTERS_DEBUG=true`) from a real
-  GitHub Actions run and compare it against
-  `parseH2H`/`parseForm`/`parseTeamFixtures`.
+  H2H/form/fixtures. The selectors were verified 2026-09-09 against a real
+  match-page capture (`debug-tipsters/forebet-match.html`, pulled via the
+  `debug-capture` branch — see `.github/workflows/snapshot.yml`'s opt-in
+  `publish_debug` input, for a sandbox with no direct network path to
+  forebet.com): H2H and each team's recent fixtures render as `.st_row`
+  divs (not `<tr>`/`<li>` as first guessed), and form badges are
+  `.form_w`/`.form_d`/`.form_l` spans inside two `.prformcont` widgets. Row
+  lookups also still accept `<tr>`/`<li>`, and `parseForm` falls back to a
+  generic badge scan, so a future markup change degrades to "no data"
+  rather than throwing.
 - `src/results/matchInfo.js` attaches the result to each match as
   `match.headToHead`, from a rolling cache (`match-info.json`, ~10 days)
   refreshed at most once a day per match (H2H/form barely change inside a

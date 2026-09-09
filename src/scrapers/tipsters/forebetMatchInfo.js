@@ -6,19 +6,18 @@ const { fetchHtml } = require('./fetchHtml');
 // match-prediction page (the URL captured per row by forebet.js's
 // extractRows, e.g. forebet.com/en/predictions/<slug>).
 //
-// UNVERIFIED: unlike the list-page scraper in forebet.js (ported from a
-// confirmed real-world scraper), these selectors are a best-effort read of
-// Forebet's typical match-page layout — this sandbox has no network path
-// to forebet.com to check them against real markup. Run with
-// TIPSTERS_DEBUG=true (see fetchHtml.js) to capture
-// debug-tipsters/forebet-match.html from a real GitHub Actions run, then
-// tune parseH2H/parseForm/parseTeamFixtures against it — the same workflow
-// already used to verify every other scraper in this repo (see README
-// "Debugging").
-//
-// All parsers are structural-selector-first with a text-anchored
-// fallback, so a markup change degrades to "no data" (this function
-// returns null) rather than throwing or silently returning garbage.
+// Selectors verified 2026-09-09 against a real match-page capture
+// (debug-tipsters/forebet-match.html from a GitHub Actions run, pulled via
+// the `debug-capture` branch published by .github/workflows/snapshot.yml's
+// opt-in publish_debug input — this sandbox still has no direct network
+// path to forebet.com). H2H and each side's recent fixtures both render as
+// `.st_row` divs (not `<tr>`/`<li>` as first guessed before verification);
+// form badges are `.form_w`/`.form_d`/`.form_l` spans inside two
+// `.prformcont` widgets (home side first, then away). Kept tolerant of a
+// future markup change: row lookups also accept `<tr>`/`<li>`, and
+// parseForm falls back to a generic badge scan if `.prformcont` isn't
+// found — a wrong guess degrades to "no data" (this function returns
+// null) rather than throwing or silently returning garbage.
 
 // No \b before/after the digit groups: cheerio's .text() concatenates
 // adjacent table cells with no inserted whitespace (e.g. "Team A2 - 1Team
@@ -29,6 +28,38 @@ const { fetchHtml } = require('./fetchHtml');
 const SCORE_RE = /(?<!\d)(\d{1,2})\s*[-–:]\s*(\d{1,2})(?!\d)/;
 const DATE_RE = /(?<!\d)(\d{1,2}[/.]\d{1,2}[/.]\d{2,4}|\d{4}-\d{2}-\d{2})(?!\d)/;
 const RESULT_LETTER_RE = /^[WDL]$/i;
+
+// Each H2H/fixture row is a `.st_row` div; kept alongside `tr, li` in case
+// a future layout reverts to a table/list.
+const ROW_SELECTOR = '.st_row, tr, li';
+
+// `.st_date` holds two child divs (day/month, then year) with no
+// separator between them in .text() — read them as separate children
+// first; DATE_RE over the full row text is the fallback for a `tr`/`li`
+// row shaped like the original (unverified) guess.
+function rowDate($, row) {
+  const parts = row.find('.st_date').first().children();
+  if (parts.length >= 2) {
+    const dm = $(parts.get(0)).text().trim();
+    const y = $(parts.get(1)).text().trim();
+    if (dm && y) return `${dm}/${y}`;
+  }
+  const text = row.text().replace(/\s+/g, ' ').trim();
+  const m = text.match(DATE_RE);
+  return m ? m[1] : null;
+}
+
+// The non-`.active-team` side of a `.st_hteam`/`.st_ateam` pair is the
+// opponent (Forebet marks whichever team this match page's subject is
+// with `.active-team`, regardless of whether that team was home or away
+// in this particular past fixture).
+function rowOpponent($, row) {
+  const home = row.find('.st_hteam').first();
+  const away = row.find('.st_ateam').first();
+  if (home.length && !home.hasClass('active-team')) return home.text().trim() || null;
+  if (away.length && !away.hasClass('active-team')) return away.text().trim() || null;
+  return null;
+}
 
 // Best-effort structural read: a heading/section whose text mentions H2H,
 // followed by row-like elements (table rows or list items) each carrying
@@ -46,37 +77,53 @@ function parseH2H($) {
   // necessarily a direct sibling — walk forward through the DOM.
   let container = heading.next();
   let hops = 0;
-  while (container.length && !container.find('tr, li').length && hops < 5) {
+  while (container.length && !container.find(ROW_SELECTOR).length && hops < 5) {
     container = container.next();
     hops += 1;
   }
   if (!container.length) container = heading.parent();
 
   const rows = [];
-  container.find('tr, li').each((_, el) => {
-    const text = $(el).text().replace(/\s+/g, ' ').trim();
+  container.find(ROW_SELECTOR).each((_, el) => {
+    const row = $(el);
+    const text = row.text().replace(/\s+/g, ' ').trim();
     const scoreMatch = text.match(SCORE_RE);
     if (!scoreMatch) return;
-    const dateMatch = text.match(DATE_RE);
     rows.push({
       raw: text,
       homeGoals: Number(scoreMatch[1]),
       awayGoals: Number(scoreMatch[2]),
-      date: dateMatch ? dateMatch[1] : null,
+      date: rowDate($, row),
     });
   });
   return rows.slice(0, 10);
 }
 
-// Best-effort structural read: recent-form widgets typically render each
-// past result as a small W/D/L badge, in DOM order (most recent first or
-// last depending on the site — kept as-is, the UI shows them in the order
-// found). `side` narrows which of the (usually two, home + away) matching
-// widgets to read: 'home' takes the first, 'away' the second.
-function parseForm($, side) {
-  const badges = $('[class*="form" i] [class*="form" i], [class*="form" i]').filter((_, el) => {
+// Recent-form widgets: two `.prformcont` containers (home side first, then
+// away — mirrors the page's left-logo/right-logo layout), each holding a
+// row of `.form_w`/`.form_d`/`.form_l` spans in DOM order.
+function parseFormPrimary($, side) {
+  const containers = $('.prformcont');
+  const idx = side === 'away' ? 1 : 0;
+  const container = containers.eq(idx);
+  if (!container.length) return [];
+
+  const results = [];
+  container.find('[class*="form_"]').each((_, el) => {
+    const cls = $(el).attr('class') || '';
+    if (/\bform_w\b/.test(cls)) results.push('W');
+    else if (/\bform_d\b/.test(cls)) results.push('D');
+    else if (/\bform_l\b/.test(cls)) results.push('L');
+  });
+  return results.slice(0, 5);
+}
+
+// Fallback for a layout that doesn't use `.prformcont`/`.form_w|d|l`:
+// scan for small leaf-ish elements labelled W/D/L (by title/aria-label/
+// text), grouped by shared parent into one widget per team.
+function parseFormFallback($, side) {
+  const badges = $('[class*="form" i]').filter((_, el) => {
     const $el = $(el);
-    if ($el.children().length) return false; // want leaf badges, not the containers
     const label = ($el.attr('title') || $el.attr('aria-label') || $el.text() || '').trim();
     return RESULT_LETTER_RE.test(label) || /\b(win|draw|lose|loss|lost)\b/i.test(label);
   });
@@ -112,47 +159,74 @@ function parseForm($, side) {
   return (groups[idx] || []).slice(0, 5);
 }
 
-// Best-effort structural read: sections titled something like "Last 6
-// matches"/"Previous matches"/"Recent matches" (distinct from the H2H
-// section, which covers meetings between both teams) — Forebet match
-// pages typically carry one such section per team. Mirrors parseForm's
-// approach of reading two same-shaped widgets in DOM order and assigning
-// the first to the home side, the second to the away side. Each row keeps
-// the date + scoreline (like parseH2H) plus a best-effort `opponent`
-// string (whatever row text remains once the date/score are stripped out
-// — may include extra labels the row carries, e.g. a competition name).
+function parseForm($, side) {
+  const primary = parseFormPrimary($, side);
+  return primary.length ? primary : parseFormFallback($, side);
+}
+
+// Sections titled "Last N matches" (distinct from the H2H section, which
+// covers meetings between both teams, and from Forebet's separate "home
+// matches"/"away matches"/"next matches" widgets, which this doesn't
+// read) — one per team, each a `.mptlt` panel heading. `.mptlt`'s own text
+// isn't used directly: it also carries a team-code prefix div (e.g. "STS")
+// concatenated with no separator, which both pushes real headings over a
+// naive length check and makes prefixed-but-unrelated panels ("STS ...
+// Straight line distance") harder to rule out. The heading label instead
+// lives cleanly in `.mptlt`'s own last child element (no prefix); a
+// generic `$('*')` scan is the fallback if `.mptlt` isn't found at all.
+function isFixturesHeadingText(t) {
+  const norm = t.replace(/\s+/g, ' ').trim();
+  if (!norm || norm.length >= 40) return false;
+  if (/h2h|head[\s-]?to[\s-]?head/i.test(norm)) return false;
+  return /\blast\s*\d*\s*(match|game)|previous\s+match/i.test(norm);
+}
+
+function findFixturesHeadings($) {
+  const fromPanels = $('.mptlt')
+    .filter((_, el) => {
+      const last = $(el).children().last();
+      return last.length && isFixturesHeadingText(last.text());
+    });
+  if (fromPanels.length) return fromPanels;
+
+  return $('*').filter((_, el) => isFixturesHeadingText($(el).text()));
+}
+
 function parseTeamFixtures($) {
-  const headings = $('*').filter((_, el) => {
-    const t = $(el).text().trim();
-    if (t.length >= 60 || /h2h|head[\s-]?to[\s-]?head/i.test(t)) return false;
-    return /\blast\s*\d*\s*(match|game)|previous\s+match|recent\s+match/i.test(t);
-  });
+  const headings = findFixturesHeadings($);
 
   const sections = [];
   headings.each((_, el) => {
     let container = $(el).next();
     let hops = 0;
-    while (container.length && !container.find('tr, li').length && hops < 5) {
+    while (container.length && !container.find(ROW_SELECTOR).length && hops < 5) {
       container = container.next();
       hops += 1;
     }
     if (!container.length) container = $(el).parent();
 
     const rows = [];
-    container.find('tr, li').each((_, rowEl) => {
-      const text = $(rowEl).text().replace(/\s+/g, ' ').trim();
+    container.find(ROW_SELECTOR).each((_, rowEl) => {
+      const row = $(rowEl);
+      const text = row.text().replace(/\s+/g, ' ').trim();
       const scoreMatch = text.match(SCORE_RE);
       if (!scoreMatch) return;
-      const dateMatch = text.match(DATE_RE);
-      let opponent = text.replace(scoreMatch[0], ' ');
-      if (dateMatch) opponent = opponent.replace(dateMatch[0], ' ');
-      opponent = opponent.replace(/\s+/g, ' ').trim();
+      // `.st_hteam`/`.st_ateam` give a reliable opponent name; fall back
+      // to stripping the score/date out of the row text for a `tr`/`li`
+      // row shaped like the original (unverified) guess.
+      let opponent = rowOpponent($, row);
+      if (!opponent) {
+        const dateMatch = text.match(DATE_RE);
+        opponent = text.replace(scoreMatch[0], ' ');
+        if (dateMatch) opponent = opponent.replace(dateMatch[0], ' ');
+        opponent = opponent.replace(/\s+/g, ' ').trim() || null;
+      }
       rows.push({
         raw: text,
         homeGoals: Number(scoreMatch[1]),
         awayGoals: Number(scoreMatch[2]),
-        date: dateMatch ? dateMatch[1] : null,
-        opponent: opponent || null,
+        date: rowDate($, row),
+        opponent,
       });
     });
     if (rows.length) sections.push(rows.slice(0, 6));

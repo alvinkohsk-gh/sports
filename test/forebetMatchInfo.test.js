@@ -3,10 +3,128 @@ const assert = require('node:assert/strict');
 const cheerio = require('cheerio');
 const { parseH2H, parseForm, parseTeamFixtures } = require('../src/scrapers/tipsters/forebetMatchInfo');
 
-// These fixtures encode this parser's own structural assumptions (see the
-// UNVERIFIED note in forebetMatchInfo.js) — they prove the parsing logic
-// itself is sound, not that it matches Forebet's real markup, which this
-// environment has no network path to check.
+// The "verified markup" tests below use a trimmed-down fixture built from
+// a real Forebet match-page capture (debug-tipsters/forebet-match.html,
+// pulled 2026-09-09 via the debug-capture branch — see forebetMatchInfo.js's
+// header comment) — they prove the primary selectors match production
+// markup, not just a plausible guess. The plain `<table>`/`<h3>`-based
+// fixtures further down exercise the fallback paths kept for resilience
+// against a future layout change; they don't claim to represent real
+// Forebet markup on their own.
+
+test('parseH2H: reads real Forebet .st_row markup under a "Head to head" .mptlt panel', () => {
+  const html = `
+    <div class="moduletable">
+      <div class="mptlt">Head to head</div>
+      <div class="st_scrblock"><div class="st_rmain">
+        <div class="st_row st_0">
+          <div class="st_date"><div>04/12</div><div>2026</div></div>
+          <div class="st_hteam active-team"><a href="/en/teams/santos-sp">Santos</a></div>
+          <a href="/en/football/matches/santos-atl-2417999" class="stat_link"><div class="st_rescnt">
+            <span class="st_res lscrsp">1 - 0</span><span class="st_htscr">(0 - 0)</span></a>
+          </div>
+          <div class="st_ateam"><a href="/en/teams/atletico">Atletico</a></div>
+        </div>
+        <div class="st_row st_1">
+          <div class="st_date"><div>09/14</div><div>2025</div></div>
+          <div class="st_hteam"><a href="/en/teams/atletico">Atletico</a></div>
+          <a href="/en/football/matches/atl-santos-2256351" class="stat_link"><div class="st_rescnt">
+            <span class="st_res lscrsp">1 - 1</span><span class="st_htscr">(0 - 0)</span></a>
+          </div>
+          <div class="st_ateam active-team"><a href="/en/teams/santos-sp">Santos</a></div>
+        </div>
+      </div></div>
+    </div>`;
+  const $ = cheerio.load(html);
+  const h2h = parseH2H($);
+  assert.equal(h2h.length, 2);
+  assert.deepEqual(
+    { homeGoals: h2h[0].homeGoals, awayGoals: h2h[0].awayGoals, date: h2h[0].date },
+    { homeGoals: 1, awayGoals: 0, date: '04/12/2026' }
+  );
+  assert.deepEqual(
+    { homeGoals: h2h[1].homeGoals, awayGoals: h2h[1].awayGoals, date: h2h[1].date },
+    { homeGoals: 1, awayGoals: 1, date: '09/14/2025' }
+  );
+});
+
+test('parseForm: reads real Forebet .prformcont/.form_w|d|l markup, home widget first then away', () => {
+  const html = `
+    <div>
+      <div class="lLogo">
+        <div class="prformcont">
+          <span class="form_w"><a>W</a></span>
+          <span class="form_d"><a>D</a></span>
+          <span class="form_l"><a>L</a></span>
+        </div>
+      </div>
+      <div class="rLogo">
+        <div class="prformcont">
+          <span class="form_w"><a>W</a></span>
+          <span class="form_w"><a>W</a></span>
+        </div>
+      </div>
+    </div>`;
+  const $ = cheerio.load(html);
+  assert.deepEqual(parseForm($, 'home'), ['W', 'D', 'L']);
+  assert.deepEqual(parseForm($, 'away'), ['W', 'W']);
+});
+
+test('parseTeamFixtures: reads real Forebet .mptlt "Last N matches" panels, using .st_hteam/.st_ateam for opponent', () => {
+  const html = `
+    <div>
+      <div class="moduletable">
+        <div class="mptlt with_logo">
+          <div class="st_logo_box"><div>STS</div></div>
+          <div>Last 6 matches</div>
+        </div>
+        <div class="st_scrblock"><div class="st_rmain">
+          <div class="st_row st_0">
+            <div class="st_date"><div>09/06</div><div>2026</div></div>
+            <div class="st_hteam"><a href="/en/teams/internacional">Internacional</a></div>
+            <a href="/x" class="stat_link"><div class="st_rescnt">
+              <span class="st_res lscrsp">2 - 3</span></a>
+            </div>
+            <div class="st_ateam active-team"><a href="/en/teams/santos-sp">Santos</a></div>
+          </div>
+        </div></div>
+      </div>
+      <div class="moduletable">
+        <div class="mptlt with_logo">
+          <div class="st_logo_box"><div>ATM</div></div>
+          <div>Last 6 matches</div>
+        </div>
+        <div class="st_scrblock"><div class="st_rmain">
+          <div class="st_row st_0">
+            <div class="st_date"><div>09/05</div><div>2026</div></div>
+            <div class="st_hteam"><a href="/en/teams/sao-paulo">Sao Paulo</a></div>
+            <a href="/x" class="stat_link"><div class="st_rescnt">
+              <span class="st_res lscrsp">2 - 0</span></a>
+            </div>
+            <div class="st_ateam active-team"><a href="/en/teams/atletico">Atletico</a></div>
+          </div>
+        </div></div>
+      </div>
+    </div>`;
+  const $ = cheerio.load(html);
+  const sections = parseTeamFixtures($);
+  assert.equal(sections.length, 2);
+  assert.equal(sections[0].length, 1);
+  assert.deepEqual(
+    { homeGoals: sections[0][0].homeGoals, awayGoals: sections[0][0].awayGoals, date: sections[0][0].date, opponent: sections[0][0].opponent },
+    { homeGoals: 2, awayGoals: 3, date: '09/06/2026', opponent: 'Internacional' }
+  );
+  assert.equal(sections[1].length, 1);
+  assert.deepEqual(
+    { homeGoals: sections[1][0].homeGoals, awayGoals: sections[1][0].awayGoals, date: sections[1][0].date, opponent: sections[1][0].opponent },
+    { homeGoals: 2, awayGoals: 0, date: '09/05/2026', opponent: 'Sao Paulo' }
+  );
+});
+
+// These fixtures encode the fallback parsers' own structural assumptions
+// (plain <table>/<h3> markup, generic form-badge scan) rather than real
+// Forebet markup — they prove that logic is sound as a safety net if the
+// primary `.st_row`/`.mptlt`/`.prformcont` selectors above stop matching.
 
 test('parseH2H: reads scorelines out of rows following an "H2H" heading', () => {
   const html = `
