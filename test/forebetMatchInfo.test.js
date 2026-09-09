@@ -139,8 +139,8 @@ test('parseH2H: reads scorelines out of rows following an "H2H" heading', () => 
   const $ = cheerio.load(html);
   const h2h = parseH2H($);
   assert.equal(h2h.length, 2);
-  assert.deepEqual(h2h[0], { raw: h2h[0].raw, homeGoals: 2, awayGoals: 1, date: '12.03.2024' });
-  assert.deepEqual(h2h[1], { raw: h2h[1].raw, homeGoals: 0, awayGoals: 0, date: '01.11.2023' });
+  assert.deepEqual(h2h[0], { raw: h2h[0].raw, homeGoals: 2, awayGoals: 1, date: '12.03.2024', homeTeamName: null, awayTeamName: null });
+  assert.deepEqual(h2h[1], { raw: h2h[1].raw, homeGoals: 0, awayGoals: 0, date: '01.11.2023', homeTeamName: null, awayTeamName: null });
 });
 
 test('parseH2H: no H2H heading -> empty array, no throw', () => {

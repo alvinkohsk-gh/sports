@@ -61,6 +61,16 @@ function rowOpponent($, row) {
   return null;
 }
 
+// Both team names for a row, regardless of `.active-team` (which — unlike
+// in the per-team fixture widgets — isn't reliably set on every H2H row).
+// Used to work out which side was the *current* match's home team in each
+// past meeting (see matchInfo.js's h2h `result` annotation).
+function rowTeams($, row) {
+  const home = row.find('.st_hteam').first().text().trim();
+  const away = row.find('.st_ateam').first().text().trim();
+  return { homeTeamName: home || null, awayTeamName: away || null };
+}
+
 // Best-effort structural read: a heading/section whose text mentions H2H,
 // followed by row-like elements (table rows or list items) each carrying
 // a scoreline and, usually, a date and the two team names.
@@ -94,6 +104,7 @@ function parseH2H($) {
       homeGoals: Number(scoreMatch[1]),
       awayGoals: Number(scoreMatch[2]),
       date: rowDate($, row),
+      ...rowTeams($, row),
     });
   });
   return rows.slice(0, 10);

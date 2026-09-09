@@ -207,6 +207,13 @@ matches — separate from the H2H list, which is only meetings between these
 two teams), all scraped from that match's own Forebet prediction page (not
 the list page forebet.js otherwise reads).
 
+- Each H2H row is colored green (win) or red (loss) from the perspective of
+  *this* match's home team — `src/results/matchInfo.js`'s
+  `annotateH2HResults` works out, per row, which side was the home team in
+  that past meeting (it flips fixture to fixture) via the team names
+  `forebetMatchInfo.js` captures per row, using the same fuzzy
+  `teamsMatch` already used to pair SG Pools fixtures to Forebet rows.
+  Left uncolored when a row carries no team names rather than guessing.
 - `src/scrapers/tipsters/forebet.js` now also captures each row's
   Forebet match-page URL (`matchUrl`).
 - `src/scrapers/tipsters/forebetMatchInfo.js` fetches that page and parses

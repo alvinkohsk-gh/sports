@@ -259,6 +259,8 @@ main { padding: 20px 24px 60px; max-width: 1100px; margin: 0 auto; }
 table.h2h-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.h2h-table td { padding: 5px 4px; border-bottom: 1px solid var(--card-border); }
 table.h2h-table td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+table.h2h-table td.num.h2h-win { color: var(--ok); }
+table.h2h-table td.num.h2h-loss { color: var(--urgent); }
 .detail-muted { color: var(--muted); font-size: 13px; }
 .detail-note { color: var(--muted); font-size: 11px; margin-top: 14px; line-height: 1.5; }
 
