@@ -25,6 +25,33 @@ function findForebetUrl(match, forebetRows) {
   return row ? row.matchUrl : null;
 }
 
+// Labels each H2H row with a `result` ('W'/'D'/'L') from the *current*
+// match's home team's perspective, so the UI can color wins/losses. A past
+// meeting's home/away side flips from row to row (whichever club hosted
+// that particular fixture), so this can't just read homeGoals/awayGoals
+// positionally — it has to work out, per row, which side was the current
+// match's home team via its Forebet-page team name (captured by
+// forebetMatchInfo.js's parseH2H as homeTeamName/awayTeamName). Left null
+// when a row carries no team names (e.g. the fallback tr/li parse path)
+// rather than guessing.
+function annotateH2HResults(h2h, match) {
+  return (h2h || []).map((r) => {
+    let usGoals;
+    let themGoals;
+    if (r.homeTeamName && teamsMatch(r.homeTeamName, match.homeTeam)) {
+      usGoals = r.homeGoals;
+      themGoals = r.awayGoals;
+    } else if (r.awayTeamName && teamsMatch(r.awayTeamName, match.homeTeam)) {
+      usGoals = r.awayGoals;
+      themGoals = r.homeGoals;
+    } else {
+      return { ...r, result: null };
+    }
+    const result = usGoals > themGoals ? 'W' : usGoals < themGoals ? 'L' : 'D';
+    return { ...r, result };
+  });
+}
+
 /**
  * Attaches `match.headToHead` (H2H + recent form, see
  * scrapers/tipsters/forebetMatchInfo.js) to each SG Pools fixture Forebet
@@ -69,6 +96,7 @@ async function attachMatchInfo(matches, forebetRows, prevCache, { nowMs = Date.n
     let info = null;
     try {
       info = await fetchFn(url);
+      if (info && info.h2h) info = { ...info, h2h: annotateH2HResults(info.h2h, m) };
     } catch (err) {
       console.error('[matchInfo] fetch failed:', err.message || err);
     }
@@ -83,4 +111,4 @@ async function attachMatchInfo(matches, forebetRows, prevCache, { nowMs = Date.n
   return { entries, updatedAt: new Date(nowMs).toISOString() };
 }
 
-module.exports = { attachMatchInfo, findForebetUrl, TTL_MS, MAX_FETCHES_PER_RUN, MAX_LOOKAHEAD_MS };
+module.exports = { attachMatchInfo, findForebetUrl, annotateH2HResults, TTL_MS, MAX_FETCHES_PER_RUN, MAX_LOOKAHEAD_MS };

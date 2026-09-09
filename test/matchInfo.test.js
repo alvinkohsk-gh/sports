@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { attachMatchInfo, findForebetUrl } = require('../src/results/matchInfo');
+const { attachMatchInfo, findForebetUrl, annotateH2HResults } = require('../src/results/matchInfo');
 
 const NOW = Date.parse('2026-01-10T00:00:00Z');
 const IN_2_DAYS = new Date(NOW + 2 * 24 * 60 * 60 * 1000).toISOString();
@@ -140,4 +140,34 @@ test('attachMatchInfo: retries a null-info cache entry even within the TTL, inst
   await attachMatchInfo([m], rows, prevCache, { nowMs: NOW, fetchFn });
   assert.equal(called, true);
   assert.equal(m.headToHead.homeForm[0], 'W');
+});
+
+test('annotateH2HResults: labels each row from the current match home team\'s perspective, flipping when that team was away in the past meeting', () => {
+  const m = match('Arsenal', 'Chelsea', IN_2_DAYS);
+  const h2h = [
+    { homeGoals: 2, awayGoals: 1, homeTeamName: 'Arsenal', awayTeamName: 'Chelsea' }, // Arsenal (us) won as home
+    { homeGoals: 1, awayGoals: 3, homeTeamName: 'Chelsea', awayTeamName: 'Arsenal' }, // Arsenal (us) won as the away side, 3-1
+    { homeGoals: 0, awayGoals: 0, homeTeamName: 'Arsenal', awayTeamName: 'Chelsea' }, // draw
+    { homeGoals: 2, awayGoals: 0, homeTeamName: 'Chelsea', awayTeamName: 'Arsenal' }, // Arsenal (us) lost as the away side
+  ];
+  const results = annotateH2HResults(h2h, m).map((r) => r.result);
+  assert.deepEqual(results, ['W', 'W', 'D', 'L']);
+});
+
+test('annotateH2HResults: leaves result null when a row has no team names', () => {
+  const m = match('Arsenal', 'Chelsea', IN_2_DAYS);
+  const h2h = [{ homeGoals: 1, awayGoals: 0 }];
+  assert.equal(annotateH2HResults(h2h, m)[0].result, null);
+});
+
+test('annotateH2HResults: attachMatchInfo annotates h2h rows on a freshly fetched result', async () => {
+  const m = match('Arsenal', 'Chelsea', IN_2_DAYS);
+  const rows = [forebetRow('Arsenal', 'Chelsea', 'https://forebet.example/arsenal-chelsea')];
+  const fetchFn = async () => ({
+    h2h: [{ homeGoals: 2, awayGoals: 0, homeTeamName: 'Arsenal', awayTeamName: 'Chelsea' }],
+    homeForm: [],
+    awayForm: [],
+  });
+  await attachMatchInfo([m], rows, { entries: [] }, { nowMs: NOW, fetchFn });
+  assert.equal(m.headToHead.h2h[0].result, 'W');
 });

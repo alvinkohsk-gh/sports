@@ -189,6 +189,16 @@ function renderFormBadges(form) {
     .join('');
 }
 
+// r.result ('W'/'D'/'L') is the current match's home team's perspective in
+// that past meeting (src/results/matchInfo.js's annotateH2HResults) — null
+// when it couldn't be determined (e.g. the row carried no team names),
+// left uncolored rather than guessed.
+function h2hResultClass(result) {
+  if (result === 'W') return ' h2h-win';
+  if (result === 'L') return ' h2h-loss';
+  return '';
+}
+
 function renderH2HTable(h2h) {
   if (!h2h || !h2h.length) return '<div class="detail-muted">No head-to-head data available.</div>';
   const rows = h2h
@@ -196,7 +206,7 @@ function renderH2HTable(h2h) {
       (r) => `
       <tr>
         <td>${r.date ? escapeHtml(r.date) : ''}</td>
-        <td class="num">${r.homeGoals} – ${r.awayGoals}</td>
+        <td class="num${h2hResultClass(r.result)}">${r.homeGoals} – ${r.awayGoals}</td>
       </tr>`
     )
     .join('');
