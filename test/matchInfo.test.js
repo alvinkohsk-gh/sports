@@ -122,3 +122,22 @@ test('attachMatchInfo: keeps last-known-good info when a re-fetch returns null',
   await attachMatchInfo([m], rows, prevCache, { nowMs: NOW, fetchFn });
   assert.equal(m.headToHead.homeForm[0], 'D');
 });
+
+test('attachMatchInfo: retries a null-info cache entry even within the TTL, instead of treating it as fresh', async () => {
+  const m = match('Arsenal', 'Chelsea', IN_2_DAYS);
+  const rows = [forebetRow('Arsenal', 'Chelsea', 'https://forebet.example/arsenal-chelsea')];
+  const prevCache = {
+    entries: [
+      {
+        matchKey: 'arsenal|chelsea|' + IN_2_DAYS.slice(0, 10),
+        fetchedAtISO: new Date(NOW - 60 * 60 * 1000).toISOString(), // 1h old, well under the 24h TTL
+        info: null, // a prior fetch/parse failure — should not block a retry
+      },
+    ],
+  };
+  let called = false;
+  const fetchFn = async () => { called = true; return { h2h: [], homeForm: ['W'], awayForm: ['W'] }; };
+  await attachMatchInfo([m], rows, prevCache, { nowMs: NOW, fetchFn });
+  assert.equal(called, true);
+  assert.equal(m.headToHead.homeForm[0], 'W');
+});
