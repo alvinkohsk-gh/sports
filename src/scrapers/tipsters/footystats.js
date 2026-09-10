@@ -10,11 +10,16 @@ const URL = 'https://footystats.org/predictions/';
 //     <div class="betData hidden">... <span class="data">Palestino vs Univ. Concepcion</span> ...</div>
 //   </div>
 // One tip per market, so a fixture can appear in several blocks (e.g. a
-// "Home Win" block and an "Over 2.5 Goals" block). We keep 1X2 outcomes
-// and over/under lines; BTTS / clean-sheet / correct-score markets give
-// neither. Plain HTTP — not Cloudflare-gated.
+// "Home Win" block and an "Over 2.5 Goals" block, or a "BTTS Yes" block).
+// We keep 1X2 outcomes, over/under lines, and BTTS yes/no; clean-sheet /
+// correct-score markets give none of the three and are skipped. Plain
+// HTTP — not Cloudflare-gated.
 async function fetchFootyStatsTips() {
   const html = await fetchHtml('footystats', URL);
+  return parseFootyStats(html);
+}
+
+function parseFootyStats(html) {
   const $ = cheerio.load(html);
   const tips = [];
   const seen = new Set();
@@ -46,16 +51,20 @@ async function fetchFootyStatsTips() {
     const ou = tip.match(/\b(over|under)\s*(\d(?:\.5)?)\s*goals?\b/i);
     if (ou) totalsPick = { selection: ou[1].toLowerCase(), point: Number(ou[2]) };
 
-    if (!pick && !totalsPick) return; // BTTS / clean sheet / correct score
+    let bttsPick = null;
+    const btts = tip.match(/\bbtts\s*(yes|no)\b/i);
+    if (btts) bttsPick = btts[1].toLowerCase();
+
+    if (!pick && !totalsPick && !bttsPick) return; // clean sheet / correct score / etc
 
     const key = `${home.toLowerCase()}|${away.toLowerCase()}|${tip.toLowerCase()}`;
     if (seen.has(key)) return;
     seen.add(key);
 
-    tips.push({ site: 'footystats', homeTeam: home, awayTeam: away, pick, totalsPick, rawText: tip, sourceUrl: URL });
+    tips.push({ site: 'footystats', homeTeam: home, awayTeam: away, pick, totalsPick, bttsPick, rawText: tip, sourceUrl: URL });
   });
 
   return tips;
 }
 
-module.exports = { fetchFootyStatsTips };
+module.exports = { fetchFootyStatsTips, parseFootyStats };

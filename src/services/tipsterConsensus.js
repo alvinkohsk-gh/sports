@@ -3,10 +3,11 @@ const { siteWeight } = require('./tipsterWeights');
 
 /**
  * Attaches tipster picks to each match by fuzzy team-name matching
- * (`teamsMatch`). Tipster sites give a discrete pick (home/draw/away, and
- * separately over/under), not a probability, so this tallies "how many
- * tipsters agree" per match rather than blending picks into one number —
- * `tipsterRanking.js` then turns that tally into each match's top pick.
+ * (`teamsMatch`). Tipster sites give a discrete pick (home/draw/away,
+ * separately over/under, and separately BTTS yes/no), not a probability, so
+ * this tallies "how many tipsters agree" per match rather than blending
+ * picks into one number — `tipsterRanking.js` then turns the 1X2 tally into
+ * each match's top pick.
  *
  * `siteWeights` (from tipsterWeights.computeSiteWeights, keyed by site with
  * a per-market weight) additionally produces a *weighted* tally alongside
@@ -27,16 +28,18 @@ function attachTipsterConsensus(matches, tips, siteWeights = {}) {
     return {
       ...match,
       tipsterConsensus: {
-        picks: picksForMatch.map(({ site, pick, totalsPick, rawText, sourceUrl, carriedForward }) => ({
+        picks: picksForMatch.map(({ site, pick, totalsPick, bttsPick, rawText, sourceUrl, carriedForward }) => ({
           site,
           pick,
           totalsPick,
+          bttsPick: bttsPick || null,
           rawText,
           sourceUrl,
           ...(carriedForward ? { carriedForward: true } : {}),
         })),
         ...tallyOneXTwo(picksForMatch, siteWeights),
         ...tallyTotals(picksForMatch, sgLinePoint, siteWeights),
+        ...tallyBtts(picksForMatch, siteWeights),
       },
     };
   });
@@ -110,6 +113,31 @@ function tallyTotals(picksForMatch, linePoint, siteWeights) {
     totalsMajorityCount,
     totalsMajorityPoint: majorityPoint,
     totalTotalsTipsters: withTotals.length,
+  };
+}
+
+// Both-teams-to-score yes/no — a straight majority vote like tallyOneXTwo,
+// no line/point to resolve against. Sites without a graded BTTS track
+// record (accuracy.json has none yet) weight at the neutral 1 via
+// siteWeight's fallback.
+function tallyBtts(picksForMatch, siteWeights) {
+  const bttsTally = { yes: 0, no: 0 };
+  const weightedBttsTally = { yes: 0, no: 0 };
+  for (const p of picksForMatch) {
+    if (!p.bttsPick) continue;
+    bttsTally[p.bttsPick] += 1;
+    weightedBttsTally[p.bttsPick] += siteWeight(siteWeights, p.site, 'btts');
+  }
+
+  const totalBttsTipsters = bttsTally.yes + bttsTally.no;
+  const [bttsMajorityPick, bttsMajorityCount] = topOf(bttsTally, ['yes', 'no']);
+
+  return {
+    bttsTally,
+    weightedBttsTally,
+    bttsMajorityPick: totalBttsTipsters > 0 ? bttsMajorityPick : null,
+    bttsMajorityCount,
+    totalBttsTipsters,
   };
 }
 

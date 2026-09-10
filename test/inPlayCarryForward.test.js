@@ -6,7 +6,7 @@ const { matchKey } = require('../src/results/history');
 const KO = '2026-09-09T00:30:00.000Z';
 const MATCH = { homeTeam: 'Boca Juniors', awayTeam: 'Sao Paulo', kickoffISO: KO };
 
-function histEntry(site, over, { kickoffISO = KO } = {}) {
+function histEntry(site, over, { kickoffISO = KO, bttsPick = null } = {}) {
   return {
     matchKey: matchKey(MATCH.homeTeam, MATCH.awayTeam, kickoffISO),
     site,
@@ -15,6 +15,7 @@ function histEntry(site, over, { kickoffISO = KO } = {}) {
     kickoffISO,
     pick: 'home',
     totalsPick: over ? { selection: 'over', point: 2.5 } : null,
+    bttsPick,
   };
 }
 
@@ -58,11 +59,21 @@ test('carryForward: no history is a no-op (returns the same array)', () => {
   assert.equal(carryForwardInPlayPicks([MATCH], live, null), live);
 });
 
-test('carryForward: skips history entries with neither a pick nor a totals pick', () => {
+test('carryForward: skips history entries with neither a pick, a totals pick, nor a BTTS pick', () => {
   const live = [liveTip('forebet')];
   const empty = { ...histEntry('statarea', false), pick: null, totalsPick: null };
   const merged = carryForwardInPlayPicks([MATCH], live, { entries: [empty] });
   assert.deepEqual(merged.map((t) => t.site), ['forebet']);
+});
+
+test('carryForward: carries a BTTS-only history entry forward and re-adds a site missing only from the live scrape', () => {
+  const live = [liveTip('forebet')];
+  const bttsOnly = { ...histEntry('statarea', false), pick: null, totalsPick: null, bttsPick: 'yes' };
+  const merged = carryForwardInPlayPicks([MATCH], live, { entries: [bttsOnly] });
+  const sta = merged.find((t) => t.site === 'statarea');
+  assert.ok(sta);
+  assert.equal(sta.bttsPick, 'yes');
+  assert.equal(sta.carriedForward, true);
 });
 
 test('carryForward: also re-adds a site that dropped a not-yet-live fixture shortly before kickoff', () => {

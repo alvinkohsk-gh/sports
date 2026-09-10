@@ -14,7 +14,8 @@ const { fetchHtml } = require('./fetchHtml');
 // teams score). A headline tip (`.tip`) carries the text "1" / "X" / "2"
 // for a single outcome, or "1X" / "X2" / "12" for a double chance; for a
 // double chance, or no tip at all, we fall back to the most likely of the
-// 1/X/2 probabilities (always present).
+// 1/X/2 probabilities (always present). The BTS box (index 9, present
+// whenever the row has 10+ values) gives a straight >50% yes/no BTTS call.
 const DAYS = Math.max(1, Number(process.env.STATAREA_DAYS) || 3);
 const urlForDay = (d) => `https://www.statarea.com/predictions/date/${d}/starttime`;
 
@@ -46,6 +47,7 @@ function parseDay(html) {
     if (vals.length < 8) return;
     const [p1, pX, p2] = vals;
     const pOver25 = vals[7];
+    const pBTS = vals[9];
 
     // headline single-outcome tip when present ("1"/"X"/"2"), else the
     // most likely 1X2 outcome (double-chance tips fall through to this)
@@ -59,6 +61,7 @@ function parseDay(html) {
     const totalsPick = Number.isFinite(pOver25)
       ? { selection: pOver25 > 50 ? 'over' : 'under', point: 2.5 }
       : null;
+    const bttsPick = Number.isFinite(pBTS) ? (pBTS > 50 ? 'yes' : 'no') : null;
 
     out.push({
       site: 'statarea',
@@ -66,7 +69,8 @@ function parseDay(html) {
       awayTeam: away,
       pick,
       totalsPick,
-      rawText: `1X2 ${p1}/${pX}/${p2} · O2.5 ${Number.isFinite(pOver25) ? pOver25 + '%' : '?'}`,
+      bttsPick,
+      rawText: `1X2 ${p1}/${pX}/${p2} · O2.5 ${Number.isFinite(pOver25) ? pOver25 + '%' : '?'} · BTS ${Number.isFinite(pBTS) ? pBTS + '%' : '?'}`,
       sourceUrl: urlForDay(isoDay(0)),
     });
   });
