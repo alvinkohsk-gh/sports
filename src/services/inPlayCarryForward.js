@@ -1,21 +1,28 @@
 const { teamsMatch } = require('./matcher');
 
 // Some tipster sites (Statarea most notably, but also any site whose
-// "today's tips" page is upcoming-only) drop a fixture the moment it kicks
-// off. Without help, a live match's tipster consensus would lose
-// contributors minute by minute as each such site stops listing it.
+// "today's tips" page is upcoming-only) drop a fixture from their listing
+// shortly before it kicks off — not just once it's live. Observed directly:
+// Statarea carried a pick for an MLS fixture at 01:35 UTC, kickoff 02:30
+// UTC, then had dropped it again by 02:02 UTC — 28 minutes before kickoff,
+// while every other tipster site still listed it fine. Without help, a
+// fixture's tipster consensus would visibly thin out (or lose a site
+// entirely) in this pre-kickoff window and through the match itself, as
+// each such site stops listing it.
 //
-// This re-hydrates an in-play fixture's pick list from the rolling
-// prediction history (history.json — the same store that feeds accuracy
-// grading): for any site that published a pre-match pick on the fixture
-// but is missing from the current scrape, its last stored pick is added
-// back, tagged `carriedForward` so the UI can mark it.
+// This re-hydrates a fixture's pick list from the rolling prediction
+// history (history.json — the same store that feeds accuracy grading): for
+// any site that published a pre-match pick on the fixture but is missing
+// from the current scrape, its last stored pick is added back, tagged
+// `carriedForward` so the UI can mark it. Used for both the main board
+// (aggregator.js's `state.matches`, so this pre-kickoff window is covered)
+// and in-play fixtures (`state.inPlay`) — nothing here is in-play-specific.
 //
 // Guardrails against pulling in the wrong match:
-//   - the history entry's teams must match the live fixture (order-
-//     insensitive, via teamsMatch), and
-//   - its kickoff must be within CARRY_WINDOW_MS of the live fixture's, so
-//     the two legs of a home/away tie don't cross-contaminate.
+//   - the history entry's teams must match the fixture (order-insensitive,
+//     via teamsMatch), and
+//   - its kickoff must be within CARRY_WINDOW_MS of the fixture's, so the
+//     two legs of a home/away tie don't cross-contaminate.
 
 const CARRY_WINDOW_MS = 36 * 60 * 60 * 1000;
 

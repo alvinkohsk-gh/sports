@@ -64,3 +64,29 @@ test('carryForward: skips history entries with neither a pick nor a totals pick'
   const merged = carryForwardInPlayPicks([MATCH], live, { entries: [empty] });
   assert.deepEqual(merged.map((t) => t.site), ['forebet']);
 });
+
+test('carryForward: also re-adds a site that dropped a not-yet-live fixture shortly before kickoff', () => {
+  // Not an in-play-only mechanism — aggregator.js calls this for the main
+  // board too, since a site (observed: Statarea) can drop a fixture's
+  // listing minutes before kickoff, well before it goes live.
+  const stillUpcoming = { homeTeam: 'Los Angeles FC', awayTeam: 'NY Red Bulls', kickoffISO: '2026-09-10T02:30:00.000Z' };
+  const tip = (site) => ({ site, homeTeam: stillUpcoming.homeTeam, awayTeam: stillUpcoming.awayTeam, pick: 'home', totalsPick: null });
+  const live = [tip('predictz'), tip('windrawwin'), tip('forebet')];
+  const history = {
+    entries: [
+      {
+        matchKey: matchKey(stillUpcoming.homeTeam, stillUpcoming.awayTeam, stillUpcoming.kickoffISO),
+        site: 'statarea',
+        homeTeam: stillUpcoming.homeTeam,
+        awayTeam: stillUpcoming.awayTeam,
+        kickoffISO: stillUpcoming.kickoffISO,
+        pick: 'home',
+        totalsPick: { selection: 'over', point: 2.5 },
+      },
+    ],
+  };
+  const merged = carryForwardInPlayPicks([stillUpcoming], live, history);
+  const sites = merged.map((t) => t.site).sort();
+  assert.deepEqual(sites, ['forebet', 'predictz', 'statarea', 'windrawwin']);
+  assert.equal(merged.find((t) => t.site === 'statarea').carriedForward, true);
+});

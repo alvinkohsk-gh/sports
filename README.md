@@ -15,7 +15,13 @@ each match.
    Mole, MatchOutlook, EaglePredict, FootyStats, Statarea, FootballPredictions)
    — see "Tipster sources" below for per-site detail and how verified each one is.
 3. `src/services/tipsterConsensus.js` attaches each match's tipster picks
-   by fuzzy team-name matching (`src/services/matcher/`).
+   by fuzzy team-name matching (`src/services/matcher/`). Before that,
+   `src/services/inPlayCarryForward.js` re-hydrates any site that's missing
+   from the current scrape but published a pre-match pick on the fixture
+   recently (from the rolling `history.json` log), tagged `carriedForward`
+   — some sites (Statarea most notably) drop a fixture from their listing
+   shortly before kickoff, not just once it's live, so this runs for both
+   the main board (`state.matches`) and in-play fixtures (`state.inPlay`).
 4. `src/services/tipsterRanking.js` picks each match's strongest tipster
    vote (1X2 majority or O/U majority, whichever has the higher agreement
    ratio) as its `topPick`; the single strongest across all matches is
