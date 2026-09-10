@@ -13,6 +13,14 @@ const MAX_FETCHES_PER_RUN = Number(process.env.FOREBET_MATCHINFO_MAX_PER_RUN) ||
 const MAX_LOOKAHEAD_MS = 4 * 24 * 60 * 60 * 1000;
 const KEEP_CACHE_MS = 10 * 24 * 60 * 60 * 1000;
 
+// Bump whenever `headToHead`'s shape changes (a new field the UI now
+// depends on, a renamed one, …). A cache entry stamped with an older
+// version is never treated as "fresh" — it's retried on the next run
+// instead of serving stale-shaped data for up to TTL_MS/KEEP_CACHE_MS.
+// v2: h2h rows gained homeTeamName/awayTeamName/result; fixture rows
+// gained result (PR #19).
+const SCHEMA_VERSION = 2;
+
 // Finds a match's Forebet detail-page URL from this cycle's raw Forebet
 // rows (forebet.js's extractRows captures `matchUrl` per row).
 function findForebetUrl(match, forebetRows) {
@@ -72,20 +80,22 @@ async function attachMatchInfo(matches, forebetRows, prevCache, { nowMs = Date.n
 
     const key = matchKey(m.homeTeam, m.awayTeam, m.kickoffISO);
     const cached = byKey.get(key);
-    // Only a cache entry that actually holds info counts as "fresh" and
-    // skips a re-fetch — a null result (fetch/parse failure, or a Forebet
-    // page whose markup didn't match the selectors) is retried every run
-    // instead of being stuck for a full TTL_MS, so a selector fix (or a
-    // transient site issue) recovers on the next cycle rather than
-    // waiting up to 24h.
-    const fresh = cached && cached.info && nowMs - (Date.parse(cached.fetchedAtISO) || 0) < TTL_MS;
+    // Only a cache entry that actually holds info AND was written under
+    // the current SCHEMA_VERSION counts as "fresh" and skips a re-fetch —
+    // a null result (fetch/parse failure, or a Forebet page whose markup
+    // didn't match the selectors) or a stale-shaped entry from before a
+    // schema bump is retried every run instead of being stuck for a full
+    // TTL_MS, so a selector fix, a schema change, or a transient site
+    // issue all recover on the next cycle rather than waiting up to 24h.
+    const usable = cached && cached.info && cached.schemaVersion === SCHEMA_VERSION;
+    const fresh = usable && nowMs - (Date.parse(cached.fetchedAtISO) || 0) < TTL_MS;
 
     if (fresh) {
-      if (cached.info) m.headToHead = cached.info;
+      m.headToHead = cached.info;
       continue;
     }
     if (fetches >= MAX_FETCHES_PER_RUN) {
-      if (cached && cached.info) m.headToHead = cached.info; // serve stale rather than nothing
+      if (usable) m.headToHead = cached.info; // serve stale-but-current-shape rather than nothing
       continue;
     }
 
@@ -100,9 +110,9 @@ async function attachMatchInfo(matches, forebetRows, prevCache, { nowMs = Date.n
     } catch (err) {
       console.error('[matchInfo] fetch failed:', err.message || err);
     }
-    byKey.set(key, { matchKey: key, fetchedAtISO: new Date(nowMs).toISOString(), info });
+    byKey.set(key, { matchKey: key, fetchedAtISO: new Date(nowMs).toISOString(), schemaVersion: SCHEMA_VERSION, info });
     if (info) m.headToHead = info;
-    else if (cached && cached.info) m.headToHead = cached.info; // keep last-known-good
+    else if (usable) m.headToHead = cached.info; // keep last-known-good (current shape only)
   }
 
   const entries = [...byKey.values()].filter(
@@ -111,4 +121,4 @@ async function attachMatchInfo(matches, forebetRows, prevCache, { nowMs = Date.n
   return { entries, updatedAt: new Date(nowMs).toISOString() };
 }
 
-module.exports = { attachMatchInfo, findForebetUrl, annotateH2HResults, TTL_MS, MAX_FETCHES_PER_RUN, MAX_LOOKAHEAD_MS };
+module.exports = { attachMatchInfo, findForebetUrl, annotateH2HResults, TTL_MS, MAX_FETCHES_PER_RUN, MAX_LOOKAHEAD_MS, SCHEMA_VERSION };

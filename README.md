@@ -240,7 +240,11 @@ the list page forebet.js otherwise reads).
   day) and capped to `FOREBET_MATCHINFO_MAX_PER_RUN` (default 15) new
   fetches per snapshot cycle, so one run can't blow the GitHub Actions job's
   time budget or hammer Forebet. Matches more than 4 days out are skipped
-  for now — they'll be fetched once closer to kickoff.
+  for now — they'll be fetched once closer to kickoff. Each cache entry is
+  stamped with a `SCHEMA_VERSION` — bump it whenever `headToHead`'s shape
+  changes (a new field the UI now depends on, a renamed one, …) so an
+  entry written under an older version is retried on the next run instead
+  of serving stale-shaped data for up to the ~1 day TTL.
 - No separate API route: `headToHead` rides along on each match object in
   `GET /api/matches`, same as `odds`/`value`/`tipsterConsensus`. Only
   populated via the published snapshot (the periodic GitHub Actions job) —
