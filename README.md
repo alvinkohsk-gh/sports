@@ -245,6 +245,12 @@ the list page forebet.js otherwise reads).
   changes (a new field the UI now depends on, a renamed one, …) so an
   entry written under an older version is retried on the next run instead
   of serving stale-shaped data for up to the ~1 day TTL.
+- A match that's already kicked off (in-play or finished) never gets a
+  *new* fetch — Forebet's own page for it is pre-match data that doesn't
+  change once play starts, and fetch budget is better spent on matches
+  still to come — but a cache entry fetched before kickoff is still
+  served, not dropped, so an in-play match's clickable card (same modal
+  as any other match) shows real data rather than "no data yet".
 - No separate API route: `headToHead` rides along on each match object in
   `GET /api/matches`, same as `odds`/`value`/`tipsterConsensus`. Only
   populated via the published snapshot (the periodic GitHub Actions job) —
