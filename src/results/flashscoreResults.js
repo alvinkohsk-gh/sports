@@ -45,6 +45,9 @@ function parseFeed(text, mode = 'finished') {
       if (mode === 'live') {
         row.stage = LIVE_STAGE[cur.AC] || 'live';
         row.kickoffISO = iso;
+        if (process.env.FLASHSCORE_DEBUG && out.length < 5) {
+          console.error('[flashscore debug] raw live record:', JSON.stringify(cur));
+        }
       }
       out.push(row);
     }
