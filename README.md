@@ -323,6 +323,13 @@ as `/api/value-picks`. Swapping in another site only needs a new
 `assess<Site>Value` wrapper — the merge/grade/summarize/route/page layers
 are all generic.
 
+`public/value-picks.html` also surfaces the statarea log inline, as a
+second "Statarea Only" section below the main "All Tipsters" one, sharing
+the page's one date-range picker — so a reader who trusts statarea's own
+picks more than the blended consensus doesn't have to leave the page to
+compare the two records side by side. `public/statarea-picks.html` stays
+as a dedicated deep link to the same data.
+
 ## Notes on matching
 
 - Kickoff times from Singapore Pools are assumed to be Singapore time
