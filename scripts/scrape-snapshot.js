@@ -49,17 +49,16 @@ async function loadPublished(file, fallback) {
 }
 
 (async () => {
-  // TEMPORARY: capture SoccerVista's raw markup via the existing
-  // TIPSTERS_DEBUG dump + debug-capture branch mechanism (this sandbox has
-  // no direct network path to soccervista.com) so a real scraper for it
+  // TEMPORARY: capture candidate new tipster sites' raw markup via the
+  // existing TIPSTERS_DEBUG dump + debug-capture branch mechanism (this
+  // sandbox has no direct network path to these sites) so a real scraper
   // can be written against actual markup instead of guessed selectors.
-  // Remove once soccervista.js is built.
+  // Remove once a decision is made.
   if (String(process.env.TIPSTERS_DEBUG || 'false').toLowerCase() === 'true') {
     const { fetchHtml } = require('../src/scrapers/tipsters/fetchHtml');
     for (const [site, url] of [
-      ['soccervista', 'https://www.soccervista.com/'],
-      ['zulubet', 'https://www.zulubet.com/results_predictions/predictions_today.php'],
-      ['betshoot', 'https://betshoot.com/predictions/'],
+      ['vitibet', 'https://www.vitibet.com/'],
+      ['adibet', 'https://www.adibet.com/'],
     ]) {
       try {
         await fetchHtml(site, url);
