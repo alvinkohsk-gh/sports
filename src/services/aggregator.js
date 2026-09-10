@@ -110,7 +110,11 @@ async function refresh({ mockMode }) {
   }
 
   const matches = sgpFixtures.map(toMatch).sort((a, b) => new Date(a.kickoffISO) - new Date(b.kickoffISO));
-  const withTipsters = attachTipsterConsensus(matches, tipsterPicks, siteWeights);
+  // Some tipster sites drop a fixture from their listing shortly before
+  // kickoff, not just once it's live (see inPlayCarryForward.js) — so this
+  // re-hydration runs for the main board too, not just state.inPlay below.
+  const preMatchTips = carryForwardInPlayPicks(matches, tipsterPicks, history);
+  const withTipsters = attachTipsterConsensus(matches, preMatchTips, siteWeights);
   for (const m of withTipsters) {
     m.value = m.odds ? assessValue(m.odds, m.tipsterConsensus) : null;
   }
