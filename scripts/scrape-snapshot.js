@@ -49,6 +49,20 @@ async function loadPublished(file, fallback) {
 }
 
 (async () => {
+  // TEMPORARY: capture SoccerVista's raw markup via the existing
+  // TIPSTERS_DEBUG dump + debug-capture branch mechanism (this sandbox has
+  // no direct network path to soccervista.com) so a real scraper for it
+  // can be written against actual markup instead of guessed selectors.
+  // Remove once soccervista.js is built.
+  if (String(process.env.TIPSTERS_DEBUG || 'false').toLowerCase() === 'true') {
+    try {
+      const { fetchHtml } = require('../src/scrapers/tipsters/fetchHtml');
+      await fetchHtml('soccervista', 'https://www.soccervista.com/');
+    } catch (err) {
+      console.error('[scrape-snapshot] soccervista debug fetch failed:', err.message);
+    }
+  }
+
   await refresh({ mockMode: false });
   const s = getState();
 
