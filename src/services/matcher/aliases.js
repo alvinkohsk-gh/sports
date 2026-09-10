@@ -46,6 +46,14 @@ const TOKEN_EXPANSIONS = new Map([
   ['cd', 'deportivo'],
   ['st', 'saint'],
   ['sthn', 'southern'],
+  // SG Pools abbreviates MLS clubs ("NY City FC", "NE Revolution") more
+  // aggressively than the tipster sites ("New York City FC", "New
+  // England Revolution") — both "ny"/"ne" are too short (2 chars) for
+  // tokensEqual's fuzzy prefix/edit-distance match (which requires >=4),
+  // so without an explicit expansion the only shared tokens left are
+  // generic ones ("city", "fc") and the match is rejected outright.
+  ['ny', 'new york'],
+  ['ne', 'new england'],
   ['int', 'international'],
   ['intl', 'international'],
   ['calcio', ''],

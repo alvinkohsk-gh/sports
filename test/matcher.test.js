@@ -26,6 +26,10 @@ const SHOULD_MATCH = [
   ['Udinese', 'Udinese Calcio'],
   ['Nantes', 'FC Nantes'],
   ['Elche', 'Elche CF'],
+  ['NY City FC', 'New York City FC'],
+  ['NE Revolution', 'New England Revolution'],
+  ['NE Revolution', 'New Eng. Revolution'],
+  ['NY Red Bulls', 'New York Red Bulls'],
 ];
 
 const SHOULD_NOT_MATCH = [
