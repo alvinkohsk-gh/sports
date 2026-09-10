@@ -78,8 +78,8 @@ shared headless browser.
 | Sports Mole | Prose preview articles | Reads the hub for fixture links, then fetches each per-match article and parses its "We say: A x-y B" verdict (falls back to "Sports Mole predicts:" / the closing paragraphs). Capped at `SPORTSMOLE_MAX_ARTICLES` (default 40). |
 | MatchOutlook | Structured `.match-section` list | One "Best Bet" per match — a 1X2 outcome (→ pick) or an over/under line (→ totalsPick); double chances (1X/X2/12) give neither. Plain HTTP, no FlareSolverr needed. |
 | EaglePredict | Tailwind card grid | Cloudflare-gated (FlareSolverr clears it). Per-match card: teams from `img[alt="X logo"]`, one prediction pill — "Home/Away Win"/"Draw" → `pick`, "Over/Under N Goals" → `totalsPick`, double-chance/BTTS/correct-score ignored. |
-| FootyStats | `.betWrapper` tip list | One market per block ("Home Win", "Over 2.5 Goals", "BTTS Yes", …); 1X2 outcomes → `pick`, over/under lines → `totalsPick`, everything else ignored. A fixture can appear in several blocks. Plain HTTP. |
-| Statarea | `div.match` blocks, per-day `/predictions/date/<YYYY-MM-DD>/starttime` | Mathematical model. Reads the `.inforow .coefrow` probability row (`1 X 2 … 1.5 2.5 3.5 BTS OTS`): headline `.tip` text "1"/"X"/"2" → `pick` (double chances "1X"/"X2"/"12" and no-tip fall back to the most likely of P1/PX/P2); P(over 2.5) > 50 → `totalsPick` over/under 2.5. Fetches `STATAREA_DAYS` days (default 3). Plain HTTP, no Cloudflare. Wide lower-league coverage. |
+| FootyStats | `.betWrapper` tip list | One market per block ("Home Win", "Over 2.5 Goals", "BTTS Yes", …); 1X2 outcomes → `pick`, over/under lines → `totalsPick`, "BTTS Yes"/"BTTS No" → `bttsPick`, everything else ignored. A fixture can appear in several blocks. Plain HTTP. |
+| Statarea | `div.match` blocks, per-day `/predictions/date/<YYYY-MM-DD>/starttime` | Mathematical model. Reads the `.inforow .coefrow` probability row (`1 X 2 … 1.5 2.5 3.5 BTS OTS`): headline `.tip` text "1"/"X"/"2" → `pick` (double chances "1X"/"X2"/"12" and no-tip fall back to the most likely of P1/PX/P2); P(over 2.5) > 50 → `totalsPick` over/under 2.5; P(BTS) > 50 → `bttsPick` yes/no. Fetches `STATAREA_DAYS` days (default 3). Plain HTTP, no Cloudflare. Wide lower-league coverage. |
 | FootballPredictions | `.match-card` cards on two section pages (`/win-draw-win-predictions-…` and `/under-over-2-5-goals-…`) | Model tips, one page each for 1X2 and O/U 2.5, both already covering today + the weekend. `.home-team`/`.away-team .team-label` for teams, `.prediction` text for the tip ("`<Team>` to win"/"Draw" → `pick`; "Over/Under 2.5" → `totalsPick`); the two pages are merged per fixture. Behind Cloudflare's passive JS challenge only — plain GET works, FlareSolverr is the fallback. |
 
 The first three give a clean discrete pick (home/draw/away) reliably; the
@@ -102,6 +102,16 @@ goals, compare to 2.5. `src/scrapers/tipsters/totalsHeuristics.js` holds
 "over"/"under" word when no scoreline is present. (No separate O/U page is
 fetched — that was dropped when scraping had to fit Vercel's 60s function
 limit, and isn't needed since the score is on the main page.)
+
+**Both teams to score (BTTS) picks**: two sites contribute a `bttsPick`
+(`'yes'`/`'no'`) alongside their 1X2/O-U picks — Statarea from its BTS
+probability box (`> 50%` → yes), FootyStats from an explicit "BTTS Yes"/
+"BTTS No" market block. Other sites don't currently expose a BTTS pick
+cleanly enough to parse, so they simply contribute none;
+`tipsterConsensus.bttsTally`/`bttsMajorityPick` reflect however many sites
+did. Unlike 1X2 and O/U, BTTS sites aren't yet accuracy-graded
+(`accuracy.json` has no BTTS track record), so `siteWeight(..., 'btts')`
+always falls back to the neutral weight of 1.
 
 Set `TIPSTERS_DEBUG=true` and check `debug-tipsters/<site>.html` if a site
 comes back with 0 picks.

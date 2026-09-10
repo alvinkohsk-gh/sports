@@ -103,19 +103,39 @@ function renderTipsters(tipsterConsensus, filterSite) {
       return `<span class="tip-chip site-${p.site}${p.carriedForward ? ' carried' : ''}" title="${escapeHtml(p.rawText || '')}">${label}${cfMark(p)}: <span class="tc-pick">${sel} ${p.totalsPick.point}</span></span>`;
     })
     .join('');
-  const ouMajority = filterSite
-    ? `${SITE_LABELS[filterSite] || filterSite} picks ${ouPicks[0].totalsPick.selection.toUpperCase()} ${ouPicks[0].totalsPick.point}`
-    : tipsterConsensus.totalsMajorityPick
-      ? `${tipsterConsensus.totalsMajorityCount}/${tipsterConsensus.totalTotalsTipsters} tipsters pick ${tipsterConsensus.totalsMajorityPick.toUpperCase()} ${tipsterConsensus.totalsMajorityPoint}`
-      : 'no clear majority';
+  const ouMajority =
+    filterSite && ouPicks.length
+      ? `${SITE_LABELS[filterSite] || filterSite} picks ${ouPicks[0].totalsPick.selection.toUpperCase()} ${ouPicks[0].totalsPick.point}`
+      : !filterSite && tipsterConsensus.totalsMajorityPick
+        ? `${tipsterConsensus.totalsMajorityCount}/${tipsterConsensus.totalTotalsTipsters} tipsters pick ${tipsterConsensus.totalsMajorityPick.toUpperCase()} ${tipsterConsensus.totalsMajorityPoint}`
+        : 'no clear majority';
   const ouSection = ouPicks.length
     ? `<div class="section-label">Tipster O/U picks (${ouMajority})</div><div class="tip-chips">${ouChips}</div>`
+    : '';
+
+  const bttsPicks = allPicks.filter((p) => p.bttsPick);
+  const bttsChips = bttsPicks
+    .map((p) => {
+      const label = SITE_LABELS[p.site] || p.site;
+      const sel = p.bttsPick.toUpperCase();
+      return `<span class="tip-chip site-${p.site}${p.carriedForward ? ' carried' : ''}" title="${escapeHtml(p.rawText || '')}">${label}${cfMark(p)}: <span class="tc-pick">BTTS ${sel}</span></span>`;
+    })
+    .join('');
+  const bttsMajority =
+    filterSite && bttsPicks.length
+      ? `${SITE_LABELS[filterSite] || filterSite} picks BTTS ${bttsPicks[0].bttsPick.toUpperCase()}`
+      : !filterSite && tipsterConsensus.bttsMajorityPick
+        ? `${tipsterConsensus.bttsMajorityCount}/${tipsterConsensus.totalBttsTipsters} tipsters pick BTTS ${tipsterConsensus.bttsMajorityPick.toUpperCase()}`
+        : 'no clear majority';
+  const bttsSection = bttsPicks.length
+    ? `<div class="section-label">Tipster BTTS picks (${bttsMajority})</div><div class="tip-chips">${bttsChips}</div>`
     : '';
 
   return `
     <div class="section-label">Tipster picks (${majority})</div>
     <div class="tip-chips">${chips}</div>
-    ${ouSection}`;
+    ${ouSection}
+    ${bttsSection}`;
 }
 
 function escapeHtml(s) {

@@ -65,3 +65,46 @@ test('tipsterConsensus: an unweighted call (no siteWeights arg) leaves weightedT
 
   assert.deepEqual(withConsensus.tipsterConsensus.weightedTotalsTally, { over: 1, under: 0 });
 });
+
+function bttsTip(site, bttsPick) {
+  return { site, homeTeam: MATCH.homeTeam, awayTeam: MATCH.awayTeam, pick: null, totalsPick: null, bttsPick };
+}
+
+test('tipsterConsensus: BTTS tally is a straight yes/no majority vote', () => {
+  const tips = [bttsTip('a', 'yes'), bttsTip('b', 'yes'), bttsTip('c', 'no')];
+  const match = { ...MATCH, odds: null };
+  const [withConsensus] = attachTipsterConsensus([match], tips);
+
+  assert.deepEqual(withConsensus.tipsterConsensus.bttsTally, { yes: 2, no: 1 });
+  assert.equal(withConsensus.tipsterConsensus.bttsMajorityPick, 'yes');
+  assert.equal(withConsensus.tipsterConsensus.bttsMajorityCount, 2);
+  assert.equal(withConsensus.tipsterConsensus.totalBttsTipsters, 3);
+});
+
+test('tipsterConsensus: a tipster with no BTTS opinion is excluded from the BTTS tally', () => {
+  const tips = [bttsTip('a', 'yes'), tip('b', null)]; // b has neither a totalsPick nor a bttsPick
+  const match = { ...MATCH, odds: null };
+  const [withConsensus] = attachTipsterConsensus([match], tips);
+
+  assert.deepEqual(withConsensus.tipsterConsensus.bttsTally, { yes: 1, no: 0 });
+  assert.equal(withConsensus.tipsterConsensus.totalBttsTipsters, 1);
+});
+
+test('tipsterConsensus: no BTTS picks at all leaves bttsMajorityPick null', () => {
+  const tips = [tip('a', null)];
+  const match = { ...MATCH, odds: null };
+  const [withConsensus] = attachTipsterConsensus([match], tips);
+
+  assert.equal(withConsensus.tipsterConsensus.bttsMajorityPick, null);
+  assert.equal(withConsensus.tipsterConsensus.totalBttsTipsters, 0);
+});
+
+test('tipsterConsensus: weightedBttsTally applies per-site btts weight while the raw tally stays a plain vote count', () => {
+  const tips = [bttsTip('sharp', 'yes'), bttsTip('cold', 'no')];
+  const siteWeights = { sharp: { btts: 1.8 }, cold: { btts: 0.5 } };
+  const match = { ...MATCH, odds: null };
+  const [withConsensus] = attachTipsterConsensus([match], tips, siteWeights);
+
+  assert.deepEqual(withConsensus.tipsterConsensus.bttsTally, { yes: 1, no: 1 });
+  assert.deepEqual(withConsensus.tipsterConsensus.weightedBttsTally, { yes: 1.8, no: 0.5 });
+});

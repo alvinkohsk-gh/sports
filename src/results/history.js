@@ -25,7 +25,7 @@ function mergeHistory(existing, matches, capturedAtISO) {
     const key = matchKey(m.homeTeam, m.awayTeam, m.kickoffISO);
     const kickoff = Date.parse(m.kickoffISO);
     for (const p of m.tipsterConsensus?.picks || []) {
-      if (!p.pick && !p.totalsPick) continue;
+      if (!p.pick && !p.totalsPick && !p.bttsPick) continue;
       const id = `${key}::${p.site}`;
       const prev = byKey.get(id);
       // don't overwrite a pick that was captured before kickoff with a
@@ -40,6 +40,7 @@ function mergeHistory(existing, matches, capturedAtISO) {
         league: m.league || null,
         pick: p.pick || null,
         totalsPick: p.totalsPick || null,
+        bttsPick: p.bttsPick || null,
         capturedAt: now,
       });
     }

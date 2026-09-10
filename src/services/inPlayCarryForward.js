@@ -44,7 +44,7 @@ function carryForwardInPlayPicks(inPlayMatches, liveTips, history) {
     );
 
     for (const e of entries) {
-      if (!e.pick && !e.totalsPick) continue;
+      if (!e.pick && !e.totalsPick && !e.bttsPick) continue;
       if (haveSites.has(e.site)) continue;
       if (kickoffMs && Math.abs((Date.parse(e.kickoffISO) || 0) - kickoffMs) > CARRY_WINDOW_MS) continue;
       // Prefer the stored raw team names; fall back to the normalized pair
@@ -65,6 +65,7 @@ function carryForwardInPlayPicks(inPlayMatches, liveTips, history) {
         awayTeam: m.awayTeam,
         pick: e.pick || null,
         totalsPick: e.totalsPick || null,
+        bttsPick: e.bttsPick || null,
         rawText: 'pre-match pick (carried into live)',
         sourceUrl: null,
         carriedForward: true,
