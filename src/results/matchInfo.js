@@ -76,7 +76,9 @@ async function attachMatchInfo(matches, forebetRows, prevCache, { nowMs = Date.n
   let fetches = 0;
   for (const m of matches || []) {
     const kickoff = Date.parse(m.kickoffISO);
-    if (!Number.isFinite(kickoff) || kickoff < nowMs || kickoff - nowMs > MAX_LOOKAHEAD_MS) continue;
+    if (!Number.isFinite(kickoff)) continue;
+    const alreadyStarted = kickoff < nowMs;
+    if (!alreadyStarted && kickoff - nowMs > MAX_LOOKAHEAD_MS) continue;
 
     const key = matchKey(m.homeTeam, m.awayTeam, m.kickoffISO);
     const cached = byKey.get(key);
@@ -88,6 +90,19 @@ async function attachMatchInfo(matches, forebetRows, prevCache, { nowMs = Date.n
     // TTL_MS, so a selector fix, a schema change, or a transient site
     // issue all recover on the next cycle rather than waiting up to 24h.
     const usable = cached && cached.info && cached.schemaVersion === SCHEMA_VERSION;
+
+    // A match already in play (or finished) never gets a *new* fetch —
+    // H2H/form/fixtures are pre-match data, Forebet's own page for it
+    // doesn't change once the match starts, and fetch budget is better
+    // spent on matches still to come. But if it was fetched before
+    // kickoff, that cached data is still exactly right, and the live
+    // match card is clickable to the same detail modal as any other card
+    // — so it should still get served rather than silently dropped.
+    if (alreadyStarted) {
+      if (usable) m.headToHead = cached.info;
+      continue;
+    }
+
     const fresh = usable && nowMs - (Date.parse(cached.fetchedAtISO) || 0) < TTL_MS;
 
     if (fresh) {

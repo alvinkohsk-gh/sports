@@ -52,13 +52,33 @@ test('attachMatchInfo: skips a match too far in the future (beyond MAX_LOOKAHEAD
   assert.equal(called, false);
 });
 
-test('attachMatchInfo: skips a match that already kicked off', async () => {
+test('attachMatchInfo: never fetches for a match that already kicked off', async () => {
   const m = match('Arsenal', 'Chelsea', YESTERDAY);
   const rows = [forebetRow('Arsenal', 'Chelsea', 'https://forebet.example/arsenal-chelsea')];
   let called = false;
   const fetchFn = async () => { called = true; return null; };
   await attachMatchInfo([m], rows, { entries: [] }, { nowMs: NOW, fetchFn });
   assert.equal(called, false);
+});
+
+test('attachMatchInfo: still serves cached pre-match info for a live/finished match (never fetches, but does not drop it)', async () => {
+  const m = match('Arsenal', 'Chelsea', YESTERDAY); // already kicked off relative to NOW
+  const rows = [forebetRow('Arsenal', 'Chelsea', 'https://forebet.example/arsenal-chelsea')];
+  const prevCache = {
+    entries: [
+      {
+        matchKey: 'arsenal|chelsea|' + YESTERDAY.slice(0, 10),
+        fetchedAtISO: new Date(NOW - 26 * 60 * 60 * 1000).toISOString(), // fetched well before kickoff, now "stale" by TTL_MS
+        schemaVersion: SCHEMA_VERSION,
+        info: { h2h: [], homeForm: ['W'], awayForm: ['L'] },
+      },
+    ],
+  };
+  let called = false;
+  const fetchFn = async () => { called = true; return null; };
+  await attachMatchInfo([m], rows, prevCache, { nowMs: NOW, fetchFn });
+  assert.equal(called, false); // never re-fetches for a live/finished match
+  assert.equal(m.headToHead.homeForm[0], 'W'); // but the pre-match cache is still served, not dropped
 });
 
 test('attachMatchInfo: serves a fresh cache entry without re-fetching', async () => {
