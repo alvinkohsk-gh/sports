@@ -344,13 +344,28 @@ function tickCountdowns() {
     }
   });
   document.querySelectorAll('.card.live [data-liveclock]').forEach((el) => {
-    el.textContent = liveClock(el.closest('.card').dataset.kickoff);
+    const card = el.closest('.card');
+    el.textContent = liveClock(card.dataset.kickoff, card.dataset.livekickoff, card.dataset.livestage);
   });
 }
 
-// Rough elapsed since kickoff — SG Pools' live feed carries no clock, so
-// this is wall-clock time and doesn't know about half-time or stoppage.
-function liveClock(kickoffISO) {
+// SG Pools' own live feed carries no clock/stage, so a match card's
+// prominent clock prefers Flashscore's actual data when matched
+// (liveKickoffISO — Flashscore's own recorded kickoff timestamp, which
+// can differ from SG Pools' listed one by minutes — plus a coarse stage:
+// HT / 1st half / 2nd half / extra time / penalties). Only falls back to
+// a rough wall-clock guess off SG Pools' listed kickoff (prefixed "~" to
+// mark it as an estimate) when Flashscore hasn't matched this fixture.
+function liveClock(kickoffISO, liveKickoffISO, stage) {
+  if (stage === 'HT') return 'HT';
+  if (stage === 'penalties') return 'Pens';
+  if (liveKickoffISO) {
+    const mins = Math.floor((Date.now() - new Date(liveKickoffISO).getTime()) / 60000);
+    if (mins < 0) return 'kicking off';
+    if (stage === 'extra time') return `${mins}' · ET`;
+    if (stage === '2nd half') return `${mins}' · 2nd half`;
+    return `${mins}'`;
+  }
   const mins = Math.floor((Date.now() - new Date(kickoffISO).getTime()) / 60000);
   if (mins < 1) return 'kicking off';
   if (mins <= 47) return `~${mins}'`;
@@ -364,16 +379,21 @@ function renderInPlayCard(m) {
   div.className = 'card live clickable';
   div.id = `match-${m.id}`;
   div.dataset.kickoff = m.kickoffISO;
+  if (m.liveKickoffISO) div.dataset.livekickoff = m.liveKickoffISO;
+  if (m.liveStage) div.dataset.livestage = m.liveStage;
   div.addEventListener('click', () => openMatchDetail(m));
   const odds = m.odds && m.odds.oneX2;
   const oddsRow = odds
     ? `<div class="section-label">Live SG Pools 1X2: <b>${Number(odds.home).toFixed(2)}</b> / <b>${Number(odds.draw).toFixed(2)}</b> / <b>${Number(odds.away).toFixed(2)}</b></div>`
     : '';
   // Real running score from Flashscore when we could match it; otherwise
-  // the O/U-line estimate ("~N goals so far").
+  // the O/U-line estimate ("~N goals so far"). The kickoff time shown
+  // here prefers Flashscore's own recorded kickoff too, for the same
+  // reason the live-clock above does (see liveClock's comment).
+  const actualKickoff = m.liveKickoffISO || m.kickoffISO;
   const scoreRow = m.liveScore
     ? `<div class="live-score">${m.liveScore.replace('-', ' - ')}</div>
-       <div class="kickoff-time">${m.liveStage ? m.liveStage + ' · ' : ''}kicked off ${new Date(m.kickoffISO).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · score via Flashscore</div>`
+       <div class="kickoff-time">kicked off ${new Date(actualKickoff).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · score via Flashscore</div>`
     : `<div class="kickoff-time">Kicked off ${new Date(m.kickoffISO).toLocaleString()}${
         m.goalsSoFar != null ? ` · ~${m.goalsSoFar} goal${m.goalsSoFar === 1 ? '' : 's'} so far (est.)` : ''
       }</div>`;
@@ -381,7 +401,7 @@ function renderInPlayCard(m) {
     <span class="badge live-badge">● LIVE</span>
     <div class="league">${m.league || ''}</div>
     <div class="teams">${m.homeTeam} vs ${m.awayTeam}</div>
-    <div class="live-clock" data-liveclock>${liveClock(m.kickoffISO)}</div>
+    <div class="live-clock" data-liveclock>${liveClock(m.kickoffISO, m.liveKickoffISO, m.liveStage)}</div>
     ${scoreRow}
     ${renderPick(m.topPick)}
     ${renderTipsters(m.tipsterConsensus, selectedTipster)}
