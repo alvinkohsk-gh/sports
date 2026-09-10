@@ -207,13 +207,20 @@ matches — separate from the H2H list, which is only meetings between these
 two teams), all scraped from that match's own Forebet prediction page (not
 the list page forebet.js otherwise reads).
 
-- Each H2H row is colored green (win) or red (loss) from the perspective of
-  *this* match's home team — `src/results/matchInfo.js`'s
-  `annotateH2HResults` works out, per row, which side was the home team in
-  that past meeting (it flips fixture to fixture) via the team names
-  `forebetMatchInfo.js` captures per row, using the same fuzzy
-  `teamsMatch` already used to pair SG Pools fixtures to Forebet rows.
-  Left uncolored when a row carries no team names rather than guessing.
+- Each H2H row names both sides ("Team A v Team B") and colors the score
+  green (win) / yellow (draw) / red (loss) from the perspective of *this*
+  match's home team — `src/results/matchInfo.js`'s `annotateH2HResults`
+  works out, per row, which side was the home team in that past meeting
+  (it flips fixture to fixture) via the team names `forebetMatchInfo.js`
+  captures per row, using the same fuzzy `teamsMatch` already used to pair
+  SG Pools fixtures to Forebet rows.
+- Each recent-fixtures row is colored the same way (green/yellow/red),
+  from that row's own subject team's perspective —
+  `forebetMatchInfo.js`'s `rowResult` reads it directly off the row's
+  `.active-team` marker (reliable within a "Last N matches" panel, unlike
+  H2H rows), no fuzzy matching needed.
+- Both leave a row uncolored (`result: null`) when its perspective
+  couldn't be determined, rather than guessing.
 - `src/scrapers/tipsters/forebet.js` now also captures each row's
   Forebet match-page URL (`matchUrl`).
 - `src/scrapers/tipsters/forebetMatchInfo.js` fetches that page and parses

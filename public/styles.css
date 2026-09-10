@@ -258,9 +258,12 @@ main { padding: 20px 24px 60px; max-width: 1100px; margin: 0 auto; }
 .form-badge.form-l { background: rgba(248, 113, 113, 0.18); color: var(--urgent); }
 table.h2h-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.h2h-table td { padding: 5px 4px; border-bottom: 1px solid var(--card-border); }
-table.h2h-table td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
-table.h2h-table td.num.h2h-win { color: var(--ok); }
-table.h2h-table td.num.h2h-loss { color: var(--urgent); }
+table.h2h-table td.teams { color: var(--muted); font-size: 12px; }
+table.h2h-table td.teams .vs { color: var(--card-border); padding: 0 2px; }
+table.h2h-table td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+table.h2h-table td.num.result-win { color: var(--ok); }
+table.h2h-table td.num.result-draw { color: var(--soon); }
+table.h2h-table td.num.result-loss { color: var(--urgent); }
 .detail-muted { color: var(--muted); font-size: 13px; }
 .detail-note { color: var(--muted); font-size: 11px; margin-top: 14px; line-height: 1.5; }
 
