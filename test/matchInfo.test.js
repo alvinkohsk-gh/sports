@@ -188,6 +188,33 @@ test('attachMatchInfo: retries a cache entry from an older SCHEMA_VERSION even w
   assert.equal(cache.entries[0].schemaVersion, SCHEMA_VERSION);
 });
 
+test('attachMatchInfo: chaining a second call for the in-play array (as scrape-snapshot.js does) serves the just-fetched cache without a new fetch', async () => {
+  // Mirrors scripts/scrape-snapshot.js: a fixture that was fetched while
+  // still in snapshot.matches must still show up when the *same* fixture
+  // (now already kicked off) is passed again as part of a separate
+  // in-play array built from a different source.
+  const upcoming = match('Arsenal', 'Chelsea', IN_2_DAYS);
+  const rows = [forebetRow('Arsenal', 'Chelsea', 'https://forebet.example/arsenal-chelsea')];
+  let fetchCount = 0;
+  const fetchFn = async () => {
+    fetchCount += 1;
+    return { h2h: [], homeForm: ['W'], awayForm: ['L'] };
+  };
+  const cacheAfterBoard = await attachMatchInfo([upcoming], rows, { entries: [] }, { nowMs: NOW, fetchFn });
+  assert.equal(fetchCount, 1);
+
+  // Same fixture, now already kicked off, arriving via the separate
+  // in-play array — same team names/kickoff, so the same matchKey.
+  const nowLive = Date.parse(IN_2_DAYS) + 60 * 60 * 1000; // an hour after that kickoff
+  const inPlayFixture = match('Arsenal', 'Chelsea', IN_2_DAYS);
+  const cacheAfterInPlay = await attachMatchInfo([inPlayFixture], rows, cacheAfterBoard, { nowMs: nowLive, fetchFn });
+
+  assert.equal(fetchCount, 1); // never re-fetched for the already-started in-play pass
+  assert.ok(inPlayFixture.headToHead);
+  assert.equal(inPlayFixture.headToHead.homeForm[0], 'W');
+  assert.equal(cacheAfterInPlay.entries.length, 1);
+});
+
 test('annotateH2HResults: labels each row from the current match home team\'s perspective, flipping when that team was away in the past meeting', () => {
   const m = match('Arsenal', 'Chelsea', IN_2_DAYS);
   const h2h = [

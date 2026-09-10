@@ -266,7 +266,15 @@ the list page forebet.js otherwise reads).
   change once play starts, and fetch budget is better spent on matches
   still to come — but a cache entry fetched before kickoff is still
   served, not dropped, so an in-play match's clickable card (same modal
-  as any other match) shows real data rather than "no data yet".
+  as any other match) shows real data rather than "no data yet". This
+  requires `attachMatchInfo` to actually see the in-play fixture:
+  `scripts/scrape-snapshot.js` calls it a *second* time for
+  `snapshot.inPlay`, chaining the cache from the main-board call, since
+  in-play is a separate array (rebuilt fresh from SG Pools' live feed, not
+  carried over from `snapshot.matches` — see `aggregator.js`) that would
+  otherwise never get `headToHead` at all. Every in-play kickoff is
+  necessarily in the past, so this second call only ever reads the cache —
+  it can't trigger a new fetch.
 - No separate API route: `headToHead` rides along on each match object in
   `GET /api/matches`, same as `odds`/`value`/`tipsterConsensus`. Only
   populated via the published snapshot (the periodic GitHub Actions job) —
@@ -355,6 +363,17 @@ elapsed time, plus the coarse stage Flashscore reports (HT / 1st half /
 2nd half / extra time / penalties). Only a fixture Flashscore hasn't
 matched falls back to the old wall-clock guess off SG Pools' listed
 kickoff, prefixed `~` to mark it as an estimate.
+
+Flashscore's feed gives no separate second-half-restart timestamp, only
+the original kickoff — so once the stage flips to `2nd half`, raw elapsed
+time since kickoff overcounts by however long the halftime break actually
+ran (real broadcast clocks pause through it). `liveClock` corrects for
+this with a flat `HALFTIME_BREAK_MIN` (15 min, the standard length — an
+approximation, since the exact real restart time isn't in the feed),
+subtracted from the elapsed minutes and clamped so the 2nd half never
+reads below 45'. Extra time/penalties aren't similarly corrected (rare
+enough, and their own break lengths are less standardized) — `liveClock`
+shows `HT`/`Pens` as fixed labels for the two break stages themselves.
 `GET /api/value-picks` returns the open + settled picks and a
 flat-1-unit record (win rate, ROI, P/L); `?from=YYYY-MM-DD&to=YYYY-MM-DD`
 filters by kickoff day. `public/value-picks.html` is a page for it with a
