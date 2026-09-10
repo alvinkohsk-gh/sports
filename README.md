@@ -330,6 +330,15 @@ to livescore.com, so `parseLivescoreRows` is a conservative,
 structure-tolerant heuristic tested only against synthetic fixtures, not
 real page HTML. Expect it to return zero extra matches until tuned against
 a `TIPSTERS_DEBUG=true` capture (`debug-tipsters/livescore-live.html`).
+
+The board's live-match clock (`public/app.js`'s `liveClock`) also prefers
+Flashscore's own data when matched: `m.liveKickoffISO` (Flashscore's
+recorded kickoff timestamp, which can differ from SG Pools' listed one by
+several minutes — an early/late actual kickoff, a delay) for computing
+elapsed time, plus the coarse stage Flashscore reports (HT / 1st half /
+2nd half / extra time / penalties). Only a fixture Flashscore hasn't
+matched falls back to the old wall-clock guess off SG Pools' listed
+kickoff, prefixed `~` to mark it as an estimate.
 `GET /api/value-picks` returns the open + settled picks and a
 flat-1-unit record (win rate, ROI, P/L); `?from=YYYY-MM-DD&to=YYYY-MM-DD`
 filters by kickoff day. `public/value-picks.html` is a page for it with a

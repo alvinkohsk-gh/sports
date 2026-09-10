@@ -65,6 +65,12 @@ async function loadPublished(file, fallback) {
       if (fx) {
         m.liveScore = `${fx.homeGoals}-${fx.awayGoals}`;
         m.liveStage = fx.stage;
+        // Flashscore's own recorded kickoff timestamp for this match —
+        // more trustworthy than SG Pools' listed kickoff for computing
+        // elapsed match time, since SG Pools' can be off by minutes
+        // (an early/late actual kickoff, a delay) while this is what
+        // Flashscore itself timestamped the match starting.
+        if (fx.kickoffISO) m.liveKickoffISO = fx.kickoffISO;
         matched += 1;
       }
     }
