@@ -207,7 +207,7 @@ function renderH2HTable(h2h) {
       (r) => `
       <tr>
         <td>${r.date ? escapeHtml(r.date) : ''}</td>
-        <td class="teams">${r.homeTeamName ? escapeHtml(r.homeTeamName) : 'Home'} <span class="vs">v</span> ${r.awayTeamName ? escapeHtml(r.awayTeamName) : 'Away'}</td>
+        <td class="teams">${r.homeTeamName && r.awayTeamName ? `${escapeHtml(r.homeTeamName)} <span class="vs">v</span> ${escapeHtml(r.awayTeamName)}` : ''}</td>
         <td class="num${resultClass(r.result)}">${r.homeGoals} – ${r.awayGoals}</td>
       </tr>`
     )

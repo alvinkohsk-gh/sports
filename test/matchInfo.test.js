@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { attachMatchInfo, findForebetUrl, annotateH2HResults } = require('../src/results/matchInfo');
+const { attachMatchInfo, findForebetUrl, annotateH2HResults, SCHEMA_VERSION } = require('../src/results/matchInfo');
 
 const NOW = Date.parse('2026-01-10T00:00:00Z');
 const IN_2_DAYS = new Date(NOW + 2 * 24 * 60 * 60 * 1000).toISOString();
@@ -69,6 +69,7 @@ test('attachMatchInfo: serves a fresh cache entry without re-fetching', async ()
       {
         matchKey: 'arsenal|chelsea|' + IN_2_DAYS.slice(0, 10),
         fetchedAtISO: new Date(NOW - 60 * 60 * 1000).toISOString(), // 1h old, well under the 24h TTL
+        schemaVersion: SCHEMA_VERSION,
         info: { h2h: [], homeForm: ['D'], awayForm: ['D'] },
       },
     ],
@@ -114,6 +115,7 @@ test('attachMatchInfo: keeps last-known-good info when a re-fetch returns null',
       {
         matchKey: 'arsenal|chelsea|' + IN_2_DAYS.slice(0, 10),
         fetchedAtISO: new Date(NOW - 25 * 60 * 60 * 1000).toISOString(),
+        schemaVersion: SCHEMA_VERSION,
         info: { h2h: [], homeForm: ['D'], awayForm: ['D'] },
       },
     ],
@@ -140,6 +142,30 @@ test('attachMatchInfo: retries a null-info cache entry even within the TTL, inst
   await attachMatchInfo([m], rows, prevCache, { nowMs: NOW, fetchFn });
   assert.equal(called, true);
   assert.equal(m.headToHead.homeForm[0], 'W');
+});
+
+test('attachMatchInfo: retries a cache entry from an older SCHEMA_VERSION even within the TTL, instead of serving stale-shaped data', async () => {
+  const m = match('Arsenal', 'Chelsea', IN_2_DAYS);
+  const rows = [forebetRow('Arsenal', 'Chelsea', 'https://forebet.example/arsenal-chelsea')];
+  const prevCache = {
+    entries: [
+      {
+        matchKey: 'arsenal|chelsea|' + IN_2_DAYS.slice(0, 10),
+        fetchedAtISO: new Date(NOW - 60 * 60 * 1000).toISOString(), // 1h old, well under the 24h TTL
+        // no schemaVersion at all — as if written before the field existed
+        info: { h2h: [{ homeGoals: 1, awayGoals: 0 }], homeForm: ['D'], awayForm: ['D'] },
+      },
+    ],
+  };
+  let called = false;
+  const fetchFn = async () => {
+    called = true;
+    return { h2h: [{ homeGoals: 2, awayGoals: 0, homeTeamName: 'Arsenal', awayTeamName: 'Chelsea' }], homeForm: ['W'], awayForm: ['W'] };
+  };
+  const cache = await attachMatchInfo([m], rows, prevCache, { nowMs: NOW, fetchFn });
+  assert.equal(called, true);
+  assert.equal(m.headToHead.homeForm[0], 'W');
+  assert.equal(cache.entries[0].schemaVersion, SCHEMA_VERSION);
 });
 
 test('annotateH2HResults: labels each row from the current match home team\'s perspective, flipping when that team was away in the past meeting', () => {
