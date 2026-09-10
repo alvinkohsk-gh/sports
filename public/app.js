@@ -189,13 +189,14 @@ function renderFormBadges(form) {
     .join('');
 }
 
-// r.result ('W'/'D'/'L') is the current match's home team's perspective in
-// that past meeting (src/results/matchInfo.js's annotateH2HResults) — null
-// when it couldn't be determined (e.g. the row carried no team names),
-// left uncolored rather than guessed.
-function h2hResultClass(result) {
-  if (result === 'W') return ' h2h-win';
-  if (result === 'L') return ' h2h-loss';
+// r.result ('W'/'D'/'L') is a per-row perspective computed server-side
+// (src/results/matchInfo.js's annotateH2HResults for h2h rows, src/
+// scrapers/tipsters/forebetMatchInfo.js's rowResult for fixture rows) —
+// null when it couldn't be determined, left uncolored rather than guessed.
+function resultClass(result) {
+  if (result === 'W') return ' result-win';
+  if (result === 'D') return ' result-draw';
+  if (result === 'L') return ' result-loss';
   return '';
 }
 
@@ -206,7 +207,8 @@ function renderH2HTable(h2h) {
       (r) => `
       <tr>
         <td>${r.date ? escapeHtml(r.date) : ''}</td>
-        <td class="num${h2hResultClass(r.result)}">${r.homeGoals} – ${r.awayGoals}</td>
+        <td class="teams">${r.homeTeamName ? escapeHtml(r.homeTeamName) : 'Home'} <span class="vs">v</span> ${r.awayTeamName ? escapeHtml(r.awayTeamName) : 'Away'}</td>
+        <td class="num${resultClass(r.result)}">${r.homeGoals} – ${r.awayGoals}</td>
       </tr>`
     )
     .join('');
@@ -220,7 +222,7 @@ function renderFixturesTable(fixtures) {
       (r) => `
       <tr>
         <td>${r.date ? escapeHtml(r.date) : ''}</td>
-        <td class="num">${r.homeGoals} – ${r.awayGoals}</td>
+        <td class="num${resultClass(r.result)}">${r.homeGoals} – ${r.awayGoals}</td>
         <td>${r.opponent ? escapeHtml(r.opponent) : ''}</td>
       </tr>`
     )

@@ -71,6 +71,26 @@ function rowTeams($, row) {
   return { homeTeamName: home || null, awayTeamName: away || null };
 }
 
+// Result ('W'/'D'/'L') of a fixture-widget row from the *panel's own*
+// subject team's perspective — unlike H2H, `.active-team` is reliably set
+// on exactly one side within a "Last N matches" panel (see
+// findFixturesHeadings), so this can read it directly instead of needing
+// the fuzzy team-name match H2H rows require.
+function rowResult(homeGoals, awayGoals, home, away) {
+  let usGoals;
+  let themGoals;
+  if (home.length && home.hasClass('active-team')) {
+    usGoals = homeGoals;
+    themGoals = awayGoals;
+  } else if (away.length && away.hasClass('active-team')) {
+    usGoals = awayGoals;
+    themGoals = homeGoals;
+  } else {
+    return null;
+  }
+  return usGoals > themGoals ? 'W' : usGoals < themGoals ? 'L' : 'D';
+}
+
 // Best-effort structural read: a heading/section whose text mentions H2H,
 // followed by row-like elements (table rows or list items) each carrying
 // a scoreline and, usually, a date and the two team names.
@@ -232,12 +252,15 @@ function parseTeamFixtures($) {
         if (dateMatch) opponent = opponent.replace(dateMatch[0], ' ');
         opponent = opponent.replace(/\s+/g, ' ').trim() || null;
       }
+      const homeGoals = Number(scoreMatch[1]);
+      const awayGoals = Number(scoreMatch[2]);
       rows.push({
         raw: text,
-        homeGoals: Number(scoreMatch[1]),
-        awayGoals: Number(scoreMatch[2]),
+        homeGoals,
+        awayGoals,
         date: rowDate($, row),
         opponent,
+        result: rowResult(homeGoals, awayGoals, row.find('.st_hteam').first(), row.find('.st_ateam').first()),
       });
     });
     if (rows.length) sections.push(rows.slice(0, 6));
