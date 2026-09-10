@@ -175,6 +175,19 @@ async function loadPublished(file, fallback) {
     matchInfoCache = prevMatchInfo;
   }
 
+  // In-play fixtures are a separate array (built fresh from SG Pools' live
+  // feed, not carried over from snapshot.matches — see aggregator.js), so
+  // without this they'd never get `headToHead` at all: the moment a match
+  // kicks off it'd silently lose the H2H/recent-form it already had cached
+  // from before kickoff. Every in-play fixture's kickoff is necessarily in
+  // the past, so attachMatchInfo's alreadyStarted path just serves the
+  // cache here — this never triggers a new fetch.
+  try {
+    matchInfoCache = await attachMatchInfo(snapshot.inPlay, forebetRows, matchInfoCache);
+  } catch (err) {
+    console.error('[scrape-snapshot] match-info attach (in-play) failed:', err.message || err);
+  }
+
   // Actual FT scores. Flashscore's feed is the primary source (near-total
   // league coverage); Forebet's results pages and WinDrawWin's "yesterday
   // results" table (archives.js) are kept as fallbacks in case the

@@ -369,6 +369,17 @@ function tickCountdowns() {
   });
 }
 
+// Flashscore's feed gives us a kickoff timestamp and a coarse stage, but no
+// separate second-half-restart timestamp — so raw elapsed time since
+// kickoff overcounts the 2nd half by however long the halftime break ran.
+// Flashscore's own displayed match minute (like any broadcast clock) pauses
+// through that break; without correcting for it, our clock would jump
+// straight from "HT" to "~60'" the moment the 2nd half kicks off instead of
+// "45'". 15 min is the standard break length — an approximation, since the
+// feed doesn't expose the real restart time — clamped so the 2nd half never
+// reads below 45'.
+const HALFTIME_BREAK_MIN = 15;
+
 // SG Pools' own live feed carries no clock/stage, so a match card's
 // prominent clock prefers Flashscore's actual data when matched
 // (liveKickoffISO — Flashscore's own recorded kickoff timestamp, which
@@ -380,10 +391,13 @@ function liveClock(kickoffISO, liveKickoffISO, stage) {
   if (stage === 'HT') return 'HT';
   if (stage === 'penalties') return 'Pens';
   if (liveKickoffISO) {
-    const mins = Math.floor((Date.now() - new Date(liveKickoffISO).getTime()) / 60000);
+    let mins = Math.floor((Date.now() - new Date(liveKickoffISO).getTime()) / 60000);
     if (mins < 0) return 'kicking off';
     if (stage === 'extra time') return `${mins}' · ET`;
-    if (stage === '2nd half') return `${mins}' · 2nd half`;
+    if (stage === '2nd half') {
+      mins = Math.max(45, mins - HALFTIME_BREAK_MIN);
+      return `${mins}' · 2nd half`;
+    }
     return `${mins}'`;
   }
   const mins = Math.floor((Date.now() - new Date(kickoffISO).getTime()) / 60000);
