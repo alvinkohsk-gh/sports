@@ -47,6 +47,18 @@
     .summary .stat .val.pos { color: var(--ok); }
     .summary .stat .val.neg { color: var(--urgent); }
 
+    .breakdown { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 20px; }
+    .breakdown .bd-group { flex: 1 1 220px; min-width: 200px; }
+    .breakdown .bd-group h4 {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+      margin: 0 0 6px;
+    }
+    table.bd-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    table.bd-table td { padding: 4px 6px; border-bottom: 1px solid var(--card-border); }
+    table.bd-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    table.bd-table td.pl-pos { color: var(--ok); }
+    table.bd-table td.pl-neg { color: var(--urgent); }
+
     h2.sec { font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 26px 0 10px; }
 
     .vp-list { display: flex; flex-direction: column; gap: 8px; }
@@ -122,6 +134,7 @@
     <section class="picks-section" data-section="all">
       <h2 class="section-title">All Tipsters <span class="section-sub">every flagged pick, full 10-source consensus</span></h2>
       <div class="summary" data-summary hidden></div>
+      <div class="breakdown" data-breakdown hidden></div>
       <div data-empty class="empty" hidden></div>
       <h2 class="sec" data-open-head hidden>Open — waiting on kickoff</h2>
       <div class="vp-list" data-open></div>
@@ -131,7 +144,7 @@
           <thead>
             <tr>
               <th>Kickoff</th><th>Fixture</th><th class="hide-sm">League</th>
-              <th>Pick</th><th class="num">Odd</th><th class="num">Score</th><th>Result</th><th class="num">P/L (u)</th>
+              <th>Pick</th><th class="num">Odd</th><th class="num hide-sm">CLV</th><th class="num">Score</th><th>Result</th><th class="num">P/L (u)</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -142,6 +155,7 @@
     <section class="picks-section" data-section="statarea">
       <h2 class="section-title">Statarea Only <span class="section-sub">same criteria, scored on statarea's own picks alone</span></h2>
       <div class="summary" data-summary hidden></div>
+      <div class="breakdown" data-breakdown hidden></div>
       <div data-empty class="empty" hidden></div>
       <h2 class="sec" data-open-head hidden>Open — waiting on kickoff</h2>
       <div class="vp-list" data-open></div>
@@ -151,7 +165,7 @@
           <thead>
             <tr>
               <th>Kickoff</th><th>Fixture</th><th class="hide-sm">League</th>
-              <th>Pick</th><th class="num">Odd</th><th class="num">Score</th><th>Result</th><th class="num">P/L (u)</th>
+              <th>Pick</th><th class="num">Odd</th><th class="num hide-sm">CLV</th><th class="num">Score</th><th>Result</th><th class="num">P/L (u)</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -188,7 +202,46 @@
     const localDay = (x) => new Date(x).toLocaleDateString('en-CA');
     const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
 
-    function summarize(settled) {
+    // Mirrors src/results/pickBreakdown.js server-side — duplicated here
+    // (same pattern as the rest of this page's summarize()) since this
+    // page re-aggregates client-side whenever the date-range picker
+    // changes, rather than round-tripping to the server on every change.
+    function oddsBand(odd) {
+      if (odd < 1.5) return '< 1.50';
+      if (odd < 2) return '1.50–1.99';
+      if (odd < 3) return '2.00–2.99';
+      return '3.00+';
+    }
+
+    function segmentBy(settled, keyFn) {
+      const out = {};
+      for (const p of settled) {
+        const k = keyFn(p) || 'Unknown';
+        const b = (out[k] = out[k] || { n: 0, won: 0, profitUnits: 0 });
+        b.n += 1;
+        if (p.won) b.won += 1;
+        b.profitUnits += p.profitUnits;
+      }
+      for (const b of Object.values(out)) {
+        b.winRate = b.n ? b.won / b.n : null;
+        b.roi = b.n ? b.profitUnits / b.n : null;
+      }
+      return out;
+    }
+
+    // CLV only needs kickoff to have passed (the line to have closed), not
+    // a graded result — so this runs over every pick past kickoff in
+    // range, open or settled alike.
+    function clvStats(picks) {
+      const now = Date.now();
+      const locked = picks.filter((p) => typeof p.clvPct === 'number' && Date.parse(p.kickoffISO) < now);
+      if (!locked.length) return { n: 0, avgClvPct: null, beatCloseRate: null };
+      const avg = locked.reduce((s, p) => s + p.clvPct, 0) / locked.length;
+      const beat = locked.filter((p) => p.clvPct > 0).length;
+      return { n: locked.length, avgClvPct: avg, beatCloseRate: beat / locked.length };
+    }
+
+    function summarize(settled, picks) {
       const won = settled.filter((p) => p.won).length;
       const staked = settled.length;
       const returned = settled.reduce((s, p) => s + (p.won ? p.odd : 0), 0);
@@ -200,6 +253,10 @@
         profitUnits: profit,
         roi: staked ? profit / staked : null,
         avgOdd: staked ? settled.reduce((s, p) => s + p.odd, 0) / staked : null,
+        byMarket: segmentBy(settled, (p) => p.market),
+        byLeague: segmentBy(settled, (p) => p.league),
+        byOddsBand: segmentBy(settled, (p) => oddsBand(p.odd)),
+        clv: clvStats(picks || settled),
       };
     }
 
@@ -210,6 +267,7 @@
       const el = {
         root,
         summary: root.querySelector('[data-summary]'),
+        breakdown: root.querySelector('[data-breakdown]'),
         empty: root.querySelector('[data-empty]'),
         openHead: root.querySelector('[data-open-head]'),
         open: root.querySelector('[data-open]'),
@@ -228,13 +286,38 @@
           el.summary.innerHTML = recordStat + `<div class="stat"><span class="lab">Open</span><span class="val">${openCount}</span></div>`;
           return;
         }
+        const clvCls = s.clv.avgClvPct > 0 ? 'pos' : s.clv.avgClvPct < 0 ? 'neg' : '';
         el.summary.innerHTML =
           recordStat +
           `<div class="stat"><span class="lab">Win rate</span><span class="val">${pct(s.winRate)}</span></div>` +
           `<div class="stat"><span class="lab">ROI (flat 1u)</span><span class="val ${roiCls}">${signedPct(s.roi)}</span></div>` +
           `<div class="stat"><span class="lab">P/L</span><span class="val ${plCls}">${signedU(s.profitUnits)} u</span></div>` +
           `<div class="stat"><span class="lab">Avg odd</span><span class="val">${s.avgOdd == null ? '—' : s.avgOdd.toFixed(2)}</span></div>` +
+          `<div class="stat"><span class="lab">Avg CLV</span><span class="val ${clvCls}" title="Closing-line value: entry price vs. where SG Pools' price closed (last one seen before kickoff), across ${s.clv.n} picks whose kickoff has passed">${s.clv.avgClvPct == null ? '—' : signedPct(s.clv.avgClvPct / 100)}</span></div>` +
+          `<div class="stat"><span class="lab">Beat close</span><span class="val">${pct(s.clv.beatCloseRate)}</span></div>` +
           `<div class="stat"><span class="lab">Open</span><span class="val">${openCount}</span></div>`;
+      }
+
+      function renderBreakdownGroup(title, groups) {
+        const keys = Object.keys(groups).sort((a, b) => groups[b].n - groups[a].n);
+        if (!keys.length) return '';
+        const rows = keys
+          .map((k) => {
+            const b = groups[k];
+            const plCls = b.profitUnits > 0 ? 'pl-pos' : b.profitUnits < 0 ? 'pl-neg' : '';
+            return `<tr><td>${k}</td><td class="num">${b.won}–${b.n - b.won}</td><td class="num">${pct(b.winRate)}</td><td class="num ${plCls}">${signedU(b.profitUnits)}</td></tr>`;
+          })
+          .join('');
+        return `<div class="bd-group"><h4>${title}</h4><table class="bd-table">${rows}</table></div>`;
+      }
+
+      function renderBreakdown(s) {
+        const html =
+          renderBreakdownGroup('By market', s.byMarket) +
+          renderBreakdownGroup('By league', s.byLeague) +
+          renderBreakdownGroup('By odds band', s.byOddsBand);
+        el.breakdown.hidden = !html;
+        el.breakdown.innerHTML = html;
       }
 
       function renderOpen(picks) {
@@ -263,6 +346,9 @@
           .map((p) => {
             const res = p.won ? '<span class="res-win">WON ✓</span>' : '<span class="res-lose">LOST ✗</span>';
             const pl = `<span class="${p.profitUnits >= 0 ? 'pl-pos' : 'pl-neg'}">${signedU(p.profitUnits)}</span>`;
+            const clv = typeof p.clvPct === 'number'
+              ? `<span class="${p.clvPct >= 0 ? 'pl-pos' : 'pl-neg'}" title="entry ${p.openOdd.toFixed(2)} vs close ${p.odd.toFixed(2)}">${signedPct(p.clvPct / 100)}</span>`
+              : '—';
             return `
             <tr>
               <td>${fmtKO(p.kickoffISO)}</td>
@@ -270,6 +356,7 @@
               <td class="hide-sm">${p.league || ''}</td>
               <td>${p.market} <strong>${p.label}</strong></td>
               <td class="num">${p.odd.toFixed(2)}</td>
+              <td class="num hide-sm">${clv}</td>
               <td class="num">${p.score || '—'}</td>
               <td>${res}</td>
               <td class="num">${pl}</td>
@@ -290,7 +377,7 @@
           .filter(inRange)
           .sort((a, b) => Date.parse(b.kickoffISO) - Date.parse(a.kickoffISO));
         const singleDay = fromEl.value && fromEl.value === toEl.value;
-        const s = summarize(settled);
+        const s = summarize(settled, open.concat(settled));
 
         const total = open.length + settled.length;
         el.empty.hidden = total > 0 && state.loaded;
@@ -306,6 +393,7 @@
         }
         el.summary.hidden = total === 0;
         if (total) renderSummary(s, open.length, singleDay);
+        renderBreakdown(s);
         renderOpen(open);
         renderSettled(settled);
 

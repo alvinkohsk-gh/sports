@@ -52,6 +52,18 @@ function mergeValuePicks(existing, matches, capturedAtISO, valueKey = 'value') {
       const preKickoff = !Number.isFinite(kickoff) || now < kickoff;
       if (prev && !preKickoff) continue; // locked at kickoff
 
+      // openOdd is the price at the moment this pick was first flagged —
+      // frozen from then on, same as firstSeenISO — standing in for "the
+      // price you'd actually have gotten". `odd` keeps behaving as before
+      // (overwritten every pre-kickoff cycle, so it ends up holding the
+      // last pre-kickoff price — a closing-line proxy, up to one ~15-min
+      // scrape cycle stale). clvPct compares the two: how much better or
+      // worse the entry price was than where the line closed. Recomputed
+      // every cycle so it tracks the live line pre-kickoff and locks in
+      // once `odd` itself stops updating after kickoff.
+      const openOdd = prev ? prev.openOdd : o.odd;
+      const clvPct = openOdd && o.odd ? Number(((openOdd / o.odd - 1) * 100).toFixed(2)) : null;
+
       byKey.set(key, {
         key,
         matchKey: mk,
@@ -65,6 +77,8 @@ function mergeValuePicks(existing, matches, capturedAtISO, valueKey = 'value') {
         selection: o.key, // home|draw|away|over|under
         label: o.label,
         odd: o.odd,
+        openOdd,
+        clvPct,
         ev: o.ev,
         refProb: o.refProb,
         impliedProb: o.impliedProb,

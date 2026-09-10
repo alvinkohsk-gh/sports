@@ -8,6 +8,7 @@
  *   value-picks.json     — rolling log of VALUE-flagged picks (full consensus)
  *   statarea-picks.json  — same, but scored on statarea's picks alone
  *   match-info.json      — cached Forebet H2H + recent form per fixture
+ *   odds-history.json    — rolling per-fixture SG Pools price history
  *
  * Meant to run OUTSIDE the request path — in GitHub Actions on a schedule
  * (see .github/workflows/snapshot.yml). The Vercel app just serves these
@@ -29,6 +30,7 @@ const { teamsMatch } = require('../src/services/matcher');
 const { mergeValuePicks, gradeValuePicks, summarizeValuePicks } = require('../src/results/valuePicks');
 const { assessStatareaValue } = require('../src/services/statareaValue');
 const { attachMatchInfo } = require('../src/results/matchInfo');
+const { mergeOddsHistory } = require('../src/results/oddsHistory');
 
 const OUT = process.argv[2] || 'snapshot.json';
 const DIR = process.argv[3] || path.dirname(OUT) || '.';
@@ -152,15 +154,22 @@ async function loadPublished(file, fallback) {
   }
 
   // ---- prediction history + accuracy grading + value-pick log(s) ----
-  const [prevHistory, prevAccuracy, prevValuePicks, prevStatareaPicks, prevMatchInfo] = await Promise.all([
+  const [prevHistory, prevAccuracy, prevValuePicks, prevStatareaPicks, prevMatchInfo, prevOddsHistory] = await Promise.all([
     loadPublished('history.json', { entries: [] }),
     loadPublished('accuracy.json', { samples: [] }),
     loadPublished('value-picks.json', { picks: [] }),
     loadPublished('statarea-picks.json', { picks: [] }),
     loadPublished('match-info.json', { entries: [] }),
+    loadPublished('odds-history.json', { entries: [] }),
   ]);
 
   const history = mergeHistory(prevHistory, snapshot.matches, nowISO);
+
+  // Rolling per-fixture price history (src/results/oddsHistory.js) — only
+  // appends a new point when SG Pools' price actually moved since the last
+  // one recorded, so most cycles are a no-op. Covers both boards: a
+  // fixture's line can keep drifting once it's live too.
+  const oddsHistory = mergeOddsHistory(prevOddsHistory, [...snapshot.matches, ...snapshot.inPlay], nowISO);
 
   // H2H + recent form (Forebet) for each SG Pools fixture Forebet also
   // covers — see src/results/matchInfo.js. Mutates snapshot.matches,
@@ -235,6 +244,7 @@ async function loadPublished(file, fallback) {
   fs.writeFileSync(path.join(DIR, 'value-picks.json'), JSON.stringify(valuePicks));
   fs.writeFileSync(path.join(DIR, 'statarea-picks.json'), JSON.stringify(statareaPicks));
   fs.writeFileSync(path.join(DIR, 'match-info.json'), JSON.stringify(matchInfoCache));
+  fs.writeFileSync(path.join(DIR, 'odds-history.json'), JSON.stringify(oddsHistory));
 
   const withMatchInfo = snapshot.matches.filter((m) => m.headToHead).length;
 

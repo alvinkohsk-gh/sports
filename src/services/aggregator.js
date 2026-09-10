@@ -7,6 +7,7 @@ const { computeSiteWeights } = require('./tipsterWeights');
 const { carryForwardInPlayPicks } = require('./inPlayCarryForward');
 const { fetchBranchJson } = require('../snapshot');
 const { getMockSgpFixtures, getMockTipsterPicks } = require('../mock/mockData');
+const { matchKey } = require('../results/history');
 
 // Per-site accuracy weighting (tipsterWeights.js) needs each tipster's
 // graded track record, published as accuracy.json alongside the snapshot.
@@ -53,6 +54,10 @@ function getState() {
 function toMatch(fixture) {
   return {
     id: fixture.sgpMatchId,
+    // Same key odds-history.json is stored under — lets the client ask
+    // for one fixture's price history (GET /api/odds-history) without the
+    // server having to embed each match's whole series in /api/matches.
+    matchKey: matchKey(fixture.homeTeam, fixture.awayTeam, fixture.kickoffISO),
     homeTeam: fixture.homeTeam,
     awayTeam: fixture.awayTeam,
     league: fixture.league,

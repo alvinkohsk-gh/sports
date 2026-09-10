@@ -1,6 +1,7 @@
 const express = require('express');
 const { fetchBranchJson } = require('../snapshot');
 const { SNAPSHOT_REFETCH_MS } = require('../config');
+const { oddsBand, segmentBy, clvStats } = require('../results/pickBreakdown');
 
 // GET /api/value-picks and GET /api/statarea-picks — rolling logs of
 // VALUE-flagged picks built by scripts/scrape-snapshot.js and published to
@@ -21,18 +22,11 @@ const router = express.Router();
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const dayOf = (iso) => String(iso || '').slice(0, 10);
 
-function summarize(settled) {
+function summarize(settled, picks) {
   const won = settled.filter((p) => p.won).length;
   const staked = settled.length;
   const returned = settled.reduce((s, p) => s + (p.won ? p.odd : 0), 0);
   const profit = returned - staked;
-  const byMarket = {};
-  for (const p of settled) {
-    const b = (byMarket[p.market] = byMarket[p.market] || { n: 0, won: 0, profitUnits: 0 });
-    b.n += 1;
-    if (p.won) b.won += 1;
-    b.profitUnits = Number((b.profitUnits + p.profitUnits).toFixed(2));
-  }
   return {
     settledCount: staked,
     won,
@@ -42,7 +36,13 @@ function summarize(settled) {
     profitUnits: Number(profit.toFixed(2)),
     roi: staked ? Number((profit / staked).toFixed(4)) : null,
     avgOdd: staked ? Number((settled.reduce((s, p) => s + p.odd, 0) / staked).toFixed(2)) : null,
-    byMarket,
+    byMarket: segmentBy(settled, (p) => p.market),
+    byLeague: segmentBy(settled, (p) => p.league),
+    byOddsBand: segmentBy(settled, (p) => oddsBand(p.odd)),
+    // Closing-line value: only needs kickoff to have passed, not a graded
+    // result, so this is computed over `picks` (open + settled in range),
+    // not just `settled` — see pickBreakdown.js.
+    clv: clvStats(picks),
   };
 }
 
@@ -85,7 +85,7 @@ function registerPicksRoute(routePath, file) {
       availableDates: days.length ? { min: days[0], max: days[days.length - 1] } : null,
       open,
       settled,
-      summary: { openCount: open.length, ...summarize(settled) },
+      summary: { openCount: open.length, ...summarize(settled, picks) },
     });
   });
 }

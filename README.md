@@ -343,6 +343,42 @@ finishes. Scores come from Flashscore's data feed
 (`src/results/flashscoreResults.js` — near-total league coverage), with
 Forebet's results pages and WinDrawWin's results table as fallbacks.
 
+### Closing-line value, price history, and backtesting (`value-picks.html`)
+
+- **Closing-line value (CLV)**. Each logged pick keeps two prices:
+  `openOdd` (frozen at the moment it was first flagged — the price you'd
+  actually have gotten) and `odd` (already existed — overwritten every
+  pre-kickoff scrape cycle, so it ends up holding the last pre-kickoff
+  price, a closing-line proxy up to one ~15-min scrape cycle stale).
+  `clvPct = (openOdd / odd − 1) × 100`: positive means the line moved in
+  your favor after you'd have bet it (you beat the close), negative means
+  it drifted the other way. Since this only needs the line to have closed
+  (kickoff passed), not a graded result, it's available before a pick is
+  "settled" — `src/results/pickBreakdown.js`'s `clvStats` runs over every
+  pick past kickoff in range, open or settled. CLV is widely considered a
+  better long-run signal of real edge than win rate alone: it isolates
+  whether your price disagreed with where the market ended up, independent
+  of variance in any single result.
+- **Odds movement history**. `src/results/oddsHistory.js` keeps a rolling
+  per-fixture series of SG Pools' own price (`odds-history.json`), only
+  appending a new point when the price actually changes — most 15-min
+  cycles see no movement. Not embedded in `GET /api/matches` (a point per
+  real move for every open fixture would bloat every board poll for a
+  feature only looked at per-match); instead `GET /api/odds-history
+  ?matchKey=<key>` (`src/routes/oddsHistory.js`) serves one fixture's
+  series on demand — the match-detail modal fetches it when opened,
+  keyed by the `matchKey` field every match object now carries (same key
+  `history.js`/`valuePicks.js`/`matchInfo.js` already use).
+- **Segmented backtesting**. Beyond the existing by-market breakdown, the
+  Value Picks page's summary now also groups settled picks by league and
+  by odds band (`< 1.50` / `1.50–1.99` / `2.00–2.99` / `3.00+`) —
+  `src/results/pickBreakdown.js`'s `segmentBy`, reused by `src/routes/
+  value.js`'s API summary and duplicated client-side in `value-picks.html`
+  (same duplication that page's own `summarize()` already had). Combined
+  with the page's existing date-range picker, this is enough to see where
+  the logged edge actually concentrates (a specific league, a price
+  range, a market) without a separate backtesting tool.
+
 "In play now" running scores (`m.liveScore` on `GET /api/matches`) use the
 same Flashscore feed. When a live SG Pools fixture has no Flashscore match
 (seen on some Asian lower/mid-tier leagues), `scripts/scrape-snapshot.js`

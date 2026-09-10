@@ -94,6 +94,7 @@ jobs:
           [ -s value-picks.json ] && cp value-picks.json "$work/" || true
           [ -s statarea-picks.json ] && cp statarea-picks.json "$work/" || true
           [ -s match-info.json ] && cp match-info.json "$work/" || true
+          [ -s odds-history.json ] && cp odds-history.json "$work/" || true
           # A vercel.json that disables deployments, so Vercel never builds a
           # preview off this branch when the workflow force-pushes it.
           printf '{ "git": { "deploymentEnabled": false } }\n' > "$work/vercel.json"
