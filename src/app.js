@@ -16,6 +16,7 @@ const matchesRoutes = require('./routes/matches');
 const debugRoutes = require('./routes/debug');
 const accuracyRoutes = require('./routes/accuracy');
 const valueRoutes = require('./routes/value');
+const oddsHistoryRoutes = require('./routes/oddsHistory');
 
 const app = express();
 app.use(cors());
@@ -25,6 +26,7 @@ app.use('/api', matchesRoutes);
 app.use('/api', debugRoutes);
 app.use('/api', accuracyRoutes);
 app.use('/api', valueRoutes);
+app.use('/api', oddsHistoryRoutes);
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 // Export `app` itself as the module's value (an Express app is callable,

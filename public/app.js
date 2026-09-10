@@ -250,6 +250,37 @@ function renderFixturesTable(fixtures) {
   return `<table class="h2h-table"><tbody>${rows}</tbody></table>`;
 }
 
+// ---- odds movement (src/results/oddsHistory.js) — fetched on demand when
+// the modal opens (GET /api/odds-history?matchKey=…), not embedded in
+// /api/matches: a price point per real move for every open fixture would
+// bloat every 15s poll of the main board for a feature only looked at
+// per-match. ----
+function renderOddsHistoryRow(p) {
+  const time = new Date(p.capturedAtISO).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const ox = p.oneX2 ? `${p.oneX2.home.toFixed(2)} / ${p.oneX2.draw.toFixed(2)} / ${p.oneX2.away.toFixed(2)}` : '—';
+  const ou = p.ou ? `${p.ou.point} · ${p.ou.over.toFixed(2)} / ${p.ou.under.toFixed(2)}` : '—';
+  return `<tr><td>${time}</td><td class="num">${ox}</td><td class="num">${ou}</td></tr>`;
+}
+
+function renderOddsHistoryTable(points) {
+  if (!points || !points.length) return '<div class="detail-muted">No price movement recorded yet.</div>';
+  const rows = points.map(renderOddsHistoryRow).join('');
+  return `<table class="h2h-table"><thead><tr><th>Time</th><th>1X2 (H/D/A)</th><th>O/U (pt · O/U)</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+async function loadOddsHistory(match) {
+  const slot = document.getElementById('odds-history-slot');
+  if (!slot || !match.matchKey) return;
+  try {
+    const res = await fetch(`/api/odds-history?matchKey=${encodeURIComponent(match.matchKey)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    slot.innerHTML = renderOddsHistoryTable(data.points);
+  } catch (err) {
+    slot.innerHTML = '<div class="detail-muted">Price history unavailable right now.</div>';
+  }
+}
+
 function renderMatchDetail(match) {
   const hh = match.headToHead;
   return `
@@ -272,6 +303,10 @@ function renderMatchDetail(match) {
       <h3>${escapeHtml(match.awayTeam)} — recent fixtures</h3>
       ${renderFixturesTable(hh && hh.awayFixtures)}
     </div>
+    <div class="detail-section">
+      <h3>Singapore Pools price movement</h3>
+      <div id="odds-history-slot" class="detail-muted">Loading…</div>
+    </div>
     ${
       !hh
         ? '<p class="detail-note">No Forebet head-to-head/form/fixture data for this match yet — either Forebet doesn\'t cover it, or the periodic scrape hasn\'t fetched it yet (upcoming matches are prioritized).</p>'
@@ -284,6 +319,7 @@ function openMatchDetail(match) {
   if (!modalEl) return;
   modalBodyEl.innerHTML = renderMatchDetail(match);
   modalEl.hidden = false;
+  loadOddsHistory(match);
 }
 
 function closeMatchDetail() {
