@@ -242,4 +242,4 @@ async function fetchHtmlScrolled(
   }
 }
 
-module.exports = { fetchHtml, fetchHtmlScrolled, DEBUG };
+module.exports = { fetchHtml, fetchHtmlScrolled, dumpDebug, DEBUG };

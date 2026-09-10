@@ -301,6 +301,18 @@ retention) and graded against the full-time score once its match
 finishes. Scores come from Flashscore's data feed
 (`src/results/flashscoreResults.js` — near-total league coverage), with
 Forebet's results pages and WinDrawWin's results table as fallbacks.
+
+"In play now" running scores (`m.liveScore` on `GET /api/matches`) use the
+same Flashscore feed. When a live SG Pools fixture has no Flashscore match
+(seen on some Asian lower/mid-tier leagues), `scripts/scrape-snapshot.js`
+falls back to `src/results/livescoreLive.js`, a livescore.com scraper —
+consulted only for fixtures Flashscore left unmatched, never racing or
+overriding a Flashscore hit. **This fallback is UNVERIFIED against real
+livescore.com markup**: the sandbox this was built in has no network path
+to livescore.com, so `parseLivescoreRows` is a conservative,
+structure-tolerant heuristic tested only against synthetic fixtures, not
+real page HTML. Expect it to return zero extra matches until tuned against
+a `TIPSTERS_DEBUG=true` capture (`debug-tipsters/livescore-live.html`).
 `GET /api/value-picks` returns the open + settled picks and a
 flat-1-unit record (win rate, ROI, P/L); `?from=YYYY-MM-DD&to=YYYY-MM-DD`
 filters by kickoff day. `public/value-picks.html` is a page for it with a
@@ -357,6 +369,8 @@ as a dedicated deep link to the same data.
 | `STATAREA_DAYS` | How many days of Statarea predictions to fetch, starting today (default 3) |
 | `FOREBET_MATCHINFO_MAX_PER_RUN` | Max new Forebet match-page (H2H/form) fetches per snapshot cycle (default 15) |
 | `SGPOOLS_ODDS_TIMEOUT_MS` | Timeout for each SG Pools odds API call (default 15 s) |
+| `LIVESCORE_LIVE_URL` | Override the livescore.com live-scores page URL used as the in-play fallback source (default `https://www.livescore.com/en/football/live/`) |
+| `LIVESCORE_TIMEOUT_MS` | Navigation timeout for the livescore.com fallback fetch (default 20 s) |
 | `VALUE_CONSENSUS_WEIGHT` | How much the tipster consensus pulls the reference probability off SG Pools' no-vig line, 0–1 (default 0.35) |
 | `VALUE_MIN_EV` | EV threshold for the VALUE flag (default 0.05 = +5%) |
 | `VALUE_MIN_VOTES` | Minimum tipster picks on a market before it's assessed for value (default 4) |
