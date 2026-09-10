@@ -55,11 +55,17 @@ async function loadPublished(file, fallback) {
   // can be written against actual markup instead of guessed selectors.
   // Remove once soccervista.js is built.
   if (String(process.env.TIPSTERS_DEBUG || 'false').toLowerCase() === 'true') {
-    try {
-      const { fetchHtml } = require('../src/scrapers/tipsters/fetchHtml');
-      await fetchHtml('soccervista', 'https://www.soccervista.com/');
-    } catch (err) {
-      console.error('[scrape-snapshot] soccervista debug fetch failed:', err.message);
+    const { fetchHtml } = require('../src/scrapers/tipsters/fetchHtml');
+    for (const [site, url] of [
+      ['soccervista', 'https://www.soccervista.com/'],
+      ['zulubet', 'https://www.zulubet.com/results_predictions/predictions_today.php'],
+      ['betshoot', 'https://betshoot.com/predictions/'],
+    ]) {
+      try {
+        await fetchHtml(site, url);
+      } catch (err) {
+        console.error(`[scrape-snapshot] ${site} debug fetch failed:`, err.message);
+      }
     }
   }
 
