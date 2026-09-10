@@ -496,9 +496,14 @@ function renderInPlay(list) {
   }
   inplayEl.hidden = false;
   const anyCarried = live.some((m) => (m.tipsterConsensus?.picks || []).some((p) => p.carriedForward));
-  inplayEl.innerHTML = `<h2 class="inplay-head">● In play now <span>(${live.length}) — picks made before kickoff; time/score approximate${
-    anyCarried ? '; <b>ᴾ</b> = pre-match pick from a site that stopped listing the live match' : ''
-  }</span></h2><div class="matches" id="inplay-grid"></div>`;
+  inplayEl.innerHTML = `
+    <div class="inplay-banner">
+      <h2 class="inplay-head"><span class="live-dot" aria-hidden="true"></span>Live betting now on Singapore Pools</h2>
+      <span>(${live.length}) — picks made before kickoff; time/score approximate${
+        anyCarried ? '; <b>ᴾ</b> = pre-match pick from a site that stopped listing the live match' : ''
+      }</span>
+    </div>
+    <div class="matches" id="inplay-grid"></div>`;
   const grid = inplayEl.querySelector('#inplay-grid');
   live
     .sort((a, b) => new Date(a.kickoffISO) - new Date(b.kickoffISO))
