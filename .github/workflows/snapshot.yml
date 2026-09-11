@@ -66,6 +66,7 @@ jobs:
         env:
           TIPSTERS_DEBUG: 'true'
           SGPOOLS_DEBUG: 'true'
+          LIVESCORE_MATCH_DEBUG: 'true'
           FLARESOLVERR_URL: 'http://localhost:8191/v1'
           TIPSTERS_DEADLINE_MS: '480000'
           SPORTSMOLE_MAX_ARTICLES: '30'

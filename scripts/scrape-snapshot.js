@@ -61,6 +61,14 @@ async function loadPublished(file, fallback) {
     (teamsMatch(a.homeTeam, b.awayTeam) && teamsMatch(a.awayTeam, b.homeTeam));
   try {
     const fsLive = await fetchFlashscoreLive();
+    if (process.env.LIVESCORE_MATCH_DEBUG) {
+      for (const m of inPlay) {
+        console.error(`[livescore-match-debug] SGP in-play: "${m.homeTeam}" v "${m.awayTeam}"`);
+      }
+      for (const r of fsLive) {
+        console.error(`[livescore-match-debug] Flashscore live: "${r.homeTeam}" v "${r.awayTeam}" (${r.league})`);
+      }
+    }
     let matched = 0;
     for (const m of inPlay) {
       const fx = fsLive.find((r) => sameFixture(m, r));
