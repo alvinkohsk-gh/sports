@@ -423,6 +423,18 @@ subtracted from the elapsed minutes and clamped so the 2nd half never
 reads below 45'. Extra time/penalties aren't similarly corrected (rare
 enough, and their own break lengths are less standardized) — `liveClock`
 shows `HT`/`Pens` as fixed labels for the two break stages themselves.
+
+Flashscore's live stage code (`AC` in the feed, mapped by
+`LIVE_STAGE` in `src/results/flashscoreResults.js`) isn't fully
+documented — production has shown an unmapped `'38'` on several
+simultaneous South American fixtures, all sitting at the exact elapsed-time
+profile of "just past halftime"; it's mapped to `2nd half` as an
+apparent regional variant of `'13'`. Any other still-unmapped code falls
+through to a generic `live` stage rather than throwing, and `liveClock`
+has its own backstop for that case: past 52 raw elapsed minutes (no real
+1st half + stoppage runs that long), it applies the halftime correction
+anyway even without a `2nd half` stage match, so an unrecognized code
+never silently shows raw elapsed time instead of the actual match minute.
 `GET /api/value-picks` returns the open + settled picks and a
 flat-1-unit record (win rate, ROI, P/L); `?from=YYYY-MM-DD&to=YYYY-MM-DD`
 filters by kickoff day. `public/value-picks.html` is a page for it with a

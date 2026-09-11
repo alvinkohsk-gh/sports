@@ -431,9 +431,18 @@ function liveClock(kickoffISO, liveKickoffISO, stage) {
     let mins = Math.floor((Date.now() - new Date(liveKickoffISO).getTime()) / 60000);
     if (mins < 0) return 'kicking off';
     if (stage === 'extra time') return `${mins}' · ET`;
-    if (stage === '2nd half') {
+    // Flashscore's own '2nd half' stage code triggers the correction
+    // directly; any other/unrecognized in-play stage string (seen in
+    // production: a bare "live" when Flashscore's AC code didn't match
+    // anything in LIVE_STAGE) falls back to inferring it from elapsed
+    // time alone — no real 1st half + stoppage runs past ~52 raw minutes,
+    // so past that we're certainly in the second half even without a
+    // stage match, and skipping the correction there would show raw
+    // elapsed time instead of the actual match minute.
+    const pastHalftime = stage === '2nd half' || mins > 52;
+    if (pastHalftime) {
       mins = Math.max(45, mins - HALFTIME_BREAK_MIN);
-      return `${mins}' · 2nd half`;
+      return stage === '2nd half' ? `${mins}' · 2nd half` : `${mins}'`;
     }
     return `${mins}'`;
   }
