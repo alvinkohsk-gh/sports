@@ -30,6 +30,12 @@ const ALIASES = [
   // Flashscore as "UNAM Pumas" — no shared token besides "unam" itself,
   // so plain overlap scoring rejects it (score 0.5, one matched token).
   ['unam pumas', 'unam mexico', 'pumas unam'],
+  // SG Pools writes this Brazilian club as "Atl Paranaense" (-> "atletico
+  // paranaense" after the atl->atletico expansion), Forebet as "Atlético
+  // PR" (-> "atletico pr") — the only shared token is "atletico", which is
+  // in GENERIC_TOKENS, so the match is rejected with no distinctive token
+  // (missed a Forebet H2H/form/fixtures fetch for this fixture entirely).
+  ['atletico paranaense', 'atletico pr', 'athletico paranaense'],
 ];
 
 const ALIAS_LOOKUP = new Map();

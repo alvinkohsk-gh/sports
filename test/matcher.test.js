@@ -34,6 +34,10 @@ const SHOULD_MATCH = [
   // Flashscore as "UNAM Pumas" — production showed this pair failing to
   // match (in-play live score never got filled in from Flashscore).
   ['UNAM Mexico', 'UNAM Pumas'],
+  // SG Pools writes this Brazilian club as "Atl Paranaense", Forebet as
+  // "Atlético PR" — production showed this pair failing to match (no
+  // Forebet H2H/form/recent-fixtures fetched for the fixture at all).
+  ['Atl Paranaense', 'Atlético PR'],
 ];
 
 const SHOULD_NOT_MATCH = [
