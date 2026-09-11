@@ -440,6 +440,30 @@ flat-1-unit record (win rate, ROI, P/L); `?from=YYYY-MM-DD&to=YYYY-MM-DD`
 filters by kickoff day. `public/value-picks.html` is a page for it with a
 date-range picker (a single day gives just that day's record).
 
+### Bankroll tracker: `public/bankroll.html`
+
+A personal staking log — separate from the server-side value-picks record
+above, which assumes a flat 1-unit stake on every flagged pick. This page
+lets you log the bets you actually place (any fixture, market, odd, and
+stake — not limited to flagged value picks) and tracks a running bankroll
+against them: current bankroll, net P/L, ROI, win rate, and max drawdown,
+plus a bankroll-over-time chart (`public/bankroll-calc.js` has the pure
+math — `profitFor`, `summarize`, `bankrollCurve`, `maxDrawdown`,
+`suggestedStake` — unit-tested in `test/bankrollCalc.test.js`). A bet is
+`pending` until you set it `won`/`lost`/`void`; only won/lost bets count
+toward the staked total, ROI and win rate (void returns the stake with no
+effect on the bankroll, matching a real void/push).
+
+There's no server or database involved — this is the one part of the site
+that isn't shared/public data. Starting bankroll and every logged bet live
+only in that browser's `localStorage` (key `bankrollTracker.v1`), so the
+log is per-browser and never leaves it. Each open pick on
+`value-picks.html` has a "Log bet →" link that jumps to this page with the
+fixture/market/pick/odd prefilled via query string, along with a suggested
+stake (`suggestedStake`: current bankroll × that pick's `quarterKelly`) —
+`value-picks.html` reads the current bankroll out of the same
+`localStorage` key just for that suggestion, and never writes to it.
+
 ### Single-site value: `public/statarea-picks.html`
 
 Same method, scoped to one tipster site instead of the full consensus.

@@ -75,6 +75,8 @@
     .vp-open .metric { text-align: right; font-variant-numeric: tabular-nums; }
     .vp-open .metric .l { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
     .vp-open .metric.ev { color: var(--ok); font-weight: 700; }
+    .vp-open .log-bet { grid-column: 1 / -1; text-align: right; margin-top: -2px; }
+    .vp-open .log-bet a { color: var(--accent); text-decoration: none; font-size: 11px; }
 
     .tscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     table.settled { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -114,6 +116,7 @@
       <a href="value-picks.html" class="current">Value Picks</a>
       <a href="statarea-picks.html">Statarea Picks</a>
       <a href="results.html">Results</a>
+      <a href="bankroll.html">Bankroll</a>
     </div>
   </header>
 
@@ -201,6 +204,41 @@
     // local calendar day of an ISO instant, as YYYY-MM-DD
     const localDay = (x) => new Date(x).toLocaleDateString('en-CA');
     const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+
+    // Reads just enough of the bankroll tracker's own localStorage (see
+    // bankroll.html) to suggest a stake on the "Log bet" link below — never
+    // writes it. Falls back to no suggestion if nothing's been set up yet.
+    function currentBankroll() {
+      try {
+        const raw = localStorage.getItem('bankrollTracker.v1');
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        const starting = typeof parsed.startingBankroll === 'number' ? parsed.startingBankroll : null;
+        if (starting == null) return null;
+        const bets = Array.isArray(parsed.bets) ? parsed.bets : [];
+        const net = bets.reduce((s, b) => {
+          if (b.result === 'won') return s + b.stake * (b.odd - 1);
+          if (b.result === 'lost') return s - b.stake;
+          return s;
+        }, 0);
+        return starting + net;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    function logBetHref(p) {
+      const bankroll = currentBankroll();
+      const stake = bankroll && p.quarterKelly ? Math.min(bankroll, bankroll * p.quarterKelly) : null;
+      const params = new URLSearchParams({
+        fixture: p.fixture,
+        market: p.market,
+        pick: p.label,
+        odd: p.odd.toFixed(2),
+      });
+      if (stake) params.set('stake', stake.toFixed(2));
+      return `bankroll.html?${params.toString()}`;
+    }
 
     // Mirrors src/results/pickBreakdown.js server-side — duplicated here
     // (same pattern as the rest of this page's summarize()) since this
@@ -334,6 +372,7 @@
             <div class="metric ev"><span class="l">EV</span>${signedPct(p.ev)}</div>
             <div class="metric fair"><span class="l">fair / price</span>${pct(p.refProb)} / ${pct(p.impliedProb)}</div>
             <div class="metric"><span class="l">¼-Kelly</span>${pct(p.quarterKelly)}</div>
+            <div class="log-bet"><a href="${logBetHref(p)}">Log bet &rarr;</a></div>
           </div>`
           )
           .join('');
