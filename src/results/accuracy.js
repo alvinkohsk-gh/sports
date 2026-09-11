@@ -21,15 +21,45 @@ function findResult(entry, results) {
   });
 }
 
+// The SG Pools price on the entry's picked outcome as it stood at the
+// moment the pick was captured (entry.capturedAt — the tipster's final
+// pre-kickoff call keeps overwriting this right up until kickoff, so it's
+// the closing-line-adjacent capture time, same spirit as valuePicks.js's
+// CLV tracking) — not the current/closing price, which is a different
+// question. Pulled from oddsHistory.js's rolling per-fixture price series;
+// only ever looks at points at or before the capture time, so a fixture
+// with no price recorded yet by then reads as unavailable (null) rather
+// than showing a later, wrong-for-the-moment price.
+function oddAtCapture(entry, oddsHistoryByKey) {
+  const points = oddsHistoryByKey.get(entry.matchKey);
+  if (!points || !points.length) return { oneX2: null, ou: null };
+  const capturedMs = entry.capturedAt || Date.parse(entry.kickoffISO) || 0;
+  let asOf = null;
+  for (const p of points) {
+    const t = Date.parse(p.capturedAtISO) || 0;
+    if (t <= capturedMs) asOf = p;
+    else break; // points are appended in chronological order
+  }
+  if (!asOf) return { oneX2: null, ou: null };
+
+  const oneX2 = entry.pick && asOf.oneX2 ? asOf.oneX2[entry.pick] ?? null : null;
+  const ou =
+    entry.totalsPick && asOf.ou && asOf.ou.point === entry.totalsPick.point
+      ? asOf.ou[entry.totalsPick.selection] ?? null
+      : null;
+  return { oneX2, ou };
+}
+
 /**
  * Grades any history entry that (a) has a matching Forebet result, (b)
  * kicked off 2-60h ago, and (c) isn't graded yet, then returns the full
  * rolling sample set (old + new, pruned to ~5 days) plus a per-site
  * accuracy summary over the last `windowHours`.
  */
-function grade(history, results, prevSamples, { windowHours = 48, nowMs = Date.now() } = {}) {
+function grade(history, results, prevSamples, { windowHours = 48, nowMs = Date.now(), oddsHistory = null } = {}) {
   const already = new Set((prevSamples || []).map((s) => `${s.matchKey}::${s.site}`));
   const fresh = [];
+  const oddsHistoryByKey = new Map((oddsHistory?.entries || []).map((e) => [e.matchKey, e.points || []]));
 
   for (const e of history.entries || []) {
     const id = `${e.matchKey}::${e.site}`;
@@ -53,6 +83,8 @@ function grade(history, results, prevSamples, { windowHours = 48, nowMs = Date.n
     }
     if (oneX2Correct === null && ouCorrect === null) continue;
 
+    const odds = oddsHistoryByKey.size ? oddAtCapture(e, oddsHistoryByKey) : { oneX2: null, ou: null };
+
     fresh.push({
       matchKey: e.matchKey,
       site: e.site,
@@ -63,8 +95,14 @@ function grade(history, results, prevSamples, { windowHours = 48, nowMs = Date.n
       pick: e.pick || null,
       actual1x2: act,
       oneX2Correct,
+      // SG Pools price on the pick at the moment it was captured (see
+      // oddAtCapture) — null when the fixture had no recorded odds-
+      // history point by then (e.g. graded from before that feature
+      // existed, or Forebet-only coverage with no SG Pools price at all).
+      oneX2Odd: odds.oneX2,
       ou: e.totalsPick ? `${e.totalsPick.selection} ${e.totalsPick.point}` : null,
       ouCorrect,
+      ouOdd: odds.ou,
       gradedAt: new Date(nowMs).toISOString(),
     });
   }

@@ -177,8 +177,10 @@ router.get('/accuracy', async (req, res) => {
         score: s.score,
         pick: s.pick || null,
         oneX2Correct: s.oneX2Correct ?? null,
+        oneX2Odd: s.oneX2Odd ?? null,
         ou: s.ou || null,
         ouCorrect: s.ouCorrect ?? null,
+        ouOdd: s.ouOdd ?? null,
       })),
     pending: pending.slice(0, 3000),
   });

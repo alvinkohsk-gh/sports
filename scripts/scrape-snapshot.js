@@ -226,7 +226,7 @@ async function loadPublished(file, fallback) {
   }
   console.error(`[scrape-snapshot] FT-score rows: ${results.length} (flashscore ${fsCount})`);
 
-  const graded = grade(history, results, prevAccuracy.samples || [], { windowHours: 48 });
+  const graded = grade(history, results, prevAccuracy.samples || [], { windowHours: 48, oddsHistory });
   const accuracy = { ...graded.summary, samples: graded.samples };
 
   const vpMerged = mergeValuePicks(prevValuePicks, snapshot.matches, nowISO);
