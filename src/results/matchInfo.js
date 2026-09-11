@@ -19,7 +19,9 @@ const KEEP_CACHE_MS = 10 * 24 * 60 * 60 * 1000;
 // instead of serving stale-shaped data for up to TTL_MS/KEEP_CACHE_MS.
 // v2: h2h rows gained homeTeamName/awayTeamName/result; fixture rows
 // gained result (PR #19).
-const SCHEMA_VERSION = 2;
+// v3: fixture rows gained venue ('H'/'A' — which side the subject team
+// played on in that past fixture).
+const SCHEMA_VERSION = 3;
 
 // Finds a match's Forebet detail-page URL from this cycle's raw Forebet
 // rows (forebet.js's extractRows captures `matchUrl` per row).

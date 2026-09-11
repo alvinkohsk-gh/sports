@@ -252,6 +252,17 @@ function renderH2HTable(h2h) {
   return `<table class="h2h-table"><tbody>${rows}</tbody></table>`;
 }
 
+// r.venue ('H'/'A', null if Forebet's markup didn't expose it — see
+// forebetMatchInfo.js's rowVenue) is which side THIS panel's own subject
+// team played on in that past fixture; homeGoals/awayGoals are always the
+// literal home/away score, so the badge is what tells you which of the
+// two numbers was the subject team's own.
+function venueBadge(venue) {
+  if (venue === 'H') return '<span class="venue-badge venue-h" title="Home">H</span>';
+  if (venue === 'A') return '<span class="venue-badge venue-a" title="Away">A</span>';
+  return '';
+}
+
 function renderFixturesTable(fixtures) {
   if (!fixtures || !fixtures.length) return '<div class="detail-muted">No recent fixtures available.</div>';
   const rows = fixtures
@@ -259,6 +270,7 @@ function renderFixturesTable(fixtures) {
       (r) => `
       <tr>
         <td>${r.date ? escapeHtml(r.date) : ''}</td>
+        <td>${venueBadge(r.venue)}</td>
         <td class="num${resultClass(r.result)}">${r.homeGoals} – ${r.awayGoals}</td>
         <td>${r.opponent ? escapeHtml(r.opponent) : ''}</td>
       </tr>`
