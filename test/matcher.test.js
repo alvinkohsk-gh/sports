@@ -30,6 +30,10 @@ const SHOULD_MATCH = [
   ['NE Revolution', 'New England Revolution'],
   ['NE Revolution', 'New Eng. Revolution'],
   ['NY Red Bulls', 'New York Red Bulls'],
+  // SG Pools writes this Liga MX/Expansion MX club as "UNAM Mexico",
+  // Flashscore as "UNAM Pumas" — production showed this pair failing to
+  // match (in-play live score never got filled in from Flashscore).
+  ['UNAM Mexico', 'UNAM Pumas'],
 ];
 
 const SHOULD_NOT_MATCH = [

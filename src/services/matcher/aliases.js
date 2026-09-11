@@ -26,6 +26,10 @@ const ALIASES = [
   ['racing club', 'rc avellaneda', 'racing club de avellaneda', 'racing de avellaneda'],
   ['boca juniors', 'boca'],
   ['river plate', 'river'],
+  // SG Pools lists this Liga MX/Expansion MX club as "UNAM Mexico",
+  // Flashscore as "UNAM Pumas" — no shared token besides "unam" itself,
+  // so plain overlap scoring rejects it (score 0.5, one matched token).
+  ['unam pumas', 'unam mexico', 'pumas unam'],
 ];
 
 const ALIAS_LOOKUP = new Map();
