@@ -52,6 +52,7 @@ const SITE_LABELS = {
   footystats: 'FootyStats',
   statarea: 'Statarea',
   footballpredictions: 'FootballPredictions',
+  vitibet: 'Vitibet',
 };
 
 if (tipsterSelectEl) {
