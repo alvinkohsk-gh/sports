@@ -31,6 +31,7 @@ const { mergeValuePicks, gradeValuePicks, summarizeValuePicks } = require('../sr
 const { assessStatareaValue } = require('../src/services/statareaValue');
 const { attachMatchInfo } = require('../src/results/matchInfo');
 const { mergeOddsHistory } = require('../src/results/oddsHistory');
+const { detectSteamMove } = require('../src/services/steamMove');
 
 const OUT = process.argv[2] || 'snapshot.json';
 const DIR = process.argv[3] || path.dirname(OUT) || '.';
@@ -170,6 +171,20 @@ async function loadPublished(file, fallback) {
   // one recorded, so most cycles are a no-op. Covers both boards: a
   // fixture's line can keep drifting once it's live too.
   const oddsHistory = mergeOddsHistory(prevOddsHistory, [...snapshot.matches, ...snapshot.inPlay], nowISO);
+
+  // Steam-move flag (src/services/steamMove.js) — a sudden, sizeable SG
+  // Pools price move just now, read straight off the price history this
+  // same cycle just updated. Attached directly to each match (`m.steamMove`,
+  // null when nothing qualifies) rather than fetched on demand like the
+  // rest of odds-history: the board needs it on every card, not just the
+  // per-match detail modal.
+  {
+    const oddsHistoryByKey = new Map(oddsHistory.entries.map((e) => [e.matchKey, e]));
+    for (const m of [...snapshot.matches, ...snapshot.inPlay]) {
+      const entry = oddsHistoryByKey.get(m.matchKey);
+      m.steamMove = entry ? detectSteamMove(entry.points) : null;
+    }
+  }
 
   // H2H + recent form (Forebet) for each SG Pools fixture Forebet also
   // covers — see src/results/matchInfo.js. Mutates snapshot.matches,

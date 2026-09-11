@@ -382,6 +382,20 @@ Forebet's results pages and WinDrawWin's results table as fallbacks.
   series on demand — the match-detail modal fetches it when opened,
   keyed by the `matchKey` field every match object now carries (same key
   `history.js`/`valuePicks.js`/`matchInfo.js` already use).
+- **Steam-move detection**. `src/services/steamMove.js`'s `detectSteamMove`
+  looks at a fixture's two most recent odds-history points each scrape and
+  flags it as a steam move when one outcome's price changed by >= 8%
+  (`THRESHOLD_PCT`) in <= 20 minutes (`WINDOW_MIN`) — big *and* fast, so a
+  price that drifted the same amount over hours doesn't count (that's just
+  the market settling). `scripts/scrape-snapshot.js` computes this once per
+  cycle, right after that cycle's own `mergeOddsHistory` call, and attaches
+  the result directly to each match as `m.steamMove` (`null` when nothing
+  qualifies) — unlike the price history above, this rides along on
+  `GET /api/matches` since the board shows it on every card, not just the
+  per-match modal. `direction` is `'shortening'` (price came down — that
+  side is being backed) or `'drifting'` (price went up); the board shows it
+  as a badge, colored like a value flag for shortening and like an urgent
+  countdown for drifting.
 - **Segmented backtesting**. Beyond the existing by-market breakdown, the
   Value Picks page's summary now also groups settled picks by league and
   by odds band (`< 1.50` / `1.50–1.99` / `2.00–2.99` / `3.00+`) —

@@ -199,6 +199,22 @@ function renderOdds(match) {
   return `<div class="odds-block"><div class="section-label">Singapore Pools odds</div>${rows}${badge}</div>`;
 }
 
+// A sudden, sizeable SG Pools price move (src/services/steamMove.js,
+// computed server-side off the price history each scrape already builds)
+// — a signal sharp/informed money may have just come in on that side.
+// 'shortening' (price came down) is highlighted like a value badge;
+// 'drifting' (price went up) uses the "urgent" color since it means
+// money is moving away from that side.
+function renderSteamMove(match) {
+  const s = match.steamMove;
+  if (!s) return '';
+  const ouPoint = match.odds && match.odds.ou ? match.odds.ou.point : null;
+  const label = outcomeLabel(s.outcome, s.market.startsWith('O/U') ? ouPoint : null);
+  const verb = s.direction === 'shortening' ? 'shortened' : 'drifted';
+  const tip = `${s.market} ${label}: ${s.fromOdd.toFixed(2)} → ${s.toOdd.toFixed(2)} in ~${s.minutesApart} min`;
+  return `<div class="steam-badge ${s.direction}" title="${escapeHtml(tip)}">🔥 Steam: ${s.market} ${label} ${verb} ${signedPct(s.pctChange)}</div>`;
+}
+
 // ---- match detail modal: recent H2H + form (see src/results/matchInfo.js,
 // scraped from Forebet and attached to a match as `headToHead` by the
 // periodic snapshot job — only present for matches Forebet also covers
@@ -353,6 +369,7 @@ function renderCard(match) {
     ${renderPick(match.topPick)}
     ${renderTipsters(match.tipsterConsensus, selectedTipster)}
     ${renderOdds(match)}
+    ${renderSteamMove(match)}
     <div class="card-hint">Tap for recent form &amp; head-to-head &rarr;</div>
   `;
   return div;
@@ -486,6 +503,7 @@ function renderInPlayCard(m) {
     ${renderPick(m.topPick)}
     ${renderTipsters(m.tipsterConsensus, selectedTipster)}
     ${oddsRow}
+    ${renderSteamMove(m)}
   `;
   return div;
 }
