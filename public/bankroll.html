@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bankroll — SG Pools Tipster Predictions</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .subnav { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    .subnav a { color: var(--accent); text-decoration: none; font-size: 13px; }
+    .subnav a.current { color: var(--text); font-weight: 700; }
+
+    .summary {
+      display: flex; flex-wrap: wrap; gap: 10px 24px;
+      padding: 14px 16px; margin-bottom: 20px;
+      border: 1px solid var(--card-border); border-radius: 12px; background: var(--card);
+    }
+    .summary .stat { display: flex; flex-direction: column; }
+    .summary .stat .lab { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .summary .stat .val { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .summary .stat .val.pos { color: var(--ok); }
+    .summary .stat .val.neg { color: var(--urgent); }
+
+    .chart-wrap {
+      border: 1px solid var(--card-border); border-radius: 12px; background: var(--card);
+      padding: 14px 16px; margin-bottom: 20px;
+    }
+    .chart-wrap h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 0 0 10px; }
+    .chart-wrap svg { width: 100%; height: 160px; display: block; }
+
+    .bankroll-form {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr 1fr 0.7fr 0.7fr 0.9fr auto;
+      gap: 8px; align-items: end;
+      padding: 14px 16px; margin-bottom: 20px;
+      border: 1px solid var(--card-border); border-radius: 12px; background: var(--card);
+    }
+    .bankroll-form label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .bankroll-form input, .bankroll-form select {
+      background: #0f172a; color: var(--text);
+      border: 1px solid var(--card-border); border-radius: 6px; padding: 6px 8px; font-size: 13px;
+    }
+    .bankroll-form button {
+      background: var(--accent); color: #05233a; border: none; border-radius: 6px;
+      padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; height: fit-content;
+    }
+    .bankroll-form button:hover { opacity: 0.9; }
+
+    .startbank-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 14px; font-size: 13px; color: var(--muted);
+    }
+    .startbank-row input {
+      background: #0f172a; color: var(--text);
+      border: 1px solid var(--card-border); border-radius: 6px; padding: 5px 8px; font-size: 13px; width: 110px;
+    }
+    .startbank-row button {
+      background: none; border: 1px solid var(--card-border); color: var(--muted);
+      border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer;
+    }
+    .startbank-row button.danger { color: var(--urgent); border-color: rgba(248,113,113,0.4); margin-left: auto; }
+
+    .tscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table.bets { width: 100%; border-collapse: collapse; font-size: 12px; }
+    table.bets th, table.bets td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--card-border); }
+    table.bets th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+    table.bets td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    table.bets select { background: #0f172a; color: var(--text); border: 1px solid var(--card-border); border-radius: 6px; padding: 3px 6px; font-size: 12px; }
+    table.bets .pl-pos { color: var(--ok); }
+    table.bets .pl-neg { color: var(--urgent); }
+    table.bets .del-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 2px 6px; }
+    table.bets .del-btn:hover { color: var(--urgent); }
+
+    @media (max-width: 720px) {
+      h1 { font-size: 16px; }
+      .subnav { font-size: 12px; gap: 12px; }
+      .summary { gap: 10px 16px; padding: 12px 14px; }
+      .summary .stat .val { font-size: 16px; }
+      .bankroll-form { grid-template-columns: 1fr 1fr; }
+      .tscroll { margin: 0 -14px; padding: 0 14px; }
+      table.bets { min-width: 640px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Bankroll</h1>
+    <div class="subnav">
+      <span class="status" id="status"></span>
+      <a href="index.html">&larr; Board</a>
+      <a href="value-picks.html">Value Picks</a>
+      <a href="statarea-picks.html">Statarea Picks</a>
+      <a href="results.html">Results</a>
+      <a href="bankroll.html" class="current">Bankroll</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="startbank-row">
+      <span>Starting bankroll</span>
+      <input type="number" id="starting-bankroll" step="1" min="0" />
+      <button id="save-starting">Save</button>
+      <button id="reset-all" class="danger">Reset all data</button>
+    </div>
+
+    <div class="summary" id="summary"></div>
+
+    <div class="chart-wrap">
+      <h2>Bankroll over time</h2>
+      <svg id="chart" viewBox="0 0 600 160" preserveAspectRatio="none"></svg>
+    </div>
+
+    <form class="bankroll-form" id="add-form">
+      <label>Fixture / note
+        <input type="text" id="f-fixture" placeholder="Man Utd v Arsenal" required />
+      </label>
+      <label>Market
+        <input type="text" id="f-market" placeholder="1X2" />
+      </label>
+      <label>Pick
+        <input type="text" id="f-pick" placeholder="Home" />
+      </label>
+      <label>Odd
+        <input type="number" id="f-odd" step="0.01" min="1.01" required />
+      </label>
+      <label>Stake
+        <input type="number" id="f-stake" step="0.01" min="0.01" required />
+      </label>
+      <label>Date
+        <input type="date" id="f-date" />
+      </label>
+      <button type="submit">Log bet</button>
+    </form>
+
+    <div data-empty class="empty" id="empty" hidden>No bets logged yet.</div>
+    <div class="tscroll">
+      <table class="bets" id="bets-table" hidden>
+        <thead>
+          <tr>
+            <th>Date</th><th>Fixture</th><th>Market</th><th>Pick</th>
+            <th class="num">Odd</th><th class="num">Stake</th><th>Result</th><th class="num">P/L</th><th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <p class="disclaimer">
+      Everything on this page — starting bankroll, logged bets, results — is stored only in this
+      browser's local storage. It is never sent to a server and won't follow you to another device
+      or browser. A "won" bet pays out stake&nbsp;&times;&nbsp;(odd&nbsp;&minus;&nbsp;1); "lost" loses
+      the stake; "void" returns the stake with no effect on the bankroll; "pending" bets don't count
+      toward the record until you set a result. ROI and win rate are computed over settled
+      (won/lost) bets only. Nothing here is financial advice. Gamble responsibly.
+    </p>
+  </main>
+
+  <script src="bankroll-calc.js"></script>
+  <script>
+    const STORAGE_KEY = 'bankrollTracker.v1';
+
+    function loadStore() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return { startingBankroll: 1000, bets: [] };
+        const parsed = JSON.parse(raw);
+        return {
+          startingBankroll: typeof parsed.startingBankroll === 'number' ? parsed.startingBankroll : 1000,
+          bets: Array.isArray(parsed.bets) ? parsed.bets : [],
+        };
+      } catch (err) {
+        return { startingBankroll: 1000, bets: [] };
+      }
+    }
+
+    function saveStore(store) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+      } catch (err) {
+        statusEl.textContent = 'Could not save — local storage unavailable or full.';
+      }
+    }
+
+    const statusEl = document.getElementById('status');
+    const startingBankrollEl = document.getElementById('starting-bankroll');
+    const saveStartingBtn = document.getElementById('save-starting');
+    const resetAllBtn = document.getElementById('reset-all');
+    const summaryEl = document.getElementById('summary');
+    const chartEl = document.getElementById('chart');
+    const addForm = document.getElementById('add-form');
+    const fFixture = document.getElementById('f-fixture');
+    const fMarket = document.getElementById('f-market');
+    const fPick = document.getElementById('f-pick');
+    const fOdd = document.getElementById('f-odd');
+    const fStake = document.getElementById('f-stake');
+    const fDate = document.getElementById('f-date');
+    const emptyEl = document.getElementById('empty');
+    const tableEl = document.getElementById('bets-table');
+
+    let store = loadStore();
+
+    const signedU = (v) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}`;
+    const pct = (v) => (v == null ? '—' : `${(v * 100).toFixed(1)}%`);
+    const todayLocal = () => new Date().toLocaleDateString('en-CA');
+
+    function renderSummary() {
+      const s = BankrollCalc.summarize(store.startingBankroll, store.bets);
+      const curve = BankrollCalc.bankrollCurve(store.startingBankroll, store.bets);
+      const dd = BankrollCalc.maxDrawdown(curve);
+      const plCls = s.netProfit > 0 ? 'pos' : s.netProfit < 0 ? 'neg' : '';
+      const roiCls = s.roi > 0 ? 'pos' : s.roi < 0 ? 'neg' : '';
+      summaryEl.innerHTML =
+        `<div class="stat"><span class="lab">Bankroll</span><span class="val">${s.currentBankroll.toFixed(2)}</span></div>` +
+        `<div class="stat"><span class="lab">Net P/L</span><span class="val ${plCls}">${signedU(s.netProfit)}</span></div>` +
+        `<div class="stat"><span class="lab">ROI</span><span class="val ${roiCls}">${pct(s.roi)}</span></div>` +
+        `<div class="stat"><span class="lab">Record</span><span class="val">${s.wonCount}–${s.settledCount - s.wonCount}</span></div>` +
+        `<div class="stat"><span class="lab">Win rate</span><span class="val">${pct(s.winRate)}</span></div>` +
+        `<div class="stat"><span class="lab">Max drawdown</span><span class="val">${pct(dd)}</span></div>` +
+        `<div class="stat"><span class="lab">Pending</span><span class="val">${s.pendingCount} (${s.pendingStaked.toFixed(2)} staked)</span></div>`;
+    }
+
+    function renderChart() {
+      const curve = BankrollCalc.bankrollCurve(store.startingBankroll, store.bets);
+      const W = 600, H = 160, PAD = 8;
+      if (curve.length < 2) {
+        chartEl.innerHTML = `<line x1="0" y1="${H / 2}" x2="${W}" y2="${H / 2}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="4 4" />`;
+        return;
+      }
+      const values = curve.map((p) => p.bankroll);
+      const min = Math.min(...values), max = Math.max(...values);
+      const range = max - min || 1;
+      const x = (i) => (i / (curve.length - 1)) * (W - PAD * 2) + PAD;
+      const y = (v) => H - PAD - ((v - min) / range) * (H - PAD * 2);
+      const path = curve.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(1)} ${y(p.bankroll).toFixed(1)}`).join(' ');
+      const startY = y(store.startingBankroll).toFixed(1);
+      const last = curve[curve.length - 1].bankroll;
+      const lineColor = last >= store.startingBankroll ? 'var(--ok)' : 'var(--urgent)';
+      chartEl.innerHTML =
+        `<line x1="0" y1="${startY}" x2="${W}" y2="${startY}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="4 4" />` +
+        `<path d="${path}" fill="none" stroke="${lineColor}" stroke-width="2" />`;
+    }
+
+    function renderTable() {
+      const bets = store.bets.slice().sort((a, b) => Date.parse(b.date) - Date.parse(a.date) || (b.id > a.id ? 1 : -1));
+      emptyEl.hidden = bets.length > 0;
+      tableEl.hidden = bets.length === 0;
+      tableEl.querySelector('tbody').innerHTML = bets
+        .map((b) => {
+          const profit = BankrollCalc.profitFor(b);
+          const plCls = profit > 0 ? 'pl-pos' : profit < 0 ? 'pl-neg' : '';
+          const plText = BankrollCalc.isDecided(b) ? signedU(profit) : '—';
+          return `
+          <tr data-id="${b.id}">
+            <td>${b.date}</td>
+            <td>${b.fixture}</td>
+            <td>${b.market || '—'}</td>
+            <td>${b.pick || '—'}</td>
+            <td class="num">${b.odd.toFixed(2)}</td>
+            <td class="num">${b.stake.toFixed(2)}</td>
+            <td>
+              <select data-result>
+                <option value="pending" ${b.result === 'pending' ? 'selected' : ''}>Pending</option>
+                <option value="won" ${b.result === 'won' ? 'selected' : ''}>Won</option>
+                <option value="lost" ${b.result === 'lost' ? 'selected' : ''}>Lost</option>
+                <option value="void" ${b.result === 'void' ? 'selected' : ''}>Void</option>
+              </select>
+            </td>
+            <td class="num ${plCls}">${plText}</td>
+            <td><button class="del-btn" data-del title="Delete">✕</button></td>
+          </tr>`;
+        })
+        .join('');
+    }
+
+    function renderAll() {
+      startingBankrollEl.value = store.startingBankroll;
+      renderSummary();
+      renderChart();
+      renderTable();
+    }
+
+    tableEl.querySelector('tbody').addEventListener('change', (e) => {
+      const select = e.target.closest('[data-result]');
+      if (!select) return;
+      const id = select.closest('tr').dataset.id;
+      const bet = store.bets.find((b) => b.id === id);
+      if (!bet) return;
+      bet.result = select.value;
+      saveStore(store);
+      renderAll();
+    });
+
+    tableEl.querySelector('tbody').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-del]');
+      if (!btn) return;
+      const id = btn.closest('tr').dataset.id;
+      if (!confirm('Delete this bet?')) return;
+      store.bets = store.bets.filter((b) => b.id !== id);
+      saveStore(store);
+      renderAll();
+    });
+
+    saveStartingBtn.addEventListener('click', () => {
+      const v = Number(startingBankrollEl.value);
+      if (!Number.isFinite(v) || v < 0) return;
+      store.startingBankroll = v;
+      saveStore(store);
+      renderAll();
+    });
+
+    resetAllBtn.addEventListener('click', () => {
+      if (!confirm('Reset the starting bankroll and delete every logged bet? This cannot be undone.')) return;
+      store = { startingBankroll: 1000, bets: [] };
+      saveStore(store);
+      renderAll();
+    });
+
+    addForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const odd = Number(fOdd.value);
+      const stake = Number(fStake.value);
+      if (!fFixture.value.trim() || !(odd > 1) || !(stake > 0)) return;
+      store.bets.push({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        date: fDate.value || todayLocal(),
+        fixture: fFixture.value.trim(),
+        market: fMarket.value.trim(),
+        pick: fPick.value.trim(),
+        odd,
+        stake,
+        result: 'pending',
+      });
+      saveStore(store);
+      addForm.reset();
+      fDate.value = todayLocal();
+      renderAll();
+    });
+
+    // Prefill from a "Log bet" link elsewhere on the site, e.g.
+    // bankroll.html?fixture=...&market=...&pick=...&odd=...&stake=...
+    function prefillFromQuery() {
+      const p = new URLSearchParams(location.search);
+      if (p.has('fixture')) fFixture.value = p.get('fixture');
+      if (p.has('market')) fMarket.value = p.get('market');
+      if (p.has('pick')) fPick.value = p.get('pick');
+      if (p.has('odd')) fOdd.value = p.get('odd');
+      if (p.has('stake')) fStake.value = p.get('stake');
+    }
+
+    fDate.value = todayLocal();
+    prefillFromQuery();
+    renderAll();
+  </script>
+</body>
+</html>
