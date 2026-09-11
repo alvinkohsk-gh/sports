@@ -1,4 +1,4 @@
-const { ALIAS_LOOKUP, TOKEN_EXPANSIONS } = require('./aliases');
+const { ALIAS_LOOKUP, TOKEN_EXPANSIONS, YOUTH_TOKENS } = require('./aliases');
 
 function stripDiacritics(s) {
   return s.normalize('NFKD').replace(/[̀-ͯ]/g, '');
@@ -10,8 +10,14 @@ function stripDiacritics(s) {
 // works on.
 function normalizeTeamName(raw) {
   let s = stripDiacritics(String(raw || '').toLowerCase())
-    // drop parenthetical qualifiers: "Vitoria (BRA)", "Al Hilal (KSA)"
-    .replace(/\([^)]*\)/g, ' ')
+    // Drop parenthetical qualifiers: "Vitoria (BRA)", "Al Hilal (KSA)" —
+    // except a reserve/youth marker written the same way ("Sociedad (B)",
+    // "Ajax (Jong)"), which is kept as its own token instead of discarded.
+    // Losing it entirely used to make a reserve-side fixture ("Sociedad
+    // (B)" on SG Pools) fail to match its own full name elsewhere ("Real
+    // Sociedad B" on Forebet) — both index.js's youth-marker guard and its
+    // overlap scoring need that token present on both sides.
+    .replace(/\(([^)]*)\)/g, (_, inner) => (YOUTH_TOKENS.has(inner.trim()) ? ` ${inner} ` : ' '))
     // separators to spaces so "al-hilal", "j.league" split into tokens
     .replace(/[.\-_/&+',]/g, ' ')
     .replace(/[^a-z0-9\s]/g, ' ')

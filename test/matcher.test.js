@@ -34,6 +34,29 @@ const SHOULD_MATCH = [
   // Flashscore as "UNAM Pumas" — production showed this pair failing to
   // match (in-play live score never got filled in from Flashscore).
   ['UNAM Mexico', 'UNAM Pumas'],
+  // SG Pools writes this Brazilian club as "Atl Paranaense", Forebet as
+  // "Atlético PR" — production showed this pair failing to match (no
+  // Forebet H2H/form/recent-fixtures fetched for the fixture at all).
+  ['Atl Paranaense', 'Atlético PR'],
+  // Full board audit against a real production snapshot (2026-09-11)
+  // turned up these further mismatches, all missing Forebet H2H data:
+  ['Tochigi City', 'Tochigi Uva'], // club renamed; SG Pools uses the new name
+  ['V Hachinohe', 'Vanraure Hachinohe'],
+  ['Yokohama FM', 'Yokohama Marinos'],
+  ['T Miyazaki', 'Tegevajaro Miyazaki'],
+  ['Fujieda FC', 'Fujieda MYFC'],
+  ['L City Sailors', 'Lion City'],
+  ["Monchengladbach", "Borussia M'gladbach"], // apostrophe splits into "m gladbach"
+  ['E Frankfurt', 'Eintracht Frankfurt'],
+  ['MK Dons', 'Milton Keynes Dons'],
+  ['Everton VDM', 'Everton de Vina'],
+  ['Sporting KC', 'Sporting Kansas City'],
+  ['LA Galaxy', 'Los Angeles Galaxy'],
+  ['Seattle Sndrs', 'Seattle Sounders'],
+  // "(B)" is a reserve-team marker, not a country/qualifier tag like
+  // "(BRA)"/"(KSA)" above — normalize.js used to strip it the same way,
+  // losing the marker entirely and breaking the youth-side guard below.
+  ['Sociedad (B)', 'Real Sociedad B'],
 ];
 
 const SHOULD_NOT_MATCH = [
@@ -47,6 +70,9 @@ const SHOULD_NOT_MATCH = [
   ['Manchester United', 'Manchester City'],
   ['Sporting Gijon', 'Sporting CP'],
   ['Getafe', 'Elche'],
+  // Regression check for the "(B)" reserve-marker fix above: the main
+  // team must still not match its own reserve side.
+  ['Sociedad', 'Real Sociedad B'],
 ];
 
 test('pairs that should match', () => {
