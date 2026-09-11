@@ -2,14 +2,17 @@ const REFRESH_MS = 15000;
 const matchesEl = document.getElementById('matches');
 const emptyEl = document.getElementById('empty');
 const statusEl = document.getElementById('status');
-const inplayEl = document.getElementById('inplay');
 const tipsterSelectEl = document.getElementById('tipster-select');
 const modalEl = document.getElementById('match-modal');
 const modalBodyEl = document.getElementById('modal-body');
 const modalCloseEl = document.getElementById('modal-close');
 
+// One combined, sorted list — `GET /api/matches` splits open (pre-kickoff)
+// and in-play fixtures into `matches`/`inPlay` (SG Pools itself serves
+// them from two separate feeds — see aggregator.js), but the board shows
+// them together: every match a live-betting indicator (`m.live`), sorted
+// so live ones surface at the top.
 let currentMatches = [];
-let currentInPlay = [];
 let selectedTipster = ''; // '' = all tipsters
 
 function formatCountdown(ms) {
@@ -65,7 +68,6 @@ if (tipsterSelectEl) {
   tipsterSelectEl.addEventListener('change', () => {
     selectedTipster = tipsterSelectEl.value;
     renderMatches(currentMatches);
-    renderInPlay(currentInPlay);
   });
 }
 
@@ -366,22 +368,65 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && modalEl && !modalEl.hidden) closeMatchDetail();
 });
 
+// A match card that's currently live (SG Pools has it open for live
+// betting — `match.live`, from a separate feed with no clock/score of its
+// own; see liveClock's comment) gets a "● LIVE" badge plus a running
+// clock/score instead of the plain countdown-to-kickoff.
+function renderLiveBadgeAndBody(match) {
+  const odds = match.odds && match.odds.oneX2;
+  const oddsRow = odds
+    ? `<div class="section-label">Live SG Pools 1X2: <b>${Number(odds.home).toFixed(2)}</b> / <b>${Number(odds.draw).toFixed(2)}</b> / <b>${Number(odds.away).toFixed(2)}</b></div>`
+    : '';
+  // Real running score from Flashscore when we could match it; otherwise
+  // the O/U-line estimate ("~N goals so far"). The kickoff time shown
+  // here prefers Flashscore's own recorded kickoff too, for the same
+  // reason the live-clock above does (see liveClock's comment).
+  const actualKickoff = match.liveKickoffISO || match.kickoffISO;
+  const scoreRow = match.liveScore
+    ? `<div class="live-score">${match.liveScore.replace('-', ' - ')}</div>
+       <div class="kickoff-time">kicked off ${new Date(actualKickoff).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · score via Flashscore</div>`
+    : `<div class="kickoff-time">Kicked off ${new Date(match.kickoffISO).toLocaleString()}${
+        match.goalsSoFar != null ? ` · ~${match.goalsSoFar} goal${match.goalsSoFar === 1 ? '' : 's'} so far (est.)` : ''
+      }</div>`;
+  return {
+    badge: `<span class="badge live-badge"><span class="live-dot" aria-hidden="true"></span>LIVE</span>`,
+    body: `
+    <div class="live-clock" data-liveclock>${liveClock(match.kickoffISO, match.liveKickoffISO, match.liveStage)}</div>
+    ${scoreRow}
+    ${renderPick(match.topPick)}
+    ${renderTipsters(match.tipsterConsensus, selectedTipster)}
+    ${oddsRow}
+    ${renderSteamMove(match)}`,
+  };
+}
+
 function renderCard(match) {
   const div = document.createElement('div');
-  div.className = 'card clickable';
+  div.className = match.live ? 'card live clickable' : 'card clickable';
   div.id = `match-${match.id}`;
   div.dataset.kickoff = match.kickoffISO;
+  if (match.live) {
+    if (match.liveKickoffISO) div.dataset.livekickoff = match.liveKickoffISO;
+    if (match.liveStage) div.dataset.livestage = match.liveStage;
+  }
   div.addEventListener('click', () => openMatchDetail(match));
+
+  const live = match.live ? renderLiveBadgeAndBody(match) : null;
   div.innerHTML = `
-    <span class="badge">Open on Singapore Pools</span>
+    ${live ? live.badge : '<span class="badge">Open on Singapore Pools</span>'}
     <div class="league">${match.league || ''}</div>
     <div class="teams">${match.homeTeam} vs ${match.awayTeam}</div>
+    ${
+      live
+        ? live.body
+        : `
     <div class="countdown" data-countdown></div>
     <div class="kickoff-time">Kickoff: ${new Date(match.kickoffISO).toLocaleString()}</div>
     ${renderPick(match.topPick)}
     ${renderTipsters(match.tipsterConsensus, selectedTipster)}
     ${renderOdds(match)}
-    ${renderSteamMove(match)}
+    ${renderSteamMove(match)}`
+    }
     <div class="card-hint">Tap for recent form &amp; head-to-head &rarr;</div>
   `;
   return div;
@@ -407,8 +452,18 @@ function coveredBy(match, site) {
   return (match.tipsterConsensus?.picks || []).some((p) => p.site === site);
 }
 
+// Live matches surface at the top (each still sorted among themselves by
+// kickoff), then everything else in kickoff order — so a card marked
+// LIVE is never buried below a long list of not-yet-kicked-off fixtures.
+function sortForBoard(matches) {
+  return matches.slice().sort((a, b) => {
+    if (!!a.live !== !!b.live) return a.live ? -1 : 1;
+    return new Date(a.kickoffISO) - new Date(b.kickoffISO);
+  });
+}
+
 function renderMatches(matches) {
-  const shown = selectedTipster ? matches.filter((m) => coveredBy(m, selectedTipster)) : matches;
+  const shown = sortForBoard(selectedTipster ? matches.filter((m) => coveredBy(m, selectedTipster)) : matches);
   matchesEl.innerHTML = '';
   emptyEl.hidden = shown.length > 0;
   emptyEl.textContent = selectedTipster && matches.length > 0 && shown.length === 0
@@ -483,79 +538,17 @@ function liveClock(kickoffISO, liveKickoffISO, stage) {
   return `~${mins}' (may have ended)`;
 }
 
-function renderInPlayCard(m) {
-  const div = document.createElement('div');
-  div.className = 'card live clickable';
-  div.id = `match-${m.id}`;
-  div.dataset.kickoff = m.kickoffISO;
-  if (m.liveKickoffISO) div.dataset.livekickoff = m.liveKickoffISO;
-  if (m.liveStage) div.dataset.livestage = m.liveStage;
-  div.addEventListener('click', () => openMatchDetail(m));
-  const odds = m.odds && m.odds.oneX2;
-  const oddsRow = odds
-    ? `<div class="section-label">Live SG Pools 1X2: <b>${Number(odds.home).toFixed(2)}</b> / <b>${Number(odds.draw).toFixed(2)}</b> / <b>${Number(odds.away).toFixed(2)}</b></div>`
-    : '';
-  // Real running score from Flashscore when we could match it; otherwise
-  // the O/U-line estimate ("~N goals so far"). The kickoff time shown
-  // here prefers Flashscore's own recorded kickoff too, for the same
-  // reason the live-clock above does (see liveClock's comment).
-  const actualKickoff = m.liveKickoffISO || m.kickoffISO;
-  const scoreRow = m.liveScore
-    ? `<div class="live-score">${m.liveScore.replace('-', ' - ')}</div>
-       <div class="kickoff-time">kicked off ${new Date(actualKickoff).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · score via Flashscore</div>`
-    : `<div class="kickoff-time">Kicked off ${new Date(m.kickoffISO).toLocaleString()}${
-        m.goalsSoFar != null ? ` · ~${m.goalsSoFar} goal${m.goalsSoFar === 1 ? '' : 's'} so far (est.)` : ''
-      }</div>`;
-  div.innerHTML = `
-    <span class="badge live-badge">● LIVE</span>
-    <div class="league">${m.league || ''}</div>
-    <div class="teams">${m.homeTeam} vs ${m.awayTeam}</div>
-    <div class="live-clock" data-liveclock>${liveClock(m.kickoffISO, m.liveKickoffISO, m.liveStage)}</div>
-    ${scoreRow}
-    ${renderPick(m.topPick)}
-    ${renderTipsters(m.tipsterConsensus, selectedTipster)}
-    ${oddsRow}
-    ${renderSteamMove(m)}
-  `;
-  return div;
-}
-
-function renderInPlay(list) {
-  currentInPlay = list || [];
-  // drop anything that must be long finished (a stale snapshot can still
-  // list a match that ended ~10 min ago)
-  let live = currentInPlay.filter(
-    (m) => (Date.now() - new Date(m.kickoffISO).getTime()) / 60000 < 135
-  );
-  if (selectedTipster) live = live.filter((m) => coveredBy(m, selectedTipster));
-  if (!inplayEl) return;
-  if (!live.length) {
-    inplayEl.hidden = true;
-    inplayEl.innerHTML = '';
-    return;
-  }
-  inplayEl.hidden = false;
-  const anyCarried = live.some((m) => (m.tipsterConsensus?.picks || []).some((p) => p.carriedForward));
-  inplayEl.innerHTML = `
-    <div class="inplay-banner">
-      <h2 class="inplay-head"><span class="live-dot" aria-hidden="true"></span>Live betting now on Singapore Pools</h2>
-      <span>(${live.length}) — picks made before kickoff; time/score approximate${
-        anyCarried ? '; <b>ᴾ</b> = pre-match pick from a site that stopped listing the live match' : ''
-      }</span>
-    </div>
-    <div class="matches" id="inplay-grid"></div>`;
-  const grid = inplayEl.querySelector('#inplay-grid');
-  live
-    .sort((a, b) => new Date(a.kickoffISO) - new Date(b.kickoffISO))
-    .forEach((m) => grid.appendChild(renderInPlayCard(m)));
-}
-
 async function fetchMatches() {
   try {
     const res = await fetch('/api/matches');
     const data = await res.json();
-    currentMatches = data.matches || [];
-    renderInPlay(data.inPlay || []);
+    // `inPlay` can still list a match that's long finished (a stale
+    // snapshot caught it a cycle late) — drop anything further than 135
+    // min past its kickoff before merging it in with the open matches.
+    const inPlay = (data.inPlay || []).filter(
+      (m) => (Date.now() - new Date(m.kickoffISO).getTime()) / 60000 < 135
+    );
+    currentMatches = [...(data.matches || []), ...inPlay];
     renderMatches(currentMatches);
     renderBestBet(data.bestBet);
 
