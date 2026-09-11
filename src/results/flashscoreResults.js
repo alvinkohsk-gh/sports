@@ -14,8 +14,16 @@ const FSIGN = process.env.FLASHSCORE_FSIGN || 'SW9D1eZo';
 const DAY_OFFSETS = [0, -1, -2]; // covers the 2–60h grading window
 const TIMEOUT_MS = Number(process.env.FLASHSCORE_TIMEOUT_MS) || 15000;
 
-// AC = stage code for a live match
-const LIVE_STAGE = { '11': 'HT', '12': '1st half', '13': '2nd half', '40': 'extra time', '41': 'extra time', '50': 'penalties' };
+// AC = stage code for a live match. '38' isn't documented anywhere — added
+// after production showed it on several simultaneous South American
+// fixtures all sitting at ~59 real elapsed minutes since kickoff with a
+// 0-0/1-0-type scoreline, the exact profile of "just past halftime";
+// apparently a regional/competition-specific variant of '13'. Any other
+// still-unmapped code falls through to the generic 'live' stage — see
+// public/app.js's liveClock(), which infers "past halftime" from elapsed
+// time alone as a backstop so an unrecognized code doesn't silently skip
+// the halftime-break correction.
+const LIVE_STAGE = { '11': 'HT', '12': '1st half', '13': '2nd half', '38': '2nd half', '40': 'extra time', '41': 'extra time', '50': 'penalties' };
 
 /**
  * @param mode 'finished' (default — AB "3", returns FT rows) or 'live'
