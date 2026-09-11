@@ -235,6 +235,24 @@ main { padding: 20px 24px 60px; max-width: 1100px; margin: 0 auto; }
   border: 1px solid rgba(52, 211, 153, 0.6);
   background: rgba(52, 211, 153, 0.12);
 }
+.steam-badge {
+  display: inline-block;
+  margin: 4px 0;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.steam-badge.shortening {
+  color: var(--ok);
+  border: 1px solid rgba(52, 211, 153, 0.6);
+  background: rgba(52, 211, 153, 0.12);
+}
+.steam-badge.drifting {
+  color: var(--urgent);
+  border: 1px solid rgba(248, 113, 113, 0.6);
+  background: rgba(248, 113, 113, 0.12);
+}
 .disclaimer {
   margin-top: 28px;
   font-size: 12px;
