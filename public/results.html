@@ -67,6 +67,7 @@
     .pill .res .sel { font-size: 12px; }
     .pill .tick, .pill .cross, .pill .dash { font-size: 17px; font-weight: 700; line-height: 1; }
     .pill .tick { color: var(--ok); } .pill .cross { color: var(--urgent); } .pill .dash { color: var(--muted); }
+    .pill .odd { font-size: 11px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
     .pill.pending { opacity: 0.72; }
 
     @media (max-width: 640px) {
@@ -141,7 +142,10 @@
       time) and, optionally, by league. 🏆 marks the most accurate site over the selected scope
       (min 10 graded picks). Full-time
       scores come from Flashscore (Forebet as a fallback); the rare match neither covers stays
-      "result pending". Past performance says nothing about future results. Gamble responsibly.
+      "result pending". The small "@N.NN" next to a ✔/✘ is the Singapore Pools price on that pick
+      at the moment it was captured (the site's final pre-kickoff call) — not today's price; it's
+      blank for older samples from before this was tracked, or a fixture with no recorded price
+      that early. Past performance says nothing about future results. Gamble responsibly.
     </p>
   </main>
 
@@ -149,7 +153,7 @@
     const SITE_LABELS = {
       forebet: 'Forebet', predictz: 'PredictZ', windrawwin: 'WinDrawWin', whoscored: 'WhoScored',
       sportsmole: 'Sports Mole', matchoutlook: 'MatchOutlook', eaglepredict: 'EaglePredict', footystats: 'FootyStats',
-      statarea: 'Statarea', footballpredictions: 'FootballPredictions',
+      statarea: 'Statarea', footballpredictions: 'FootballPredictions', vitibet: 'Vitibet',
     };
     const MIN_BEST = 10; // graded picks needed before a site can get the 🏆
     const statusEl = document.getElementById('status');
@@ -186,10 +190,20 @@
           : ok
           ? '<span class="tick">✔</span>'
           : '<span class="cross">✘</span>';
-      const bit = (sel, ok) => `<span class="res"><span class="sel">${sel}</span>${mark(ok)}</span>`;
+      // Odd sits right after the tick/cross — the SG Pools price on that
+      // pick as it stood at the moment the pick was captured (its final
+      // pre-kickoff call), not today's price. Absent when no odds-history
+      // point was recorded for this fixture that early (older samples
+      // predate that feature, or the fixture had no SG Pools price yet).
+      const bit = (sel, ok, odd) => {
+        const oddHtml = typeof odd === 'number'
+          ? `<span class="odd" title="SG Pools price on this pick when it was captured">@${odd.toFixed(2)}</span>`
+          : '';
+        return `<span class="res"><span class="sel">${sel}</span>${mark(ok)}${oddHtml}</span>`;
+      };
       const bits = [];
-      if (s.pick) bits.push(bit(s.pick[0].toUpperCase(), s.oneX2Correct));
-      if (s.ou) bits.push(bit(s.ou.split(' ')[0][0].toUpperCase(), s.ouCorrect));
+      if (s.pick) bits.push(bit(s.pick[0].toUpperCase(), s.oneX2Correct, s.oneX2Odd));
+      if (s.ou) bits.push(bit(s.ou.split(' ')[0][0].toUpperCase(), s.ouCorrect, s.ouOdd));
       return `<span class="pill site-${s.site}${s.pending ? ' pending' : ''}">${label(s.site)}${bits.join('')}</span>`;
     }
 

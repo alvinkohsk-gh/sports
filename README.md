@@ -59,6 +59,18 @@ API covers the leagues Singapore Pools lists; matches Forebet doesn't
 cover stay ungraded. The dashboard is empty until ~48 h of history and
 finished matches have accumulated.
 
+Each graded sample also carries the SG Pools price on that pick as it
+stood the moment the pick was captured (`history.js`'s `capturedAt` — the
+site's last pre-kickoff update, same capture-time concept CLV tracking
+uses) — `src/results/accuracy.js`'s `oddAtCapture` looks it up in
+`odds-history.json`'s rolling per-fixture price series (`oddsHistory.js`),
+taking the latest point at or before that moment so a later price can
+never leak in. Exposed as `oneX2Odd`/`ouOdd` per sample; `results.html`
+renders it as a small "@N.NN" right next to that pick's ✔/✘. Null when no
+odds-history point existed for the fixture that early — older samples
+from before `odds-history.json` existed, or a fixture with no recorded
+SG Pools price yet at capture time.
+
 The snapshot job runs a **FlareSolverr** service container and points
 `FLARESOLVERR_URL` at it. `src/scrapers/tipsters/fetchHtml.js` sends any
 page that plain HTTP can't get (Cloudflare challenge / 403) through
