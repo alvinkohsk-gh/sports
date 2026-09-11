@@ -71,6 +71,16 @@ function rowTeams($, row) {
   return { homeTeamName: home || null, awayTeamName: away || null };
 }
 
+// 'H'/'A' — which side the panel's own subject team played on in this
+// particular past fixture (the same `.active-team` marker rowResult
+// reads). A team's schedule alternates, so this varies row to row even
+// though every row in one panel shares the same subject team.
+function rowVenue(home, away) {
+  if (home.length && home.hasClass('active-team')) return 'H';
+  if (away.length && away.hasClass('active-team')) return 'A';
+  return null;
+}
+
 // Result ('W'/'D'/'L') of a fixture-widget row from the *panel's own*
 // subject team's perspective — unlike H2H, `.active-team` is reliably set
 // on exactly one side within a "Last N matches" panel (see
@@ -254,13 +264,16 @@ function parseTeamFixtures($) {
       }
       const homeGoals = Number(scoreMatch[1]);
       const awayGoals = Number(scoreMatch[2]);
+      const hteam = row.find('.st_hteam').first();
+      const ateam = row.find('.st_ateam').first();
       rows.push({
         raw: text,
         homeGoals,
         awayGoals,
         date: rowDate($, row),
         opponent,
-        result: rowResult(homeGoals, awayGoals, row.find('.st_hteam').first(), row.find('.st_ateam').first()),
+        result: rowResult(homeGoals, awayGoals, hteam, ateam),
+        venue: rowVenue(hteam, ateam),
       });
     });
     if (rows.length) sections.push(rows.slice(0, 6));

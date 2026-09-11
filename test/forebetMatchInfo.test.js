@@ -111,14 +111,36 @@ test('parseTeamFixtures: reads real Forebet .mptlt "Last N matches" panels, usin
   assert.equal(sections.length, 2);
   assert.equal(sections[0].length, 1);
   assert.deepEqual(
-    { homeGoals: sections[0][0].homeGoals, awayGoals: sections[0][0].awayGoals, date: sections[0][0].date, opponent: sections[0][0].opponent, result: sections[0][0].result },
-    { homeGoals: 2, awayGoals: 3, date: '09/06/2026', opponent: 'Internacional', result: 'W' } // Santos (.active-team, away side) scored 3, conceded 2
+    { homeGoals: sections[0][0].homeGoals, awayGoals: sections[0][0].awayGoals, date: sections[0][0].date, opponent: sections[0][0].opponent, result: sections[0][0].result, venue: sections[0][0].venue },
+    { homeGoals: 2, awayGoals: 3, date: '09/06/2026', opponent: 'Internacional', result: 'W', venue: 'A' } // Santos (.active-team, away side) scored 3, conceded 2
   );
   assert.equal(sections[1].length, 1);
   assert.deepEqual(
-    { homeGoals: sections[1][0].homeGoals, awayGoals: sections[1][0].awayGoals, date: sections[1][0].date, opponent: sections[1][0].opponent, result: sections[1][0].result },
-    { homeGoals: 2, awayGoals: 0, date: '09/05/2026', opponent: 'Sao Paulo', result: 'L' } // Atletico (.active-team, away side) scored 0, conceded 2
+    { homeGoals: sections[1][0].homeGoals, awayGoals: sections[1][0].awayGoals, date: sections[1][0].date, opponent: sections[1][0].opponent, result: sections[1][0].result, venue: sections[1][0].venue },
+    { homeGoals: 2, awayGoals: 0, date: '09/05/2026', opponent: 'Sao Paulo', result: 'L', venue: 'A' } // Atletico (.active-team, away side) scored 0, conceded 2
   );
+});
+
+test('parseTeamFixtures: venue is "H" when the subject team is marked .active-team on the home side', () => {
+  const html = `
+    <div class="mptlt with_logo">
+      <div class="st_logo_box"><div>STS</div></div>
+      <div>Last 6 matches</div>
+    </div>
+    <div class="st_scrblock"><div class="st_rmain">
+      <div class="st_row st_0">
+        <div class="st_date"><div>09/06</div><div>2026</div></div>
+        <div class="st_hteam active-team"><a href="/en/teams/santos-sp">Santos</a></div>
+        <a href="/x" class="stat_link"><div class="st_rescnt">
+          <span class="st_res lscrsp">1 - 0</span></a>
+        </div>
+        <div class="st_ateam"><a href="/en/teams/internacional">Internacional</a></div>
+      </div>
+    </div></div>`;
+  const $ = cheerio.load(html);
+  const sections = parseTeamFixtures($);
+  assert.equal(sections[0][0].venue, 'H');
+  assert.equal(sections[0][0].result, 'W'); // Santos (home) scored 1, conceded 0
 });
 
 test('parseTeamFixtures: result is null when neither side is marked .active-team', () => {
@@ -140,6 +162,7 @@ test('parseTeamFixtures: result is null when neither side is marked .active-team
   const $ = cheerio.load(html);
   const sections = parseTeamFixtures($);
   assert.equal(sections[0][0].result, null);
+  assert.equal(sections[0][0].venue, null);
 });
 
 // These fixtures encode the fallback parsers' own structural assumptions
