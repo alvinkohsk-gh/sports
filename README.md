@@ -40,7 +40,7 @@ Vercel function is unreliable — `@sparticuz/chromium-min` runs
 `--single-process` and crashes under load, and every tipster site except
 Sports Mole's hub 403s any datacenter IP behind Cloudflare. So
 `.github/workflows/snapshot.yml` runs `scripts/scrape-snapshot.js` every
-~15 min on a GitHub Actions runner and force-pushes the result JSON to the
+~5 min on a GitHub Actions runner and force-pushes the result JSON to the
 orphan `data-snapshot` branch. `src/app.js` fetches
 `raw.githubusercontent.com/<repo>/data-snapshot/snapshot.json` and serves
 that; it only falls back to an on-demand scrape when the snapshot is
@@ -362,7 +362,7 @@ Forebet's results pages and WinDrawWin's results table as fallbacks.
   `openOdd` (frozen at the moment it was first flagged — the price you'd
   actually have gotten) and `odd` (already existed — overwritten every
   pre-kickoff scrape cycle, so it ends up holding the last pre-kickoff
-  price, a closing-line proxy up to one ~15-min scrape cycle stale).
+  price, a closing-line proxy up to one ~5-min scrape cycle stale).
   `clvPct = (openOdd / odd − 1) × 100`: positive means the line moved in
   your favor after you'd have bet it (you beat the close), negative means
   it drifted the other way. Since this only needs the line to have closed
@@ -374,7 +374,7 @@ Forebet's results pages and WinDrawWin's results table as fallbacks.
   of variance in any single result.
 - **Odds movement history**. `src/results/oddsHistory.js` keeps a rolling
   per-fixture series of SG Pools' own price (`odds-history.json`), only
-  appending a new point when the price actually changes — most 15-min
+  appending a new point when the price actually changes — most 5-min
   cycles see no movement. Not embedded in `GET /api/matches` (a point per
   real move for every open fixture would bloat every board poll for a
   feature only looked at per-match); instead `GET /api/odds-history

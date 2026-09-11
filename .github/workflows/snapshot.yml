@@ -6,7 +6,7 @@ name: Scrape tipster snapshot
 # that, so live user requests never wait on (or time out on) the scrape.
 on:
   schedule:
-    - cron: '*/15 * * * *' # every 15 min (GitHub may delay under load)
+    - cron: '*/5 * * * *' # every 5 min (GitHub may delay under load)
   workflow_dispatch:
     inputs:
       publish_debug:
