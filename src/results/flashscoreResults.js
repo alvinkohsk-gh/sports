@@ -45,6 +45,9 @@ function parseFeed(text, mode = 'finished') {
       if (mode === 'live') {
         row.stage = LIVE_STAGE[cur.AC] || 'live';
         row.kickoffISO = iso;
+        if (process.env.FLASHSCORE_DEBUG && !LIVE_STAGE[cur.AC]) {
+          console.error(`[flashscore debug] unmapped AC="${cur.AC}" for ${cur.AE} v ${cur.AF}`);
+        }
       }
       out.push(row);
     }
