@@ -1,4 +1,5 @@
 const { teamsMatch } = require('../services/matcher');
+const { settleAh, ahProfit } = require('../services/asianHandicap');
 
 const GRADE_MIN_AGE_MS = 2 * 60 * 60 * 1000; // kicked off >2h ago (finished)
 const GRADE_MAX_AGE_MS = 60 * 60 * 60 * 1000; // but not more than 60h ago
@@ -81,7 +82,15 @@ function grade(history, results, prevSamples, { windowHours = 48, nowMs = Date.n
       const actualOver = total > e.totalsPick.point;
       ouCorrect = (e.totalsPick.selection === 'over') === actualOver;
     }
-    if (oneX2Correct === null && ouCorrect === null) continue;
+
+    // Asian Handicap: `e.ahPick`/`e.ahLine` were already derived + captured
+    // at history-merge time (src/results/history.js), from whichever site
+    // gave a predicted scoreline — settleAh does the actual win/half-win/
+    // push/half-loss/loss math (src/services/asianHandicap.js) against the
+    // real final score.
+    const ah = e.ahPick ? settleAh(e.ahPick, e.ahLine, r.homeGoals, r.awayGoals) : null;
+
+    if (oneX2Correct === null && ouCorrect === null && !ah) continue;
 
     const odds = oddsHistoryByKey.size ? oddAtCapture(e, oddsHistoryByKey) : { oneX2: null, ou: null };
 
@@ -103,6 +112,17 @@ function grade(history, results, prevSamples, { windowHours = 48, nowMs = Date.n
       ou: e.totalsPick ? `${e.totalsPick.selection} ${e.totalsPick.point}` : null,
       ouCorrect,
       ouOdd: odds.ou,
+      // Asian Handicap: `ah` is a display string ("home -0.5"); `ahResult`
+      // is one of win/half-win/push/half-loss/loss (never a plain
+      // correct/incorrect boolean — see asianHandicap.js's header comment
+      // for why); `ahValue` is that result's settlement fraction (-1..1),
+      // kept alongside for computing win rate/P&L without re-deriving it.
+      // `ahOdd` was captured once at history-merge time (no rolling CLV
+      // series for AH, unlike 1X2/O/U).
+      ah: e.ahPick && Number.isFinite(e.ahLine) ? `${e.ahPick} ${e.ahPick === 'home' ? e.ahLine : -e.ahLine}` : null,
+      ahResult: ah ? ah.result : null,
+      ahValue: ah ? ah.value : null,
+      ahOdd: e.ahOdd ?? null,
       gradedAt: new Date(nowMs).toISOString(),
     });
   }
@@ -121,7 +141,15 @@ function summarize(samples, windowHours, nowMs) {
   for (const s of samples) {
     if ((Date.parse(s.kickoffISO) || 0) < cutoff) continue;
     n += 1;
-    const b = (perSite[s.site] = perSite[s.site] || { oneX2Correct: 0, oneX2Total: 0, ouCorrect: 0, ouTotal: 0 });
+    const b = (perSite[s.site] = perSite[s.site] || {
+      oneX2Correct: 0, oneX2Total: 0, ouCorrect: 0, ouTotal: 0,
+      // AH decided count excludes pushes (a push is a stake refund, not a
+      // win or loss — same convention the bankroll tracker uses for
+      // 'void' bets), same reason ahEquity (win=1, half-win/half-loss=0.75/
+      // 0.25, loss=0 — i.e. (value+1)/2) is only accumulated over decided
+      // samples, not every graded one.
+      ahWin: 0, ahHalfWin: 0, ahPush: 0, ahHalfLoss: 0, ahLoss: 0, ahDecided: 0, ahEquitySum: 0,
+    });
     if (s.oneX2Correct !== null) {
       b.oneX2Total += 1;
       if (s.oneX2Correct) b.oneX2Correct += 1;
@@ -130,10 +158,23 @@ function summarize(samples, windowHours, nowMs) {
       b.ouTotal += 1;
       if (s.ouCorrect) b.ouCorrect += 1;
     }
+    if (s.ahResult) {
+      if (s.ahResult === 'win') b.ahWin += 1;
+      else if (s.ahResult === 'half-win') b.ahHalfWin += 1;
+      else if (s.ahResult === 'push') b.ahPush += 1;
+      else if (s.ahResult === 'half-loss') b.ahHalfLoss += 1;
+      else if (s.ahResult === 'loss') b.ahLoss += 1;
+      if (s.ahResult !== 'push') {
+        b.ahDecided += 1;
+        b.ahEquitySum += (s.ahValue + 1) / 2;
+      }
+    }
   }
   for (const b of Object.values(perSite)) {
     b.oneX2Pct = b.oneX2Total ? Math.round((100 * b.oneX2Correct) / b.oneX2Total) : null;
     b.ouPct = b.ouTotal ? Math.round((100 * b.ouCorrect) / b.ouTotal) : null;
+    b.ahTotal = b.ahWin + b.ahHalfWin + b.ahPush + b.ahHalfLoss + b.ahLoss;
+    b.ahPct = b.ahDecided ? Math.round((100 * b.ahEquitySum) / b.ahDecided) : null;
   }
   return { windowHours, gradedSamples: n, perSite, updatedAt: new Date(nowMs).toISOString() };
 }

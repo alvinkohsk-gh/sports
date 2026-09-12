@@ -35,8 +35,9 @@
     .acccard:hover { box-shadow: 0 0 0 1px var(--card-border); }
     .acccard.selected { box-shadow: 0 0 0 2px var(--site-color, var(--accent)); }
     .accgrid.has-selection .acccard:not(.selected) { opacity: .45; }
-    .accgrid.market-1x2 .market-block-ou { opacity: .35; }
-    .accgrid.market-ou .market-block-1x2 { opacity: .35; }
+    .accgrid.market-1x2 .market-block-ou, .accgrid.market-1x2 .market-block-ah { opacity: .35; }
+    .accgrid.market-ou .market-block-1x2, .accgrid.market-ou .market-block-ah { opacity: .35; }
+    .accgrid.market-ah .market-block-1x2, .accgrid.market-ah .market-block-ou { opacity: .35; }
     .clear-site {
       background: rgba(148,163,184,0.12); color: var(--text); border: 1px solid var(--card-border);
       border-radius: 6px; padding: 3px 9px; font-size: 12px; cursor: pointer;
@@ -51,6 +52,7 @@
     .bar > span { display: block; height: 100%; border-radius: 999px; }
     .bar.x12 > span { background: var(--ok); }
     .bar.ou > span { background: var(--accent); }
+    .bar.ah > span { background: var(--soon); }
     .muted-note { color: var(--muted); font-size: 13px; line-height: 1.5; margin-top: 40px; text-align: center; }
     .tscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 28px; }
     table.recent { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -67,8 +69,10 @@
     .pill[class*="site-"] { border-color: color-mix(in srgb, var(--site-color) 55%, transparent); color: var(--site-color); }
     .pill .res { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; }
     .pill .res .sel { font-size: 12px; }
-    .pill .tick, .pill .cross, .pill .dash { font-size: 17px; font-weight: 700; line-height: 1; }
+    .pill .tick, .pill .cross, .pill .dash, .pill .half { font-size: 17px; font-weight: 700; line-height: 1; }
     .pill .tick { color: var(--ok); } .pill .cross { color: var(--urgent); } .pill .dash { color: var(--muted); }
+    .pill .half { font-size: 12px; }
+    .pill .half.half-win { color: var(--ok); } .pill .half.half-loss { color: var(--urgent); }
     .pill .odd { font-size: 11px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
     .pill.pending { opacity: 0.72; }
 
@@ -118,9 +122,10 @@
       <label>League <select id="league"><option value="">All leagues</option></select></label>
       <label>Market
         <select id="market">
-          <option value="">1X2 + O/U</option>
+          <option value="">All markets</option>
           <option value="1x2">1X2 only</option>
           <option value="ou">Over/Under only</option>
+          <option value="ah">Asian Handicap only</option>
         </select>
       </label>
       <span class="range-note" id="range-note"></span>
@@ -147,13 +152,18 @@
 
     <p class="disclaimer">
       "Accuracy" here is simply: of the predictions a site made for matches that have since finished,
-      how many were right — 1X2 (home/draw/away) and Over/Under total goals, scored separately.
-      Only fixtures on the Singapore Pools board are counted, filtered by kickoff date (your local
-      time) and, optionally, by league. 🏆 marks the most accurate site over the selected scope
-      (min 10 graded picks). Full-time
+      how many were right — 1X2 (home/draw/away), Over/Under total goals, and Asian Handicap, scored
+      separately. No tipster site publishes an Asian Handicap pick directly, so it's derived from
+      whichever sites give a predicted correct score (currently Forebet and PredictZ) compared against
+      Singapore Pools' actual handicap line for that match — a quarter line (e.g. -0.25, -0.75) is
+      settled as two equal-stake bets on the adjacent half/whole lines, same as real money settlement,
+      so a pick can win, half-win, push (line refunded — excluded from the win rate and shown as "P"),
+      half-lose, or lose, not just win or lose. Only fixtures on the Singapore Pools board are counted,
+      filtered by kickoff date (your local time) and, optionally, by league. 🏆 marks the most accurate
+      site over the selected scope (min 10 graded picks). Full-time
       scores come from Flashscore (Forebet as a fallback); the rare match neither covers stays
-      "result pending". The small "@N.NN" next to a ✔/✘ is the Singapore Pools price on that pick
-      at the moment it was captured (the site's final pre-kickoff call) — not today's price; it's
+      "result pending". The small "@N.NN" next to a result mark is the Singapore Pools price on that
+      pick at the moment it was captured (the site's final pre-kickoff call) — not today's price; it's
       blank for older samples from before this was tracked, or a fixture with no recorded price
       that early. Past performance says nothing about future results. Gamble responsibly.
     </p>
@@ -194,8 +204,36 @@
         </div>`;
     }
 
+    // AH's bar is equity (win=1, half-win=0.75, half-loss=0.25, loss=0),
+    // not a plain correct/total ratio — the record line spells out the
+    // actual W/HW/P/HL/L counts instead, since "3/5" would hide which of
+    // those five outcomes actually happened.
+    function ahMetric(b) {
+      const w = b.ahDecided ? Math.round((100 * b.ahEquitySum) / b.ahDecided) : 0;
+      const record = `${b.ahWin}W ${b.ahHalfWin}HW ${b.ahPush}P ${b.ahHalfLoss}HL ${b.ahLoss}L`;
+      return `
+        <div class="metric">
+          <div class="metric-top"><span>Asian Handicap</span><b>${pct(b.ahPct)}</b></div>
+          <div class="bar ah"><span style="width:${w}%"></span></div>
+          <div class="metric-top"><span></span><span title="Win / Half-win / Push / Half-loss / Loss">${record}</span></div>
+        </div>`;
+    }
+
+    // Symbol + CSS class for each Asian Handicap result — a plain
+    // win/loss tick/cross doesn't capture a push (stake refunded, not a
+    // win or loss) or a half-win/half-loss (a quarter line splits the bet
+    // across two adjacent lines — see src/services/asianHandicap.js), so
+    // this gets its own 5-state marker instead of reusing `mark()`.
+    const AH_MARK = {
+      win: ['✔', 'tick'],
+      'half-win': ['½✔', 'half half-win'],
+      push: ['P', 'dash'],
+      'half-loss': ['½✘', 'half half-loss'],
+      loss: ['✘', 'cross'],
+    };
+
     // `market` narrows which pick bit(s) a pill shows: '' (default) shows
-    // both 1X2 and O/U when the site made both; '1x2'/'ou' shows just that
+    // every market a site made a pick in; '1x2'/'ou'/'ah' shows just that
     // one — same market filter the site leaderboard/sort applies, kept in
     // sync so the table and the cards above it always agree on scope.
     function pillFor(s, market) {
@@ -216,9 +254,18 @@
           : '';
         return `<span class="res"><span class="sel">${sel}</span>${mark(ok)}${oddHtml}</span>`;
       };
+      const ahBit = (ahStr, ahResult, odd) => {
+        const side = ahStr.split(' ')[0][0].toUpperCase(); // "home -0.75" -> "H"
+        const [symbol, cls] = AH_MARK[ahResult] || ['·', 'dash'];
+        const oddHtml = typeof odd === 'number'
+          ? `<span class="odd" title="SG Pools price on this pick when it was captured">@${odd.toFixed(2)}</span>`
+          : '';
+        return `<span class="res"><span class="sel">${side}</span><span class="${cls}" title="${ahResult || 'pending'}">${symbol}</span>${oddHtml}</span>`;
+      };
       const bits = [];
-      if (s.pick && market !== 'ou') bits.push(bit(s.pick[0].toUpperCase(), s.oneX2Correct, s.oneX2Odd));
-      if (s.ou && market !== '1x2') bits.push(bit(s.ou.split(' ')[0][0].toUpperCase(), s.ouCorrect, s.ouOdd));
+      if (s.pick && market !== 'ou' && market !== 'ah') bits.push(bit(s.pick[0].toUpperCase(), s.oneX2Correct, s.oneX2Odd));
+      if (s.ou && market !== '1x2' && market !== 'ah') bits.push(bit(s.ou.split(' ')[0][0].toUpperCase(), s.ouCorrect, s.ouOdd));
+      if (s.ah && market !== '1x2' && market !== 'ou') bits.push(ahBit(s.ah, s.ahResult, s.ahOdd));
       return `<span class="pill site-${s.site}${s.pending ? ' pending' : ''}">${label(s.site)}${bits.join('')}</span>`;
     }
 
@@ -227,10 +274,20 @@
     let lastUpdated = null;
     let selectedSite = null; // click a card to show only that site's picks
 
+    // Asian Handicap has no plain correct/incorrect boolean — a push
+    // (stake refunded) is neither, and a quarter line can land on a
+    // half-win/half-loss (see src/services/asianHandicap.js). Pushes are
+    // excluded from `ahDecided` (same convention the bankroll tracker uses
+    // for 'void' bets) and equity is accumulated as (value+1)/2 — win=1,
+    // half-win=0.75, half-loss=0.25, loss=0 — so "AH win rate" reads as the
+    // fraction of staked equity retained, not a raw win count.
     function computePerSite(samples) {
       const per = {};
       for (const s of samples) {
-        const b = (per[s.site] = per[s.site] || { oneX2Correct: 0, oneX2Total: 0, ouCorrect: 0, ouTotal: 0 });
+        const b = (per[s.site] = per[s.site] || {
+          oneX2Correct: 0, oneX2Total: 0, ouCorrect: 0, ouTotal: 0,
+          ahWin: 0, ahHalfWin: 0, ahPush: 0, ahHalfLoss: 0, ahLoss: 0, ahDecided: 0, ahEquitySum: 0,
+        });
         if (s.oneX2Correct !== null && s.oneX2Correct !== undefined) {
           b.oneX2Total += 1;
           if (s.oneX2Correct) b.oneX2Correct += 1;
@@ -239,36 +296,53 @@
           b.ouTotal += 1;
           if (s.ouCorrect) b.ouCorrect += 1;
         }
+        if (s.ahResult) {
+          if (s.ahResult === 'win') b.ahWin += 1;
+          else if (s.ahResult === 'half-win') b.ahHalfWin += 1;
+          else if (s.ahResult === 'push') b.ahPush += 1;
+          else if (s.ahResult === 'half-loss') b.ahHalfLoss += 1;
+          else if (s.ahResult === 'loss') b.ahLoss += 1;
+          if (s.ahResult !== 'push') {
+            b.ahDecided += 1;
+            b.ahEquitySum += (s.ahValue + 1) / 2;
+          }
+        }
       }
       for (const b of Object.values(per)) {
         b.oneX2Pct = b.oneX2Total ? Math.round((100 * b.oneX2Correct) / b.oneX2Total) : null;
         b.ouPct = b.ouTotal ? Math.round((100 * b.ouCorrect) / b.ouTotal) : null;
-        b.graded = b.oneX2Total + b.ouTotal;
-        b.overall = b.graded ? (b.oneX2Correct + b.ouCorrect) / b.graded : null;
+        b.ahTotal = b.ahWin + b.ahHalfWin + b.ahPush + b.ahHalfLoss + b.ahLoss;
+        b.ahPct = b.ahDecided ? Math.round((100 * b.ahEquitySum) / b.ahDecided) : null;
+        b.graded = b.oneX2Total + b.ouTotal + b.ahDecided;
+        b.overall = b.graded ? (b.oneX2Correct + b.ouCorrect + b.ahEquitySum) / b.graded : null;
       }
       return per;
     }
 
     // `market` narrows the leaderboard to one market's own accuracy: '1x2'
-    // ranks/best-badges by oneX2Pct alone, 'ou' by ouPct alone, '' (default)
-    // keeps the combined overall. Sites with no graded picks in the chosen
+    // ranks/best-badges by oneX2Pct alone, 'ou' by ouPct, 'ah' by ahPct
+    // (equity-based, excluding pushes), '' (default) keeps the combined
+    // overall across all three. Sites with no graded picks in the chosen
     // market are dropped from the leaderboard entirely rather than shown
     // at 0/0, and the recent-picks table's pills/rows follow the same
     // narrowing so the two sections never disagree on scope.
     function marketPct(b, market) {
       if (market === '1x2') return b.oneX2Pct;
       if (market === 'ou') return b.ouPct;
+      if (market === 'ah') return b.ahPct;
       return b.overall == null ? null : Math.round(b.overall * 100);
     }
     function marketCount(b, market) {
       if (market === '1x2') return b.oneX2Total;
       if (market === 'ou') return b.ouTotal;
+      if (market === 'ah') return b.ahDecided;
       return b.graded;
     }
     function marketCorrect(b, market) {
       if (market === '1x2') return b.oneX2Correct;
       if (market === 'ou') return b.ouCorrect;
-      return b.oneX2Correct + b.ouCorrect;
+      if (market === 'ah') return Math.round(b.ahEquitySum * 10) / 10;
+      return b.oneX2Correct + b.ouCorrect + Math.round(b.ahEquitySum * 10) / 10;
     }
 
     function render(perSite, tableSamples, singleDay, market) {
@@ -291,10 +365,11 @@
       emptyEl.hidden = true;
 
       const bestSite = sites.find(([, b]) => marketCount(b, market) >= MIN_BEST)?.[0] || null;
-      const overallLabel = market === '1x2' ? '1X2' : market === 'ou' ? 'Over/Under' : 'Overall';
+      const overallLabel = market === '1x2' ? '1X2' : market === 'ou' ? 'Over/Under' : market === 'ah' ? 'Asian Handicap' : 'Overall';
       gridEl.classList.toggle('has-selection', !!selectedSite);
       gridEl.classList.toggle('market-1x2', market === '1x2');
       gridEl.classList.toggle('market-ou', market === 'ou');
+      gridEl.classList.toggle('market-ah', market === 'ah');
       gridEl.innerHTML = sites
         .map(
           ([site, b]) => `
@@ -304,6 +379,7 @@
           <h3>${site === bestSite ? '<span class="crown">🏆 most accurate</span>' : ''}${label(site)}</h3>
           <div class="metric-block market-block-1x2">${metric('1X2 (home/draw/away)', b.oneX2Correct, b.oneX2Total, b.oneX2Pct, 'x12')}</div>
           <div class="metric-block market-block-ou">${metric('Over / Under goals', b.ouCorrect, b.ouTotal, b.ouPct, 'ou')}</div>
+          <div class="metric-block market-block-ah">${ahMetric(b)}</div>
           <div class="metric-top"><span>${overallLabel}</span><span>${marketPct(b, market) == null ? '—' : marketPct(b, market) + '%'} · ${marketCorrect(b, market)}/${marketCount(b, market)}</span></div>
         </div>`
         )
@@ -314,6 +390,7 @@
         if (selectedSite && s.site !== selectedSite) continue;
         if (market === '1x2' && !s.pick) continue;
         if (market === 'ou' && !s.ou) continue;
+        if (market === 'ah' && !s.ah) continue;
         if (!byMatch.has(s.matchKey))
           byMatch.set(s.matchKey, { fixture: s.fixture, score: null, kickoffISO: s.kickoffISO, picks: [] });
         const row = byMatch.get(s.matchKey);
@@ -386,7 +463,7 @@
       const rangeLabel = fromEl.value && toEl.value
         ? (singleDay ? fromEl.value : `${fromEl.value} → ${toEl.value}`)
         : 'all dates';
-      const marketLabel = market === '1x2' ? '1X2' : market === 'ou' ? 'Over/Under' : null;
+      const marketLabel = market === '1x2' ? '1X2' : market === 'ou' ? 'Over/Under' : market === 'ah' ? 'Asian Handicap' : null;
       const best = Object.entries(perSite)
         .filter(([, b]) => marketCount(b, market) >= MIN_BEST)
         .sort((a, b) => (marketPct(b[1], market) ?? -1) - (marketPct(a[1], market) ?? -1))[0];

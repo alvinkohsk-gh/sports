@@ -70,4 +70,77 @@ async function fetchSgPoolsOu() {
   }
 }
 
-module.exports = { fetchSgPoolsOu, parseOu };
+// Asian Handicap — betType=AH confirmed via a live capture (2026-09-12):
+// each event carries a plain "Asian Handicap" market (minorCode 'AH') plus
+// a "Half Time Asian Handicap" one at the same minorCode, so this has to
+// filter by the exact market name, not just minorCode, or the two get
+// conflated. Two outcomes, minorCode 'H'/'A' (home/away, same convention
+// as the 1X2 market) — deliberately NOT using the outcome's own `name`
+// ("Columbus Crew -0.75") for the line, since parsing a team name out of
+// free text is fragile; instead the line is read out of
+// `prices[0].hcapValue`, a comma-separated list of the actual settlement
+// line(s) for that outcome ("-0.50,-1.00," for a -0.75 quarter line, which
+// splits into a same-stake bet on each of -0.50 and -1.00 — see
+// src/services/asianHandicap.js). Its average is the displayed line
+// regardless of whether it's a whole/half/quarter line, and the market's
+// own top-level `handicapValue` was seen stale/unrelated to the real line
+// in that capture, so it's ignored entirely.
+const AH_MARKET_RE = /^Asian Handicap$/;
+
+function parseHcapValue(raw) {
+  const parts = String(raw || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map(Number)
+    .filter(Number.isFinite);
+  if (!parts.length) return null;
+  return parts.reduce((a, b) => a + b, 0) / parts.length;
+}
+
+function parseAh(events) {
+  const byId = new Map();
+  for (const ev of events || []) {
+    for (const mkt of ev.markets || []) {
+      if (mkt.minorCode !== 'AH' || !AH_MARKET_RE.test(mkt.name || '')) continue;
+      let point = null;
+      const o = {};
+      for (const out of mkt.outcomes || []) {
+        const hcap = out.prices && out.prices[0] && parseHcapValue(out.prices[0].hcapValue);
+        const price = priceOf(out);
+        if (out.minorCode === 'H') {
+          o.home = price;
+          if (Number.isFinite(hcap)) point = hcap;
+        } else if (out.minorCode === 'A') {
+          o.away = price;
+        }
+      }
+      if (o.home && o.away && Number.isFinite(point)) {
+        byId.set(String(ev.id), { point, home: o.home, away: o.away });
+        break; // one full-time AH market per event
+      }
+    }
+  }
+  return byId;
+}
+
+/**
+ * Returns Map<sgpMatchId, { point, home, away }> for the fixtures that have
+ * a full-time Asian Handicap line — `point` is the home side's handicap
+ * (negative when the home team is favored); the away side's is its
+ * negation. Never throws.
+ */
+async function fetchSgPoolsAh() {
+  try {
+    const res = await axios.get(
+      'https://api.singaporepools.com/football/events/v1/upcoming-event?lang=en&betType=AH',
+      { timeout: TIMEOUT_MS, headers: { 'User-Agent': 'sg-pools-live-odds' } }
+    );
+    return parseAh(res.data && res.data.events);
+  } catch (err) {
+    console.error('[sgpools-odds] AH fetch failed:', err.message || err);
+    return new Map();
+  }
+}
+
+module.exports = { fetchSgPoolsOu, parseOu, fetchSgPoolsAh, parseAh, parseHcapValue };
