@@ -1,4 +1,5 @@
 const { normalizeTeamName } = require('../services/matcher');
+const { resolveAhPick } = require('../services/asianHandicap');
 
 // A stable-ish key for a fixture: normalized team names + the kickoff
 // calendar day (UTC). Good enough to line a stored pick up with a result
@@ -24,6 +25,13 @@ function mergeHistory(existing, matches, capturedAtISO) {
   for (const m of matches) {
     const key = matchKey(m.homeTeam, m.awayTeam, m.kickoffISO);
     const kickoff = Date.parse(m.kickoffISO);
+    // SG Pools' Asian Handicap line for this match, home-side perspective
+    // (see src/scrapers/singaporePools/odds.js) — captured once per match
+    // alongside each site's pick, same "last value seen before kickoff"
+    // snapshot semantics the picks themselves already have. Not tracked as
+    // a rolling price series (unlike odds-history.json's O/U/1X2 series),
+    // so there's no CLV figure for AH — just this one line.
+    const ahLine = m.odds && m.odds.ah && Number.isFinite(m.odds.ah.point) ? m.odds.ah.point : null;
     for (const p of m.tipsterConsensus?.picks || []) {
       if (!p.pick && !p.totalsPick && !p.bttsPick) continue;
       const id = `${key}::${p.site}`;
@@ -31,6 +39,7 @@ function mergeHistory(existing, matches, capturedAtISO) {
       // don't overwrite a pick that was captured before kickoff with a
       // later (post-kickoff) capture
       if (prev && Number.isFinite(kickoff) && (prev.capturedAt || 0) >= kickoff && now >= kickoff) continue;
+      const ahPick = resolveAhPick(p.totalsPick, ahLine);
       byKey.set(id, {
         matchKey: key,
         site: p.site,
@@ -41,6 +50,9 @@ function mergeHistory(existing, matches, capturedAtISO) {
         pick: p.pick || null,
         totalsPick: p.totalsPick || null,
         bttsPick: p.bttsPick || null,
+        ahLine,
+        ahPick,
+        ahOdd: ahPick && m.odds && m.odds.ah ? m.odds.ah[ahPick] ?? null : null,
         capturedAt: now,
       });
     }
