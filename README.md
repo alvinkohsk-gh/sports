@@ -366,6 +366,39 @@ kickoff.
   click. A match Forebet doesn't cover, or hasn't been scraped yet, shows a
   plain "no data yet" message instead of an empty panel.
 
+### Team stats + goal-timing chart
+
+The match detail panel also shows each side's goals scored/conceded (full
+time, first half, second half) and a goal-timing chart, from Forebet's
+"Overall statistics" panel — all over the same "last 6 matches" sample the
+form/fixtures panels already use.
+
+- That panel's own bar chart only renders relative bar-height percentages
+  in its markup (scaled to a shared axis max, not to games played), so the
+  real counts are read instead from `get_ovd(type)`, a JS function Forebet
+  embeds on the page to drive that chart. `src/scrapers/tipsters/
+  forebetMatchInfo.js`'s `parseOverallStats` locates that function, then
+  brace-balances (not regexes) its way through `return {...};` in each of
+  its two branches to pull out the object literal, which is valid JSON
+  (every value is a number, string, or array of those) and gets parsed
+  directly. Verified against a real capture (2026-09-12) that
+  `get_ovd("h")` is *this fixture's* home team and `get_ovd("a")` the away
+  team — confirmed via the panel's own rendered `data-team="h"/"a"`
+  attributes, which are captioned with the real team codes.
+- Each stat in that payload is a 3-element array (`[allMatches,
+  homeMatches, awayMatches]` — that team's own home/away split, unrelated
+  to which side of *this* fixture it is); only the all-matches value is
+  used.
+- Unlike H2H rows (which cover *past* meetings whose home/away side can
+  differ from this fixture's), `overallStats.home`/`.away` need no
+  perspective flip — Forebet's own home/away designation for *this* match
+  already matches ours. `SCHEMA_VERSION` bumped 5 → 6 for the shape change.
+- The goal-timing chart (six 15-minute buckets, scored vs conceded) is
+  rendered as a small dependency-free CSS bar chart
+  (`public/app.js`'s `renderGoalTimingChart`) — both teams' bars share one
+  scale (the larger side's own max bucket value) so the two charts are
+  visually comparable rather than each auto-scaling to its own max.
+
 ## Top pick / "best bet"
 
 Each match's `topPick` is whichever of its two tipster votes (1X2 majority

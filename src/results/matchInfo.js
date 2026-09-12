@@ -26,7 +26,12 @@ const KEEP_CACHE_MS = 10 * 24 * 60 * 60 * 1000;
 // v5: standings rows gained `side` ('home'/'away'/null) — which of the two
 // fixture teams a flagged row is, so the UI can project a live match's
 // current score onto the table without re-doing the fuzzy team match.
-const SCHEMA_VERSION = 5;
+// v6: gained `overallStats` (goals scored/conceded per half + goal-timing
+// buckets, per side) — passed through from forebetMatchInfo.js as-is, no
+// annotation needed here (Forebet's own home/away split for the *current*
+// fixture already matches ours; only past-meeting rows like h2h need a
+// perspective flip).
+const SCHEMA_VERSION = 6;
 
 // Finds a match's Forebet detail-page URL from this cycle's raw Forebet
 // rows (forebet.js's extractRows captures `matchUrl` per row).

@@ -281,6 +281,72 @@ function renderFixturesTable(fixtures) {
   return `<table class="h2h-table"><thead><tr><th>Date</th><th>Venue</th><th class="num">Score</th><th>Opponent</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
+// Per-team goals/half-splits + a goal-timing chart, from Forebet's
+// "Overall statistics" panel (src/scrapers/tipsters/forebetMatchInfo.js's
+// parseOverallStats) — all over the same "last 6 matches" sample the
+// form/fixtures panels use. `overallStats.home`/`.away` line up directly
+// with this fixture's own home/away teams (Forebet's own designation for
+// *this* match, not a past-meeting perspective that needs flipping).
+function renderTeamStatsTable(homeTeam, awayTeam, stats) {
+  if (!stats || (!stats.home && !stats.away)) return '<div class="detail-muted">No stats available.</div>';
+  const row = (label, s) =>
+    !s
+      ? ''
+      : `
+      <tr>
+        <td class="teams">${escapeHtml(label)}</td>
+        <td class="num">${s.goalsScored.fullTime ?? '—'}</td>
+        <td class="num">${s.goalsConceded.fullTime ?? '—'}</td>
+        <td class="num">${s.goalsScored.firstHalf ?? '—'}</td>
+        <td class="num">${s.goalsConceded.firstHalf ?? '—'}</td>
+        <td class="num">${s.goalsScored.secondHalf ?? '—'}</td>
+        <td class="num">${s.goalsConceded.secondHalf ?? '—'}</td>
+      </tr>`;
+  return `<table class="h2h-table stats-table"><thead><tr>
+    <th>Team</th><th class="num">GF</th><th class="num">GA</th>
+    <th class="num">1H GF</th><th class="num">1H GA</th><th class="num">2H GF</th><th class="num">2H GA</th>
+  </tr></thead><tbody>${row(homeTeam, stats.home)}${row(awayTeam, stats.away)}</tbody></table>`;
+}
+
+const GOAL_TIMING_LABELS = ['0-15', '15-30', '30-45', '45-60', '60-75', '75-90'];
+
+// A small dependency-free bar chart per team: each 15-min bucket gets a
+// scored bar and a conceded bar, both scaled to the larger of the two
+// teams' max bucket value so the two teams' charts are visually
+// comparable rather than each auto-scaling to its own max.
+function renderGoalTimingChart(label, timing, maxVal) {
+  if (!timing) return '';
+  const max = Math.max(1, maxVal);
+  const buckets = GOAL_TIMING_LABELS.map((b, i) => {
+    const scored = timing.scored[i] ?? 0;
+    const conceded = timing.conceded[i] ?? 0;
+    const scoredPct = Math.round((scored / max) * 100);
+    const concededPct = Math.round((conceded / max) * 100);
+    return `
+      <div class="timing-bucket">
+        <div class="timing-bars">
+          <div class="timing-bar scored" style="height:${scoredPct}%" title="${scored} scored, ${b}'"></div>
+          <div class="timing-bar conceded" style="height:${concededPct}%" title="${conceded} conceded, ${b}'"></div>
+        </div>
+        <div class="timing-label">${b}</div>
+      </div>`;
+  }).join('');
+  return `<div class="timing-chart"><div class="timing-chart-title">${escapeHtml(label)}</div><div class="timing-bucket-row">${buckets}</div></div>`;
+}
+
+function renderGoalTimingCharts(homeTeam, awayTeam, stats) {
+  if (!stats || (!stats.home && !stats.away)) return '';
+  const allVals = [stats.home, stats.away]
+    .filter(Boolean)
+    .flatMap((s) => [...s.goalTiming.scored, ...s.goalTiming.conceded])
+    .filter((v) => typeof v === 'number');
+  const maxVal = allVals.length ? Math.max(...allVals) : 1;
+  return `
+    <div class="timing-legend"><span class="timing-swatch scored"></span>Scored <span class="timing-swatch conceded"></span>Conceded</div>
+    ${renderGoalTimingChart(homeTeam, stats.home && stats.home.goalTiming, maxVal)}
+    ${renderGoalTimingChart(awayTeam, stats.away && stats.away.goalTiming, maxVal)}`;
+}
+
 // Full league table (src/scrapers/tipsters/forebetMatchInfo.js's
 // parseStandings + src/results/matchInfo.js's annotateStandings). Forebet's
 // match page has no home-only/away-only version of this table — its
@@ -366,6 +432,12 @@ function renderMatchDetail(match) {
       <h3>Recent form (last 5)</h3>
       <div class="form-row"><span class="form-team">${escapeHtml(match.homeTeam)}</span>${renderFormBadges(hh && hh.homeForm)}</div>
       <div class="form-row"><span class="form-team">${escapeHtml(match.awayTeam)}</span>${renderFormBadges(hh && hh.awayForm)}</div>
+    </div>
+    <div class="detail-section">
+      <h3>Team stats (last 6 matches)</h3>
+      ${renderTeamStatsTable(match.homeTeam, match.awayTeam, hh && hh.overallStats)}
+      <div class="section-label">Goals by time period</div>
+      ${renderGoalTimingCharts(match.homeTeam, match.awayTeam, hh && hh.overallStats)}
     </div>
     <div class="detail-section">
       <h3>Head-to-head</h3>
