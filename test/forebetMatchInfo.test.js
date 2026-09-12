@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const cheerio = require('cheerio');
-const { parseH2H, parseForm, parseTeamFixtures } = require('../src/scrapers/tipsters/forebetMatchInfo');
+const { parseH2H, parseForm, parseTeamFixtures, parseStandings } = require('../src/scrapers/tipsters/forebetMatchInfo');
 
 // The "verified markup" tests below use a trimmed-down fixture built from
 // a real Forebet match-page capture (debug-tipsters/forebet-match.html,
@@ -258,4 +258,65 @@ test('parseTeamFixtures: does not pick up the H2H section', () => {
 test('parseTeamFixtures: no matching sections -> empty array, no throw', () => {
   const $ = cheerio.load('<div><p>nothing relevant here</p></div>');
   assert.deepEqual(parseTeamFixtures($), []);
+});
+
+// Real markup shape verified 2026-09-12 against a fresh Forebet match-page
+// capture (debug-tipsters/forebet-match.html, pulled via the debug-capture
+// branch): the "Standings of both teams" panel duplicates the same table
+// twice — a short `#short_standings` preview (only the fixture teams'
+// neighbors) and the full `#stand_hidden` one (every club) — parseStandings
+// must read only the full one, or a team near the two fixture teams in the
+// table would look like the entire league.
+const STANDINGS_HTML = `
+  <div id="short_standings">
+    <table id="standings" class="standings">
+      <tr class="hdn2"><td colspan="2">x</td></tr>
+      <tr class="color0">
+        <td class="std_pos"><div class="standing-first-td-"><span>4</span></div></td>
+        <td class="standing-second-td"><a href="/t/x">Neighbor Only FC</a></td>
+        <td align="center"><b>99</b></td><td align="center">1</td><td align="center">1</td>
+        <td align="center">0</td><td align="center">0</td><td align="center">9</td>
+        <td align="center">0</td><td align="center">9</td>
+      </tr>
+    </table>
+  </div>
+  <div id="stand_hidden">
+    <table width="100%" class="standings" id="standings">
+      <thead><tr class="standings_meta_data"><td colspan="2">Regular Season</td></tr></thead>
+      <tr class="hdn2 std_btn-heading">
+        <td colspan="2"><b>REGULAR SEASON</b></td>
+        <td><span>PTS</span></td><td><span>GP</span></td><td><span>W</span></td>
+        <td><span>D</span></td><td><span>L</span></td><td><span>GF</span></td>
+        <td><span>GA</span></td><td><span>+/-</span></td>
+      </tr>
+      <tr class="color0">
+        <td class="std_pos"><div class="standing-first-td-"><span>1</span></div></td>
+        <td class="standing-second-td"><a href="/en/teams/omiya-ardija">Omiya Ardija</a></td>
+        <td align="center"><b>11</b></td><td align="center">5</td><td align="center">3</td>
+        <td align="center">2</td><td align="center">0</td><td align="center">10</td>
+        <td align="center">5</td><td align="center">5</td>
+      </tr>
+      <tr class="color1">
+        <td class="std_pos"><div class="standing-first-td-4"><span class="std_zn">18</span></div></td>
+        <td class="standing-second-td"><a href="/en/teams/iwaki-fc">Iwaki FC</a></td>
+        <td align="center"><b>3</b></td><td align="center">5</td><td align="center">1</td>
+        <td align="center">0</td><td align="center">4</td><td align="center">6</td>
+        <td align="center">12</td><td align="center">-6</td>
+      </tr>
+    </table>
+  </div>`;
+
+test('parseStandings: reads the full #stand_hidden table, ignoring the #short_standings preview', () => {
+  const $ = cheerio.load(STANDINGS_HTML);
+  const rows = parseStandings($);
+  assert.deepEqual(rows, [
+    { position: 1, team: 'Omiya Ardija', points: 11, played: 5, won: 3, drawn: 2, lost: 0, goalsFor: 10, goalsAgainst: 5, goalDiff: 5 },
+    { position: 18, team: 'Iwaki FC', points: 3, played: 5, won: 1, drawn: 0, lost: 4, goalsFor: 6, goalsAgainst: 12, goalDiff: -6 },
+  ]);
+  assert.ok(!rows.some((r) => r.team === 'Neighbor Only FC'));
+});
+
+test('parseStandings: no standings panel -> empty array, no throw', () => {
+  const $ = cheerio.load('<div><p>nothing relevant here</p></div>');
+  assert.deepEqual(parseStandings($), []);
 });

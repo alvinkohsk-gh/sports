@@ -296,6 +296,36 @@ the list page forebet.js otherwise reads).
   otherwise never get `headToHead` at all. Every in-play kickoff is
   necessarily in the past, so this second call only ever reads the cache —
   it can't trigger a new fetch.
+
+### League standings
+
+The same match-detail panel also shows the full league table for that
+match's competition, with the two fixture teams highlighted.
+
+- The match page's "Standings of both teams" panel actually renders the
+  table *twice* — a short preview (`#short_standings`, only the rows near
+  the two fixture teams) and the full list (`#stand_hidden`, every club,
+  behind a "View all" toggle). `forebetMatchInfo.js`'s `parseStandings`
+  reads only the full `#stand_hidden` copy, or a team that merely happens
+  to sit near the two fixture teams in the table would look like the
+  entire league.
+- Each row carries position/team/points/played/won/drawn/lost/goals
+  for/against/difference. `src/results/matchInfo.js`'s `annotateStandings`
+  flags whichever rows are this fixture's own two teams (fuzzy-matched via
+  the same `teamsMatch` used everywhere else on the board), so the UI can
+  highlight them — verified 2026-09-12 against a real match-page capture.
+- **No home/away split**: the page's "Home/Away" tab looks like it should
+  filter this table, but it actually belongs to a completely different
+  widget — an "Overall statistics" goals-scored/conceded comparison
+  between just the two fixture teams — not a home-only/away-only version
+  of the standings table. Forebet doesn't offer one, so this is the one
+  overall table available; there's no per-team home/away form breakdown
+  here either; recent form (last 5, any venue) is still shown separately
+  above, as before.
+- Counts toward the same `headToHead` cache/schema-version machinery
+  described above (`SCHEMA_VERSION` bumped to 4) — a match with no
+  standings data yet (not cached, or Forebet's page carried none) just
+  shows "No standings data available" in that section.
 - No separate API route: `headToHead` rides along on each match object in
   `GET /api/matches`, same as `odds`/`value`/`tipsterConsensus`. Only
   populated via the published snapshot (the periodic GitHub Actions job) —

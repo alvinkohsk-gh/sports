@@ -282,6 +282,34 @@ function parseTeamFixtures($) {
   return sections;
 }
 
+// League table ("Standings of both teams" panel) — one row per club:
+// position, points, played, won, drawn, lost, goals for/against. Reads
+// the full list inside `#stand_hidden table.standings` (every club),
+// not the few-rows preview in `#short_standings` (only the two fixture
+// teams' neighbors). Forebet doesn't offer a home-only/away-only version
+// of this table (the page's own "Home/Away" tab belongs to a different,
+// unrelated goals-scored/conceded comparison widget) — this is the one
+// overall table it has.
+function parseStandings($) {
+  const rows = [];
+  $('#stand_hidden table.standings tr').each((_, el) => {
+    const row = $(el);
+    const posCell = row.find('td.std_pos');
+    if (!posCell.length) return; // header/meta rows carry no td.std_pos
+    const position = Number(posCell.find('span').first().text().trim());
+    const teamLink = row.find('td.standing-second-td a').first();
+    const team = teamLink.text().trim();
+    if (!position || !team) return;
+    const stats = row
+      .find("td[align='center']")
+      .map((__, td) => Number($(td).text().trim()))
+      .get();
+    const [points, played, won, drawn, lost, goalsFor, goalsAgainst, goalDiff] = stats;
+    rows.push({ position, team, points, played, won, drawn, lost, goalsFor, goalsAgainst, goalDiff });
+  });
+  return rows;
+}
+
 async function fetchForebetMatchInfo(url) {
   if (!url) return null;
   let html;
@@ -299,8 +327,16 @@ async function fetchForebetMatchInfo(url) {
   const fixtureSections = parseTeamFixtures($);
   const homeFixtures = fixtureSections[0] || [];
   const awayFixtures = fixtureSections[1] || [];
+  const standings = parseStandings($);
 
-  if (!h2h.length && !homeForm.length && !awayForm.length && !homeFixtures.length && !awayFixtures.length) {
+  if (
+    !h2h.length &&
+    !homeForm.length &&
+    !awayForm.length &&
+    !homeFixtures.length &&
+    !awayFixtures.length &&
+    !standings.length
+  ) {
     return null;
   }
   return {
@@ -309,9 +345,10 @@ async function fetchForebetMatchInfo(url) {
     awayForm,
     homeFixtures,
     awayFixtures,
+    standings,
     sourceUrl: url,
     fetchedAtISO: new Date().toISOString(),
   };
 }
 
-module.exports = { fetchForebetMatchInfo, parseH2H, parseForm, parseTeamFixtures };
+module.exports = { fetchForebetMatchInfo, parseH2H, parseForm, parseTeamFixtures, parseStandings };

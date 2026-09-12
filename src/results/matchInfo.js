@@ -21,7 +21,9 @@ const KEEP_CACHE_MS = 10 * 24 * 60 * 60 * 1000;
 // gained result (PR #19).
 // v3: fixture rows gained venue ('H'/'A' — which side the subject team
 // played on in that past fixture).
-const SCHEMA_VERSION = 3;
+// v4: gained `standings` (the league table), with each row's `isMatchTeam`
+// flagging whether it's one of this fixture's own two teams.
+const SCHEMA_VERSION = 4;
 
 // Finds a match's Forebet detail-page URL from this cycle's raw Forebet
 // rows (forebet.js's extractRows captures `matchUrl` per row).
@@ -60,6 +62,19 @@ function annotateH2HResults(h2h, match) {
     const result = usGoals > themGoals ? 'W' : usGoals < themGoals ? 'L' : 'D';
     return { ...r, result };
   });
+}
+
+// Flags each standings row that's one of *this* fixture's own two teams,
+// so the UI can highlight them in the full league table — fuzzy-matched
+// the same way every other team-name pairing on the board is (Forebet's
+// standings table spells clubs the same way its fixture rows do, but a
+// belt-and-braces match here is cheap and avoids yet another exact-string
+// dependency).
+function annotateStandings(standings, match) {
+  return (standings || []).map((r) => ({
+    ...r,
+    isMatchTeam: teamsMatch(r.team, match.homeTeam) || teamsMatch(r.team, match.awayTeam),
+  }));
 }
 
 /**
@@ -124,6 +139,7 @@ async function attachMatchInfo(matches, forebetRows, prevCache, { nowMs = Date.n
     try {
       info = await fetchFn(url);
       if (info && info.h2h) info = { ...info, h2h: annotateH2HResults(info.h2h, m) };
+      if (info && info.standings) info = { ...info, standings: annotateStandings(info.standings, m) };
     } catch (err) {
       console.error('[matchInfo] fetch failed:', err.message || err);
     }
@@ -138,4 +154,13 @@ async function attachMatchInfo(matches, forebetRows, prevCache, { nowMs = Date.n
   return { entries, updatedAt: new Date(nowMs).toISOString() };
 }
 
-module.exports = { attachMatchInfo, findForebetUrl, annotateH2HResults, TTL_MS, MAX_FETCHES_PER_RUN, MAX_LOOKAHEAD_MS, SCHEMA_VERSION };
+module.exports = {
+  attachMatchInfo,
+  findForebetUrl,
+  annotateH2HResults,
+  annotateStandings,
+  TTL_MS,
+  MAX_FETCHES_PER_RUN,
+  MAX_LOOKAHEAD_MS,
+  SCHEMA_VERSION,
+};
