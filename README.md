@@ -71,6 +71,17 @@ odds-history point existed for the fixture that early — older samples
 from before `odds-history.json` existed, or a fixture with no recorded
 SG Pools price yet at capture time.
 
+`results.html`'s date range and league filters both have a **Market**
+sibling (`1X2 + O/U` / `1X2 only` / `Over/Under only`) — picking one
+re-sorts the site leaderboard by that market's own accuracy alone (a site
+great at 1X2 but poor at O/U, or vice versa, can rank very differently
+depending which is selected) instead of the combined overall figure, dims
+the other market's bar on each card, and narrows the recent-picks table's
+pills to just that market's pick (a match where the filtered site made no
+pick in that market drops out of the table, same as the existing per-site
+click-to-filter). Sites with zero graded picks in the selected market are
+left off the leaderboard entirely rather than shown at 0/0.
+
 The snapshot job runs a **FlareSolverr** service container and points
 `FLARESOLVERR_URL` at it. `src/scrapers/tipsters/fetchHtml.js` sends any
 page that plain HTTP can't get (Cloudflare challenge / 403) through
