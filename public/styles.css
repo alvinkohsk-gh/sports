@@ -305,6 +305,7 @@ table.h2h-table td.num.result-loss { color: var(--urgent); }
 table.standings-table td.teams { color: var(--text); font-size: 13px; font-weight: 500; }
 table.standings-table tr.standings-highlight { background: rgba(56, 189, 248, 0.12); }
 table.standings-table tr.standings-highlight td.teams { color: var(--accent); font-weight: 700; }
+.standings-live-note { color: var(--urgent); margin-bottom: 6px; }
 .detail-muted { color: var(--muted); font-size: 13px; }
 .detail-note { color: var(--muted); font-size: 11px; margin-top: 14px; line-height: 1.5; }
 

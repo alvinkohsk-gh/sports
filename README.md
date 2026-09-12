@@ -323,9 +323,39 @@ match's competition, with the two fixture teams highlighted.
   here either; recent form (last 5, any venue) is still shown separately
   above, as before.
 - Counts toward the same `headToHead` cache/schema-version machinery
-  described above (`SCHEMA_VERSION` bumped to 4) — a match with no
-  standings data yet (not cached, or Forebet's page carried none) just
-  shows "No standings data available" in that section.
+  described above (`SCHEMA_VERSION` bumped to 4, then 5 — see below) — a
+  match with no standings data yet (not cached, or Forebet's page carried
+  none) just shows "No standings data available" in that section.
+
+### Live standings projection
+
+For a match that's currently live *and* has a real Flashscore-matched
+score (`match.liveScore`, an actual home-away split — not
+`match.goalsSoFar`, the O/U-line-inferred combined goal count used when
+Flashscore hasn't matched the fixture, which has no side to attribute
+goals to), the standings table shown is projected rather than the raw
+pre-match one: the current score is treated as if it were the match's
+final result, added onto the home/away rows' existing tallies, and the
+whole table is re-sorted — so a fan watching a live game sees where it'd
+actually put both sides right now, not the table as it stood before
+kickoff.
+
+- `src/results/matchInfo.js`'s `annotateStandings` now also labels each
+  flagged row with `side` (`'home'`/`'away'`/`null`) so the projection
+  knows which row to credit which team's goals to without re-running the
+  fuzzy team match (`SCHEMA_VERSION` bumped 4 → 5 for the shape change).
+- The projection itself is pure math in `public/live-standings-calc.js`
+  (`parseScore`/`projectStandings`), same pattern as
+  `public/bankroll-calc.js` — no DOM dependency, unit-tested directly with
+  `node:test`, loaded as a plain `<script>` before `app.js`.
+- It's a simplification, and the UI labels it as a live "projected" table
+  rather than the real-time official one: it can't account for any *other*
+  match live at the same moment (a real league table updates from every
+  simultaneous fixture), and ties are broken by goal difference then goals
+  scored — not head-to-head, which the table doesn't carry.
+- A live match with no Flashscore-matched score (so no home/away split to
+  project with) just falls back to showing the plain pre-match table, same
+  as any non-live match.
 - No separate API route: `headToHead` rides along on each match object in
   `GET /api/matches`, same as `odds`/`value`/`tipsterConsensus`. Only
   populated via the published snapshot (the periodic GitHub Actions job) —
