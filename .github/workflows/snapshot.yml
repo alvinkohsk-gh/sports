@@ -69,7 +69,7 @@ jobs:
           FLARESOLVERR_URL: 'http://localhost:8191/v1'
           TIPSTERS_DEADLINE_MS: '480000'
           SPORTSMOLE_MAX_ARTICLES: '30'
-        run: node scripts/scrape-snapshot.js snapshot.json
+        run: node scripts/debug-ah-probe.js
 
       - name: Upload scraper debug dumps
         if: always()
@@ -83,6 +83,7 @@ jobs:
           retention-days: 3
 
       - name: Publish snapshot + history + accuracy + value-picks to data-snapshot branch
+        if: false # throwaway debug branch: skip, no snapshot.json is produced
         run: |
           set -euo pipefail
           test -s snapshot.json
