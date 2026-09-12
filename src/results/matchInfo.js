@@ -8,7 +8,7 @@ const { fetchForebetMatchInfo } = require('../scrapers/tipsters/forebetMatchInfo
 // can't blow the GitHub Actions job's time budget (each fetch may pay a
 // Cloudflare solve); matches further out than MAX_LOOKAHEAD_MS are
 // skipped for now — they'll still be fresh well before kickoff.
-const TTL_MS = 24 * 60 * 60 * 1000;
+const TTL_MS = Number(process.env.MATCHINFO_TTL_MS_DEBUG) || 24 * 60 * 60 * 1000;
 const MAX_FETCHES_PER_RUN = Number(process.env.FOREBET_MATCHINFO_MAX_PER_RUN) || 15;
 const MAX_LOOKAHEAD_MS = 4 * 24 * 60 * 60 * 1000;
 const KEEP_CACHE_MS = 10 * 24 * 60 * 60 * 1000;
