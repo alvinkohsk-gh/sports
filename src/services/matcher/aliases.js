@@ -52,6 +52,12 @@ const ALIASES = [
   // "Everton de Vina" / "Everton Vina del Mar" (Chile) vs SG Pools'
   // "Everton VDM" ("VDM" = Viña del Mar) — no shared token past "everton".
   ['everton de vina', 'everton vdm', 'everton vina del mar'],
+  // Malaysian M League club: SG Pools lists it by nickname alone ("Red
+  // Warrior"), Forebet by its old registered name ("Kelantan FA") — no
+  // shared token between "red warrior" and "kelantan fa" at all, so plain
+  // overlap scoring rejects the pair outright (missed Forebet H2H/form/
+  // standings for this fixture entirely).
+  ['kelantan fa', 'red warrior', 'kelantan red warrior fc', 'kelantan red warriors'],
   ['sporting kansas city', 'sporting kc'],
   ['los angeles galaxy', 'la galaxy'],
   ['seattle sounders', 'seattle sndrs'],
