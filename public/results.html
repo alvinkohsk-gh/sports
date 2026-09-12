@@ -35,6 +35,8 @@
     .acccard:hover { box-shadow: 0 0 0 1px var(--card-border); }
     .acccard.selected { box-shadow: 0 0 0 2px var(--site-color, var(--accent)); }
     .accgrid.has-selection .acccard:not(.selected) { opacity: .45; }
+    .accgrid.market-1x2 .market-block-ou { opacity: .35; }
+    .accgrid.market-ou .market-block-1x2 { opacity: .35; }
     .clear-site {
       background: rgba(148,163,184,0.12); color: var(--text); border: 1px solid var(--card-border);
       border-radius: 6px; padding: 3px 9px; font-size: 12px; cursor: pointer;
@@ -114,6 +116,13 @@
         <button data-preset="all" class="active">All</button>
       </div>
       <label>League <select id="league"><option value="">All leagues</option></select></label>
+      <label>Market
+        <select id="market">
+          <option value="">1X2 + O/U</option>
+          <option value="1x2">1X2 only</option>
+          <option value="ou">Over/Under only</option>
+        </select>
+      </label>
       <span class="range-note" id="range-note"></span>
     </div>
 
@@ -167,6 +176,7 @@
     const toEl = document.getElementById('to');
     const presetsEl = document.getElementById('presets');
     const leagueEl = document.getElementById('league');
+    const marketEl = document.getElementById('market');
     const rangeNoteEl = document.getElementById('range-note');
 
     function label(s) { return SITE_LABELS[s] || s; }
@@ -184,7 +194,11 @@
         </div>`;
     }
 
-    function pillFor(s) {
+    // `market` narrows which pick bit(s) a pill shows: '' (default) shows
+    // both 1X2 and O/U when the site made both; '1x2'/'ou' shows just that
+    // one — same market filter the site leaderboard/sort applies, kept in
+    // sync so the table and the cards above it always agree on scope.
+    function pillFor(s, market) {
       const mark = (ok) =>
         ok === null || ok === undefined
           ? '<span class="dash">·</span>'
@@ -203,8 +217,8 @@
         return `<span class="res"><span class="sel">${sel}</span>${mark(ok)}${oddHtml}</span>`;
       };
       const bits = [];
-      if (s.pick) bits.push(bit(s.pick[0].toUpperCase(), s.oneX2Correct, s.oneX2Odd));
-      if (s.ou) bits.push(bit(s.ou.split(' ')[0][0].toUpperCase(), s.ouCorrect, s.ouOdd));
+      if (s.pick && market !== 'ou') bits.push(bit(s.pick[0].toUpperCase(), s.oneX2Correct, s.oneX2Odd));
+      if (s.ou && market !== '1x2') bits.push(bit(s.ou.split(' ')[0][0].toUpperCase(), s.ouCorrect, s.ouOdd));
       return `<span class="pill site-${s.site}${s.pending ? ' pending' : ''}">${label(s.site)}${bits.join('')}</span>`;
     }
 
@@ -235,9 +249,33 @@
       return per;
     }
 
-    function render(perSite, tableSamples, singleDay) {
-      const sites = Object.entries(perSite).sort(
-        (a, b) => (b[1].overall ?? -1) - (a[1].overall ?? -1) || b[1].graded - a[1].graded
+    // `market` narrows the leaderboard to one market's own accuracy: '1x2'
+    // ranks/best-badges by oneX2Pct alone, 'ou' by ouPct alone, '' (default)
+    // keeps the combined overall. Sites with no graded picks in the chosen
+    // market are dropped from the leaderboard entirely rather than shown
+    // at 0/0, and the recent-picks table's pills/rows follow the same
+    // narrowing so the two sections never disagree on scope.
+    function marketPct(b, market) {
+      if (market === '1x2') return b.oneX2Pct;
+      if (market === 'ou') return b.ouPct;
+      return b.overall == null ? null : Math.round(b.overall * 100);
+    }
+    function marketCount(b, market) {
+      if (market === '1x2') return b.oneX2Total;
+      if (market === 'ou') return b.ouTotal;
+      return b.graded;
+    }
+    function marketCorrect(b, market) {
+      if (market === '1x2') return b.oneX2Correct;
+      if (market === 'ou') return b.ouCorrect;
+      return b.oneX2Correct + b.ouCorrect;
+    }
+
+    function render(perSite, tableSamples, singleDay, market) {
+      let siteEntries = Object.entries(perSite);
+      if (market) siteEntries = siteEntries.filter(([, b]) => marketCount(b, market) > 0);
+      const sites = siteEntries.sort(
+        (a, b) => (marketPct(b[1], market) ?? -1) - (marketPct(a[1], market) ?? -1) || marketCount(b[1], market) - marketCount(a[1], market)
       );
 
       if (!sites.length && !tableSamples.length) {
@@ -252,8 +290,11 @@
       }
       emptyEl.hidden = true;
 
-      const bestSite = sites.find(([, b]) => b.graded >= MIN_BEST)?.[0] || null;
+      const bestSite = sites.find(([, b]) => marketCount(b, market) >= MIN_BEST)?.[0] || null;
+      const overallLabel = market === '1x2' ? '1X2' : market === 'ou' ? 'Over/Under' : 'Overall';
       gridEl.classList.toggle('has-selection', !!selectedSite);
+      gridEl.classList.toggle('market-1x2', market === '1x2');
+      gridEl.classList.toggle('market-ou', market === 'ou');
       gridEl.innerHTML = sites
         .map(
           ([site, b]) => `
@@ -261,9 +302,9 @@
              data-site="${site}" role="button" tabindex="0"
              aria-pressed="${site === selectedSite}" title="Show only ${label(site)}'s picks">
           <h3>${site === bestSite ? '<span class="crown">🏆 most accurate</span>' : ''}${label(site)}</h3>
-          ${metric('1X2 (home/draw/away)', b.oneX2Correct, b.oneX2Total, b.oneX2Pct, 'x12')}
-          ${metric('Over / Under goals', b.ouCorrect, b.ouTotal, b.ouPct, 'ou')}
-          <div class="metric-top"><span>Overall</span><span>${b.overall == null ? '—' : Math.round(b.overall * 100) + '%'} · ${b.oneX2Correct + b.ouCorrect}/${b.graded}</span></div>
+          <div class="metric-block market-block-1x2">${metric('1X2 (home/draw/away)', b.oneX2Correct, b.oneX2Total, b.oneX2Pct, 'x12')}</div>
+          <div class="metric-block market-block-ou">${metric('Over / Under goals', b.ouCorrect, b.ouTotal, b.ouPct, 'ou')}</div>
+          <div class="metric-top"><span>${overallLabel}</span><span>${marketPct(b, market) == null ? '—' : marketPct(b, market) + '%'} · ${marketCorrect(b, market)}/${marketCount(b, market)}</span></div>
         </div>`
         )
         .join('');
@@ -271,6 +312,8 @@
       const byMatch = new Map();
       for (const s of tableSamples) {
         if (selectedSite && s.site !== selectedSite) continue;
+        if (market === '1x2' && !s.pick) continue;
+        if (market === 'ou' && !s.ou) continue;
         if (!byMatch.has(s.matchKey))
           byMatch.set(s.matchKey, { fixture: s.fixture, score: null, kickoffISO: s.kickoffISO, picks: [] });
         const row = byMatch.get(s.matchKey);
@@ -292,7 +335,7 @@
             <td><div class="pillrow">${m.picks
               .slice()
               .sort((a, b) => (a.pending === b.pending ? 0 : a.pending ? 1 : -1))
-              .map(pillFor)
+              .map((s) => pillFor(s, market))
               .join('')}</div></td>
           </tr>`;
         })
@@ -337,17 +380,19 @@
       const singleDay = fromEl.value && fromEl.value === toEl.value;
       const perSite = computePerSite(graded);
       if (selectedSite && !perSite[selectedSite]) selectedSite = null; // nothing for it in this scope
-      render(perSite, graded.concat(pending), singleDay);
+      const market = marketEl.value; // '' | '1x2' | 'ou'
+      render(perSite, graded.concat(pending), singleDay, market);
 
       const rangeLabel = fromEl.value && toEl.value
         ? (singleDay ? fromEl.value : `${fromEl.value} → ${toEl.value}`)
         : 'all dates';
+      const marketLabel = market === '1x2' ? '1X2' : market === 'ou' ? 'Over/Under' : null;
       const best = Object.entries(perSite)
-        .filter(([, b]) => b.graded >= MIN_BEST)
-        .sort((a, b) => (b[1].overall ?? -1) - (a[1].overall ?? -1))[0];
+        .filter(([, b]) => marketCount(b, market) >= MIN_BEST)
+        .sort((a, b) => (marketPct(b[1], market) ?? -1) - (marketPct(a[1], market) ?? -1))[0];
       rangeNoteEl.innerHTML =
-        `${rangeLabel}${lg ? ` · ${lg}` : ''} · ${graded.length} graded pick${graded.length === 1 ? '' : 's'}` +
-        (best ? ` · best: ${label(best[0])} ${Math.round(best[1].overall * 100)}%` : '') +
+        `${rangeLabel}${lg ? ` · ${lg}` : ''}${marketLabel ? ` · ${marketLabel} only` : ''} · ${graded.length} graded pick${graded.length === 1 ? '' : 's'}` +
+        (best ? ` · best: ${label(best[0])} ${marketPct(best[1], market)}%` : '') +
         (selectedSite ? ` · <b>${label(selectedSite)} only</b> <button class="clear-site" id="clear-site">show all</button>` : '');
       const clearBtn = document.getElementById('clear-site');
       if (clearBtn) clearBtn.addEventListener('click', () => { selectedSite = null; apply(); });
@@ -390,6 +435,7 @@
       })
     );
     leagueEl.addEventListener('change', apply);
+    marketEl.addEventListener('change', apply);
 
     async function load() {
       try {
