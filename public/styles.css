@@ -306,6 +306,21 @@ table.standings-table td.teams { color: var(--text); font-size: 13px; font-weigh
 table.standings-table tr.standings-highlight { background: rgba(56, 189, 248, 0.12); }
 table.standings-table tr.standings-highlight td.teams { color: var(--accent); font-weight: 700; }
 .standings-live-note { color: var(--urgent); margin-bottom: 6px; }
+table.stats-table td.teams { color: var(--text); font-size: 13px; font-weight: 500; }
+.timing-legend { font-size: 11px; color: var(--muted); margin: 8px 0 4px; display: flex; align-items: center; gap: 4px; }
+.timing-swatch { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-left: 8px; }
+.timing-swatch:first-child { margin-left: 0; }
+.timing-swatch.scored { background: var(--ok); }
+.timing-swatch.conceded { background: var(--urgent); }
+.timing-chart { margin-top: 6px; }
+.timing-chart-title { font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+.timing-bucket-row { display: flex; gap: 6px; }
+.timing-bucket { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; }
+.timing-bars { display: flex; gap: 2px; align-items: flex-end; height: 44px; width: 100%; justify-content: center; }
+.timing-bar { width: 8px; border-radius: 2px 2px 0 0; min-height: 2px; }
+.timing-bar.scored { background: var(--ok); }
+.timing-bar.conceded { background: var(--urgent); }
+.timing-label { font-size: 9px; color: var(--muted); margin-top: 3px; white-space: nowrap; }
 .detail-muted { color: var(--muted); font-size: 13px; }
 .detail-note { color: var(--muted); font-size: 11px; margin-top: 14px; line-height: 1.5; }
 

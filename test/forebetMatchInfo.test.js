@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const cheerio = require('cheerio');
-const { parseH2H, parseForm, parseTeamFixtures, parseStandings } = require('../src/scrapers/tipsters/forebetMatchInfo');
+const { parseH2H, parseForm, parseTeamFixtures, parseStandings, parseOverallStats } = require('../src/scrapers/tipsters/forebetMatchInfo');
 
 // The "verified markup" tests below use a trimmed-down fixture built from
 // a real Forebet match-page capture (debug-tipsters/forebet-match.html,
@@ -319,4 +319,46 @@ test('parseStandings: reads the full #stand_hidden table, ignoring the #short_st
 test('parseStandings: no standings panel -> empty array, no throw', () => {
   const $ = cheerio.load('<div><p>nothing relevant here</p></div>');
   assert.deepEqual(parseStandings($), []);
+});
+
+// The "Overall statistics" widget's bar chart only renders relative
+// bar-height percentages in the DOM (scaled to a shared axis max, not to
+// games played), so the real counts are read out of the `get_ovd(type)`
+// JS function Forebet embeds on the page instead — this fixture keeps the
+// function's real (minified) shape from a genuine capture
+// (2026-09-12), trimmed to just the fields parseOverallStats reads, to
+// prove the brace-balanced extraction handles real nesting/whitespace
+// rather than a hand-shaped string that happens to regex-match.
+const OVERALL_STATS_SCRIPT_HTML = `<script>
+function get_ovd(type){
+	if(type=="h"){
+		return {"all":{"ft":{"scr":[5,2,3],"cnd":[15,6,9],"pl":[6,2,4],"scr_min_0_15":[1,1,0],"scr_min_15_30":[1,0,1],"scr_min_30_45":[0,0,0],"scr_min_45_60":[1,0,1],"scr_min_60_75":[2,1,1],"scr_min_75_90":[0,0,0],"cnd_min_0_15":[1,1,0],"cnd_min_15_30":[3,1,2],"cnd_min_30_45":[0,0,0],"cnd_min_45_60":[4,1,3],"cnd_min_60_75":[0,0,0],"cnd_min_75_90":[7,3,4]},"ht1":{"scr":[2,1,1],"cnd":[4,2,2],"pl":[6,2,4]},"ht2":{"scr":[3,1,2],"cnd":[11,4,7],"pl":[6,2,4]}}};
+	}else{
+    	return {"all":{"ft":{"scr":[9,5,4],"cnd":[6,3,3],"pl":[6,3,3],"scr_min_0_15":[2,1,1],"scr_min_15_30":[0,0,0],"scr_min_30_45":[2,1,1],"scr_min_45_60":[1,1,0],"scr_min_60_75":[2,1,1],"scr_min_75_90":[1,0,1],"cnd_min_0_15":[1,0,1],"cnd_min_15_30":[0,0,0],"cnd_min_30_45":[0,0,0],"cnd_min_45_60":[3,2,1],"cnd_min_60_75":[0,0,0],"cnd_min_75_90":[2,1,1]},"ht1":{"scr":[4,2,2],"cnd":[2,0,2],"pl":[6,3,3]},"ht2":{"scr":[5,3,2],"cnd":[4,3,1],"pl":[6,3,3]}}};
+    }
+}
+</script>`;
+
+test('parseOverallStats: reads goals/half-splits/goal-timing out of the real get_ovd(type) script shape', () => {
+  const $ = cheerio.load(OVERALL_STATS_SCRIPT_HTML);
+  const stats = parseOverallStats($);
+  assert.deepEqual(stats, {
+    home: {
+      played: 6,
+      goalsScored: { fullTime: 5, firstHalf: 2, secondHalf: 3 },
+      goalsConceded: { fullTime: 15, firstHalf: 4, secondHalf: 11 },
+      goalTiming: { scored: [1, 1, 0, 1, 2, 0], conceded: [1, 3, 0, 4, 0, 7] },
+    },
+    away: {
+      played: 6,
+      goalsScored: { fullTime: 9, firstHalf: 4, secondHalf: 5 },
+      goalsConceded: { fullTime: 6, firstHalf: 2, secondHalf: 4 },
+      goalTiming: { scored: [2, 0, 2, 1, 2, 1], conceded: [1, 0, 0, 3, 0, 2] },
+    },
+  });
+});
+
+test('parseOverallStats: no get_ovd script -> null, no throw', () => {
+  const $ = cheerio.load('<div><p>nothing relevant here</p></div>');
+  assert.equal(parseOverallStats($), null);
 });

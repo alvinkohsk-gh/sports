@@ -310,6 +310,101 @@ function parseStandings($) {
   return rows;
 }
 
+// "Overall statistics" panel — goals scored/conceded (full time, first
+// half, second half) and a goal-timing breakdown (six 15-min buckets),
+// each per side over the same "last 6 matches" sample the fixtures/form
+// panels use. The panel's own bar chart only renders relative bar-height
+// percentages (scaled to a shared axis max, not to games played), so the
+// real counts are read from the `get_ovd(type)` JS function Forebet
+// embeds on the page to drive that chart's `data-team`/`data-stat`
+// elements — verified against a real capture (2026-09-12) that
+// `get_ovd("h")` is the fixture's home team and `get_ovd("a")` the away
+// team (matches the `data-team="h"/"a"` attributes on the rendered
+// "Played games"/"Goals" cards, which are captioned with the actual team
+// codes). Each stat is a 3-element array `[allMatches, homeMatches,
+// awayMatches]` (that team's own home/away split, unrelated to which
+// side of *this* fixture they are) — only the first (all-matches) value
+// is used here.
+function extractBalancedObject(str, openIdx) {
+  if (str[openIdx] !== '{') return null;
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = openIdx; i < str.length; i++) {
+    const ch = str[i];
+    if (inString) {
+      if (escape) escape = false;
+      else if (ch === '\\') escape = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    else if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) return str.slice(openIdx, i + 1);
+    }
+  }
+  return null;
+}
+
+// Finds the next `return { ... };` starting from `fromIdx` and parses the
+// object literal as JSON (every value in this payload is a number, string,
+// or array of those — no functions/undefined — so it's always valid JSON).
+function extractReturnedObject(scriptText, fromIdx) {
+  const returnMatch = /return\s*/i.exec(scriptText.slice(fromIdx));
+  if (!returnMatch) return null;
+  const objStart = fromIdx + returnMatch.index + returnMatch[0].length;
+  if (scriptText[objStart] !== '{') return null;
+  const json = extractBalancedObject(scriptText, objStart);
+  if (!json) return null;
+  try {
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+const TIME_BUCKETS = ['0_15', '15_30', '30_45', '45_60', '60_75', '75_90'];
+
+function summarizeOvd(data) {
+  const ft = (data && data.all && data.all.ft) || {};
+  const ht1 = (data && data.all && data.all.ht1) || {};
+  const ht2 = (data && data.all && data.all.ht2) || {};
+  const first = (arr) => (Array.isArray(arr) && typeof arr[0] === 'number' ? arr[0] : null);
+  return {
+    played: first(ft.pl),
+    goalsScored: { fullTime: first(ft.scr), firstHalf: first(ht1.scr), secondHalf: first(ht2.scr) },
+    goalsConceded: { fullTime: first(ft.cnd), firstHalf: first(ht1.cnd), secondHalf: first(ht2.cnd) },
+    goalTiming: {
+      scored: TIME_BUCKETS.map((b) => first(ft[`scr_min_${b}`])),
+      conceded: TIME_BUCKETS.map((b) => first(ft[`cnd_min_${b}`])),
+    },
+  };
+}
+
+function parseOverallStats($) {
+  let scriptText = null;
+  $('script').each((_, el) => {
+    const t = $(el).html() || '';
+    if (t.includes('function get_ovd')) scriptText = t;
+  });
+  if (!scriptText) return null;
+
+  const hMatch = /if\s*\(\s*type\s*==\s*"h"\s*\)\s*\{/.exec(scriptText);
+  if (!hMatch) return null;
+  const hBranchStart = hMatch.index + hMatch[0].length;
+  const home = extractReturnedObject(scriptText, hBranchStart);
+
+  const elseMatch = /\}\s*else\s*\{/.exec(scriptText.slice(hBranchStart));
+  if (!elseMatch) return null;
+  const elseBranchStart = hBranchStart + elseMatch.index + elseMatch[0].length;
+  const away = extractReturnedObject(scriptText, elseBranchStart);
+
+  if (!home && !away) return null;
+  return { home: home ? summarizeOvd(home) : null, away: away ? summarizeOvd(away) : null };
+}
+
 async function fetchForebetMatchInfo(url) {
   if (!url) return null;
   let html;
@@ -328,6 +423,7 @@ async function fetchForebetMatchInfo(url) {
   const homeFixtures = fixtureSections[0] || [];
   const awayFixtures = fixtureSections[1] || [];
   const standings = parseStandings($);
+  const overallStats = parseOverallStats($);
 
   if (
     !h2h.length &&
@@ -335,7 +431,8 @@ async function fetchForebetMatchInfo(url) {
     !awayForm.length &&
     !homeFixtures.length &&
     !awayFixtures.length &&
-    !standings.length
+    !standings.length &&
+    !overallStats
   ) {
     return null;
   }
@@ -346,9 +443,10 @@ async function fetchForebetMatchInfo(url) {
     homeFixtures,
     awayFixtures,
     standings,
+    overallStats,
     sourceUrl: url,
     fetchedAtISO: new Date().toISOString(),
   };
 }
 
-module.exports = { fetchForebetMatchInfo, parseH2H, parseForm, parseTeamFixtures, parseStandings };
+module.exports = { fetchForebetMatchInfo, parseH2H, parseForm, parseTeamFixtures, parseStandings, parseOverallStats };
