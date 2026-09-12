@@ -23,7 +23,10 @@ const KEEP_CACHE_MS = 10 * 24 * 60 * 60 * 1000;
 // played on in that past fixture).
 // v4: gained `standings` (the league table), with each row's `isMatchTeam`
 // flagging whether it's one of this fixture's own two teams.
-const SCHEMA_VERSION = 4;
+// v5: standings rows gained `side` ('home'/'away'/null) — which of the two
+// fixture teams a flagged row is, so the UI can project a live match's
+// current score onto the table without re-doing the fuzzy team match.
+const SCHEMA_VERSION = 5;
 
 // Finds a match's Forebet detail-page URL from this cycle's raw Forebet
 // rows (forebet.js's extractRows captures `matchUrl` per row).
@@ -71,10 +74,15 @@ function annotateH2HResults(h2h, match) {
 // belt-and-braces match here is cheap and avoids yet another exact-string
 // dependency).
 function annotateStandings(standings, match) {
-  return (standings || []).map((r) => ({
-    ...r,
-    isMatchTeam: teamsMatch(r.team, match.homeTeam) || teamsMatch(r.team, match.awayTeam),
-  }));
+  return (standings || []).map((r) => {
+    const isHome = teamsMatch(r.team, match.homeTeam);
+    const isAway = !isHome && teamsMatch(r.team, match.awayTeam);
+    return {
+      ...r,
+      isMatchTeam: isHome || isAway,
+      side: isHome ? 'home' : isAway ? 'away' : null,
+    };
+  });
 }
 
 /**

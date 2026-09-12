@@ -287,9 +287,23 @@ function renderFixturesTable(fixtures) {
 // "Home/Away" tab belongs to a separate goals-scored/conceded widget — so
 // this is the one overall table available; the two fixture teams are just
 // highlighted within it via `isMatchTeam`.
-function renderStandingsTable(standings) {
+//
+// For a live match with a real (Flashscore-matched) score, the table is
+// projected: public/live-standings-calc.js treats the current score as if
+// it were final and re-sorts, so a fan watching a live game sees where it'd
+// put the two sides right now rather than the pre-match table. This can't
+// account for any other match live at the same moment, so it's labeled as
+// a projection rather than presented as the real-time official table.
+// `match.goalsSoFar` (the O/U-line estimate used when Flashscore hasn't
+// matched the fixture) has no home/away split, so it can't drive this —
+// only a real `match.liveScore` can.
+function renderStandingsTable(standings, match) {
   if (!standings || !standings.length) return '<div class="detail-muted">No standings data available.</div>';
-  const rows = standings
+  const projected = match && match.live && match.liveScore ? LiveStandingsCalc.projectStandings(standings, match.liveScore) : null;
+  const note = projected
+    ? `<div class="section-label standings-live-note">● LIVE — projected with the current score (${escapeHtml(match.liveScore)}) treated as final</div>`
+    : '';
+  const rows = (projected || standings)
     .map(
       (r) => `
       <tr class="${r.isMatchTeam ? 'standings-highlight' : ''}">
@@ -306,7 +320,7 @@ function renderStandingsTable(standings) {
       </tr>`
     )
     .join('');
-  return `<table class="h2h-table standings-table"><thead><tr>
+  return `${note}<table class="h2h-table standings-table"><thead><tr>
     <th>#</th><th>Team</th><th class="num">Pts</th><th class="num">P</th><th class="num">W</th>
     <th class="num">D</th><th class="num">L</th><th class="num">GF</th><th class="num">GA</th><th class="num">+/-</th>
   </tr></thead><tbody>${rows}</tbody></table>`;
@@ -367,7 +381,7 @@ function renderMatchDetail(match) {
     </div>
     <div class="detail-section">
       <h3>League standings</h3>
-      ${renderStandingsTable(hh && hh.standings)}
+      ${renderStandingsTable(hh && hh.standings, match)}
     </div>
     <div class="detail-section">
       <h3>Singapore Pools price movement</h3>

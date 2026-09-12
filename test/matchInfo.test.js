@@ -256,6 +256,17 @@ test('annotateStandings: flags rows matching either the home or away team, leavi
   assert.deepEqual(flags, [true, false, true]);
 });
 
+test('annotateStandings: labels which flagged row is the home team vs the away team', () => {
+  const m = match('Arsenal', 'Chelsea', IN_2_DAYS);
+  const standings = [
+    { position: 1, team: 'Arsenal', points: 50 },
+    { position: 2, team: 'Liverpool', points: 48 },
+    { position: 3, team: 'Chelsea', points: 45 },
+  ];
+  const sides = annotateStandings(standings, m).map((r) => r.side);
+  assert.deepEqual(sides, ['home', null, 'away']);
+});
+
 test('annotateStandings: attachMatchInfo annotates standings rows on a freshly fetched result', async () => {
   const m = match('Arsenal', 'Chelsea', IN_2_DAYS);
   const rows = [forebetRow('Arsenal', 'Chelsea', 'https://forebet.example/arsenal-chelsea')];
