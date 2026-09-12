@@ -1,0 +1,298 @@
+{
+  "probedAt": "2026-09-12T23:20:06.107Z",
+  "results": [
+    {
+      "betType": "HL",
+      "url": "https://api.singaporepools.com/football/events/v1/upcoming-event?lang=en&betType=HL",
+      "status": 200,
+      "eventCount": 97,
+      "markets": [
+        {
+          "name": "Total Goals Over/Under 3.5",
+          "minorCode": "HL",
+          "handicapValue": "3.5",
+          "outcomeCount": 2
+        },
+        {
+          "name": "Halftime Total Goals Over/Under 1.5",
+          "minorCode": "HL",
+          "handicapValue": "1.5",
+          "outcomeCount": 2
+        },
+        {
+          "name": "Total Goals Over/Under 2.5",
+          "minorCode": "HL",
+          "handicapValue": "2.5",
+          "outcomeCount": 2
+        },
+        {
+          "name": "Halftime Total Goals Over/Under 0.5",
+          "minorCode": "HL",
+          "handicapValue": "0.5",
+          "outcomeCount": 2
+        },
+        {
+          "name": "Total Goals Over/Under 4.5",
+          "minorCode": "HL",
+          "handicapValue": "4.5",
+          "outcomeCount": 2
+        },
+        {
+          "name": "Total Goals Over/Under 1.5",
+          "minorCode": "HL",
+          "handicapValue": "1.5",
+          "outcomeCount": 2
+        }
+      ]
+    },
+    {
+      "betType": "MR",
+      "url": "https://api.singaporepools.com/football/events/v1/upcoming-event?lang=en&betType=MR",
+      "status": 200,
+      "eventCount": 102,
+      "markets": [
+        {
+          "name": "1X2",
+          "minorCode": "MR",
+          "outcomeCount": 3
+        }
+      ]
+    },
+    {
+      "betType": "AH",
+      "url": "https://api.singaporepools.com/football/events/v1/upcoming-event?lang=en&betType=AH",
+      "status": 200,
+      "eventCount": 53,
+      "markets": [
+        {
+          "name": "Asian Handicap",
+          "minorCode": "AH",
+          "handicapValue": "-3.0",
+          "outcomeCount": 2
+        },
+        {
+          "name": "Half Time Asian Handicap",
+          "minorCode": "AH",
+          "handicapValue": "-1.0",
+          "outcomeCount": 2
+        }
+      ],
+      "sampleEvent": {
+        "displayOrder": 0,
+        "eventStatusCode": "A",
+        "id": "144368",
+        "isActive": true,
+        "isLiveBettingAvailable": "true",
+        "liveServChannels": "sEVENT0000144368,",
+        "liveServChildrenChannels": "SEVENT0000144368,",
+        "liveServLastMsgId": "1789029285000001",
+        "marketCount": 18,
+        "markets": [
+          {
+            "displayOrder": -879,
+            "handicapValue": "-3.0",
+            "id": "2275732",
+            "isActive": true,
+            "liveServChannels": "sEVMKT0002275732,",
+            "liveServChildrenChannels": "SEVMKT0002275732,",
+            "liveServLastMsgId": "1789018541000008",
+            "majorCode": "A",
+            "marketStatusCode": "A",
+            "maxAccumulator": "4",
+            "minorCode": "AH",
+            "name": "Asian Handicap",
+            "outcomes": [
+              {
+                "displayOrder": 1,
+                "id": "11118700",
+                "isActive": true,
+                "liveServChannels": "sSELCN0011118700,",
+                "liveServChildrenChannels": "SSELCN0011118700,",
+                "liveServLastMsgId": "1789254783000005",
+                "majorCode": "AH",
+                "minorCode": "H",
+                "name": "Columbus Crew -0.75",
+                "outcomeStatusCode": "A",
+                "prices": [
+                  {
+                    "decimal": "1.87",
+                    "denominator": "100",
+                    "displayOrder": 1,
+                    "hcapValue": "-0.50,-1.00,",
+                    "numerator": "87",
+                    "type": "LP"
+                  }
+                ],
+                "historicPrices": [],
+                "cashoutAvail": false
+              },
+              {
+                "displayOrder": 2,
+                "id": "11118697",
+                "isActive": true,
+                "liveServChannels": "sSELCN0011118697,",
+                "liveServChildrenChannels": "SSELCN0011118697,",
+                "liveServLastMsgId": "1789254783000006",
+                "majorCode": "AH",
+                "minorCode": "A",
+                "name": "NY Red Bulls +0.75",
+                "outcomeStatusCode": "A",
+                "prices": [
+                  {
+                    "decimal": "1.90",
+                    "denominator": "10",
+                    "displayOrder": 1,
+                    "hcapValue": "0.50,1.00,",
+                    "numerator": "9",
+                    "type": "LP"
+                  }
+                ],
+                "historicPrices": [],
+                "cashoutAvail": false
+              }
+            ],
+            "cashoutAvail": false
+          },
+          {
+            "displayOrder": -832,
+            "handicapValue": "-1.0",
+            "id": "2275730",
+            "isActive": true,
+            "liveServChannels": "sEVMKT0002275730,",
+            "liveServChildrenChannels": "SEVMKT0002275730,",
+            "liveServLastMsgId": "1789018541000019",
+            "majorCode": "A",
+            "marketStatusCode": "A",
+            "maxAccumulator": "4",
+            "minorCode": "AH",
+            "name": "Half Time Asian Handicap",
+            "outcomes": [
+              {
+                "displayOrder": 1,
+                "id": "11118656",
+                "isActive": true,
+                "liveServChannels": "sSELCN0011118656,",
+                "liveServChildrenChannels": "SSELCN0011118656,",
+                "liveServLastMsgId": "1789254062000009",
+                "majorCode": "AH",
+                "minorCode": "H",
+                "name": "Columbus Crew -0.25",
+                "outcomeStatusCode": "A",
+                "prices": [
+                  {
+                    "decimal": "1.82",
+                    "denominator": "50",
+                    "displayOrder": 1,
+                    "hcapValue": "0.00,-0.50,",
+                    "numerator": "41",
+                    "type": "LP"
+                  }
+                ],
+                "historicPrices": [],
+                "cashoutAvail": false
+              },
+              {
+                "displayOrder": 2,
+                "id": "11118659",
+                "isActive": true,
+                "liveServChannels": "sSELCN0011118659,",
+                "liveServChildrenChannels": "SSELCN0011118659,",
+                "liveServLastMsgId": "1789254062000010",
+                "majorCode": "AH",
+                "minorCode": "A",
+                "name": "NY Red Bulls +0.25",
+                "outcomeStatusCode": "A",
+                "prices": [
+                  {
+                    "decimal": "1.95",
+                    "denominator": "20",
+                    "displayOrder": 1,
+                    "hcapValue": "0.00,0.50,",
+                    "numerator": "19",
+                    "type": "LP"
+                  }
+                ],
+                "historicPrices": [],
+                "cashoutAvail": false
+              }
+            ],
+            "cashoutAvail": false
+          }
+        ],
+        "name": "Columbus Crew vs NY Red Bulls",
+        "startTime": "2026-09-12T23:30:00Z",
+        "type": {
+          "displayOrder": 1,
+          "id": "150",
+          "name": "US Soccer League",
+          "sportClass": {
+            "category": {
+              "id": "1",
+              "name": "Football",
+              "categoryCode": "FOOTBALL"
+            },
+            "displayOrder": 30,
+            "id": "20",
+            "name": "USA"
+          }
+        },
+        "cashoutAvail": true
+      }
+    },
+    {
+      "betType": "HDP",
+      "url": "https://api.singaporepools.com/football/events/v1/upcoming-event?lang=en&betType=HDP",
+      "status": 200,
+      "eventCount": 0,
+      "markets": []
+    },
+    {
+      "betType": "HC",
+      "url": "https://api.singaporepools.com/football/events/v1/upcoming-event?lang=en&betType=HC",
+      "status": 200,
+      "eventCount": 0,
+      "markets": []
+    },
+    {
+      "betType": "H",
+      "url": "https://api.singaporepools.com/football/events/v1/upcoming-event?lang=en&betType=H",
+      "status": 200,
+      "eventCount": 0,
+      "markets": []
+    },
+    {
+      "betType": "AHC",
+      "url": "https://api.singaporepools.com/football/events/v1/upcoming-event?lang=en&betType=AHC",
+      "status": 200,
+      "eventCount": 0,
+      "markets": []
+    },
+    {
+      "betType": "ASIAN_HANDICAP",
+      "url": "https://api.singaporepools.com/football/events/v1/upcoming-event?lang=en&betType=ASIAN_HANDICAP",
+      "status": 200,
+      "eventCount": 0,
+      "markets": []
+    },
+    {
+      "betType": "HANDICAP",
+      "url": "https://api.singaporepools.com/football/events/v1/upcoming-event?lang=en&betType=HANDICAP",
+      "status": 200,
+      "eventCount": 0,
+      "markets": []
+    },
+    {
+      "betType": "(none)",
+      "url": "https://api.singaporepools.com/football/events/v1/upcoming-event?lang=en",
+      "status": 200,
+      "eventCount": 102,
+      "markets": [
+        {
+          "name": "1X2",
+          "minorCode": "MR",
+          "outcomeCount": 3
+        }
+      ]
+    }
+  ]
+}
