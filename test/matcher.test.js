@@ -57,6 +57,11 @@ const SHOULD_MATCH = [
   // "(BRA)"/"(KSA)" above — normalize.js used to strip it the same way,
   // losing the marker entirely and breaking the youth-side guard below.
   ['Sociedad (B)', 'Real Sociedad B'],
+  // Malaysian M League club: SG Pools/Vitibet call it by nickname alone
+  // ("Red Warrior"), Forebet by its old registered name ("Kelantan FA") —
+  // no shared token at all, so this pair failed to match in production
+  // (no Forebet H2H/form/standings fetched for the fixture at all).
+  ['Red Warrior', 'Kelantan FA'],
 ];
 
 const SHOULD_NOT_MATCH = [
