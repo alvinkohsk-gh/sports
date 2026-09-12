@@ -285,12 +285,16 @@ main { padding: 20px 24px 60px; max-width: 1100px; margin: 0 auto; }
 .form-badge.form-l { background: rgba(248, 113, 113, 0.18); color: var(--urgent); }
 .venue-badge {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 18px; height: 18px; border-radius: 5px; font-size: 10px; font-weight: 700;
-  color: var(--muted); background: rgba(148, 163, 184, 0.14);
+  min-width: 34px; height: 18px; padding: 0 4px; border-radius: 5px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.02em;
 }
+/* Distinct colors (not tied to win/loss green-red) so home vs away reads
+   at a glance instead of relying on the letter alone. */
+.venue-badge.venue-h { background: rgba(56, 189, 248, 0.18); color: var(--accent); }
+.venue-badge.venue-a { background: rgba(251, 191, 36, 0.18); color: var(--soon); }
 table.h2h-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.h2h-table th { padding: 5px 4px; border-bottom: 1px solid var(--card-border); text-align: left; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
-table.h2h-table th:not(:first-child) { text-align: right; }
+table.h2h-table th.num { text-align: right; }
 table.h2h-table td { padding: 5px 4px; border-bottom: 1px solid var(--card-border); }
 table.h2h-table td.teams { color: var(--muted); font-size: 12px; }
 table.h2h-table td.teams .vs { color: var(--card-border); padding: 0 2px; }

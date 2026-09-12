@@ -250,11 +250,14 @@ the list page forebet.js otherwise reads).
   H2H rows), no fuzzy matching needed.
 - Both leave a row uncolored (`result: null`) when its perspective
   couldn't be determined, rather than guessing.
-- Each recent-fixtures row also gets an `H`/`A` badge (`venue`, read off
-  the same `.active-team` marker as `rowResult`) — the home/away score
-  columns are always literal home-then-away, so without this there was no
-  way to tell from the row alone which number was the subject team's own.
-  `null` (no badge) when it couldn't be determined.
+- Each recent-fixtures row also gets a `venue` value (`'H'`/`'A'`/`null`,
+  read off the same `.active-team` marker as `rowResult`) — the home/away
+  score columns are always literal home-then-away, so without this there
+  was no way to tell from the row alone which number was the subject
+  team's own. The UI renders it as a color-coded "HOME"/"AWAY" badge
+  (blue/amber, not tied to the win/loss coloring) with a column header,
+  rather than a single unlabeled letter — a first pass at just an `H`/`A`
+  initial turned out too subtle to read at a glance.
 - `src/scrapers/tipsters/forebet.js` now also captures each row's
   Forebet match-page URL (`matchUrl`).
 - `src/scrapers/tipsters/forebetMatchInfo.js` fetches that page and parses
