@@ -260,8 +260,8 @@ function renderH2HTable(h2h) {
 // literal home/away score, so the badge is what tells you which of the
 // two numbers was the subject team's own.
 function venueBadge(venue) {
-  if (venue === 'H') return '<span class="venue-badge venue-h" title="Home">H</span>';
-  if (venue === 'A') return '<span class="venue-badge venue-a" title="Away">A</span>';
+  if (venue === 'H') return '<span class="venue-badge venue-h" title="Played at home">HOME</span>';
+  if (venue === 'A') return '<span class="venue-badge venue-a" title="Played away">AWAY</span>';
   return '';
 }
 
@@ -278,7 +278,7 @@ function renderFixturesTable(fixtures) {
       </tr>`
     )
     .join('');
-  return `<table class="h2h-table"><tbody>${rows}</tbody></table>`;
+  return `<table class="h2h-table"><thead><tr><th>Date</th><th>Venue</th><th class="num">Score</th><th>Opponent</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 // ---- odds movement (src/results/oddsHistory.js) — fetched on demand when
