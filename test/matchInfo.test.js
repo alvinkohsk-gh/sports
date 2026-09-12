@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { attachMatchInfo, findForebetUrl, annotateH2HResults, SCHEMA_VERSION } = require('../src/results/matchInfo');
+const { attachMatchInfo, findForebetUrl, annotateH2HResults, annotateStandings, SCHEMA_VERSION } = require('../src/results/matchInfo');
 
 const NOW = Date.parse('2026-01-10T00:00:00Z');
 const IN_2_DAYS = new Date(NOW + 2 * 24 * 60 * 60 * 1000).toISOString();
@@ -243,4 +243,32 @@ test('annotateH2HResults: attachMatchInfo annotates h2h rows on a freshly fetche
   });
   await attachMatchInfo([m], rows, { entries: [] }, { nowMs: NOW, fetchFn });
   assert.equal(m.headToHead.h2h[0].result, 'W');
+});
+
+test('annotateStandings: flags rows matching either the home or away team, leaving the rest false', () => {
+  const m = match('Arsenal', 'Chelsea', IN_2_DAYS);
+  const standings = [
+    { position: 1, team: 'Arsenal', points: 50 },
+    { position: 2, team: 'Liverpool', points: 48 },
+    { position: 3, team: 'Chelsea', points: 45 },
+  ];
+  const flags = annotateStandings(standings, m).map((r) => r.isMatchTeam);
+  assert.deepEqual(flags, [true, false, true]);
+});
+
+test('annotateStandings: attachMatchInfo annotates standings rows on a freshly fetched result', async () => {
+  const m = match('Arsenal', 'Chelsea', IN_2_DAYS);
+  const rows = [forebetRow('Arsenal', 'Chelsea', 'https://forebet.example/arsenal-chelsea')];
+  const fetchFn = async () => ({
+    h2h: [],
+    homeForm: [],
+    awayForm: [],
+    standings: [
+      { position: 1, team: 'Arsenal', points: 50 },
+      { position: 2, team: 'Liverpool', points: 48 },
+    ],
+  });
+  await attachMatchInfo([m], rows, { entries: [] }, { nowMs: NOW, fetchFn });
+  assert.equal(m.headToHead.standings[0].isMatchTeam, true);
+  assert.equal(m.headToHead.standings[1].isMatchTeam, false);
 });

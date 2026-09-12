@@ -281,6 +281,37 @@ function renderFixturesTable(fixtures) {
   return `<table class="h2h-table"><thead><tr><th>Date</th><th>Venue</th><th class="num">Score</th><th>Opponent</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
+// Full league table (src/scrapers/tipsters/forebetMatchInfo.js's
+// parseStandings + src/results/matchInfo.js's annotateStandings). Forebet's
+// match page has no home-only/away-only version of this table — its
+// "Home/Away" tab belongs to a separate goals-scored/conceded widget — so
+// this is the one overall table available; the two fixture teams are just
+// highlighted within it via `isMatchTeam`.
+function renderStandingsTable(standings) {
+  if (!standings || !standings.length) return '<div class="detail-muted">No standings data available.</div>';
+  const rows = standings
+    .map(
+      (r) => `
+      <tr class="${r.isMatchTeam ? 'standings-highlight' : ''}">
+        <td class="num">${r.position}</td>
+        <td class="teams">${escapeHtml(r.team)}</td>
+        <td class="num"><b>${r.points}</b></td>
+        <td class="num">${r.played}</td>
+        <td class="num">${r.won}</td>
+        <td class="num">${r.drawn}</td>
+        <td class="num">${r.lost}</td>
+        <td class="num">${r.goalsFor}</td>
+        <td class="num">${r.goalsAgainst}</td>
+        <td class="num">${r.goalDiff > 0 ? '+' : ''}${r.goalDiff}</td>
+      </tr>`
+    )
+    .join('');
+  return `<table class="h2h-table standings-table"><thead><tr>
+    <th>#</th><th>Team</th><th class="num">Pts</th><th class="num">P</th><th class="num">W</th>
+    <th class="num">D</th><th class="num">L</th><th class="num">GF</th><th class="num">GA</th><th class="num">+/-</th>
+  </tr></thead><tbody>${rows}</tbody></table>`;
+}
+
 // ---- odds movement (src/results/oddsHistory.js) — fetched on demand when
 // the modal opens (GET /api/odds-history?matchKey=…), not embedded in
 // /api/matches: a price point per real move for every open fixture would
@@ -333,6 +364,10 @@ function renderMatchDetail(match) {
     <div class="detail-section">
       <h3>${escapeHtml(match.awayTeam)} — recent fixtures</h3>
       ${renderFixturesTable(hh && hh.awayFixtures)}
+    </div>
+    <div class="detail-section">
+      <h3>League standings</h3>
+      ${renderStandingsTable(hh && hh.standings)}
     </div>
     <div class="detail-section">
       <h3>Singapore Pools price movement</h3>
