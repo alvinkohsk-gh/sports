@@ -21,7 +21,7 @@ on:
         default: false
 
 concurrency:
-  group: tipster-snapshot
+  group: tipster-snapshot-debug-probe-throwaway
   cancel-in-progress: false
 
 permissions:
