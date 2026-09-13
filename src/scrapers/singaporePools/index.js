@@ -112,26 +112,37 @@ async function fetchOpenFixtures() {
   let handicap1x2ById = rendered.handicap1x2Events ? parseHandicap1X2(rendered.handicap1x2Events) : new Map();
   if (handicap1x2ById.size === 0) handicap1x2ById = await fetchSgPoolsHandicap1X2();
 
-  let x12 = 0;
-  const counts = { ou: 0, ah: 0, h1: 0, oe: 0, btts: 0, firstGoal: 0, goalHandicap: 0, handicap1x2: 0 };
-  for (const f of fixtures) {
-    if (f.odds && f.odds.oneX2) x12 += 1;
-    const attach = (key, byId, countKey) => {
-      const val = byId.get(String(f.sgpMatchId));
-      if (val) {
-        f.odds = { ...(f.odds || { oneX2: null, ou: null }), [key]: val };
-        counts[countKey] += 1;
+  // Attaches every {key: Map<sgpMatchId, odds>} entry in `maps` onto each
+  // fixture's `odds`, tallying a per-key count. Shared between the
+  // pre-match fixtures below and the in-play ones further down — same
+  // shape, different source maps.
+  function attachAllOdds(list, maps) {
+    let x12 = 0;
+    const counts = {};
+    for (const key of Object.keys(maps)) counts[key] = 0;
+    for (const f of list) {
+      if (f.odds && f.odds.oneX2) x12 += 1;
+      for (const [key, byId] of Object.entries(maps)) {
+        const val = byId.get(String(f.sgpMatchId));
+        if (val) {
+          f.odds = { ...(f.odds || { oneX2: null, ou: null }), [key]: val };
+          counts[key] += 1;
+        }
       }
-    };
-    attach('ou', ouById, 'ou');
-    attach('ah', ahById, 'ah');
-    attach('h1', h1ById, 'h1');
-    attach('oe', oeById, 'oe');
-    attach('btts', bttsById, 'btts');
-    attach('firstGoal', firstGoalById, 'firstGoal');
-    attach('goalHandicap', goalHandicapById, 'goalHandicap');
-    attach('handicap1x2', handicap1x2ById, 'handicap1x2');
+    }
+    return { x12, counts };
   }
+
+  const { x12, counts } = attachAllOdds(fixtures, {
+    ou: ouById,
+    ah: ahById,
+    h1: h1ById,
+    oe: oeById,
+    btts: bttsById,
+    firstGoal: firstGoalById,
+    goalHandicap: goalHandicapById,
+    handicap1x2: handicap1x2ById,
+  });
   if (DEBUG)
     console.log(
       `[singaporePools] odds: 1X2 on ${x12}/${fixtures.length}, O/U on ${counts.ou}, AH on ${counts.ah}, ` +
@@ -140,7 +151,32 @@ async function fetchOpenFixtures() {
     );
 
   lastInPlay = extractLiveFixtures(rendered.liveEvents);
-  if (DEBUG) console.log(`[singaporePools] in-play: ${lastInPlay.length}`);
+  // Unlike the pre-match endpoint (one betType per request), SG Pools'
+  // /live payload already carries every market for an in-play event in
+  // its own `markets` array — the same odds.js parsers work against it
+  // directly, no extra requests needed. (O/U is deliberately NOT
+  // re-attached here — extractLiveFixtures already picked the live O/U
+  // line it wants, the lowest still-open threshold, for `liveLine`/
+  // `goalsSoFar`; re-parsing it here could disagree with that choice.)
+  if (rendered.liveEvents) {
+    const { counts: liveCounts } = attachAllOdds(lastInPlay, {
+      ah: parseAh(rendered.liveEvents),
+      h1: parseH1(rendered.liveEvents),
+      oe: parseOe(rendered.liveEvents),
+      btts: parseBtts(rendered.liveEvents),
+      firstGoal: parseFirstGoal(rendered.liveEvents),
+      goalHandicap: parseGoalHandicap(rendered.liveEvents),
+      handicap1x2: parseHandicap1X2(rendered.liveEvents),
+    });
+    if (DEBUG)
+      console.log(
+        `[singaporePools] in-play: ${lastInPlay.length}, odds: AH on ${liveCounts.ah}, H1 on ${liveCounts.h1}, ` +
+          `O/E on ${liveCounts.oe}, BTTS on ${liveCounts.btts}, 1st-goal on ${liveCounts.firstGoal}, ` +
+          `1/2-goal on ${liveCounts.goalHandicap}, handicap-1X2 on ${liveCounts.handicap1x2}`
+      );
+  } else if (DEBUG) {
+    console.log(`[singaporePools] in-play: ${lastInPlay.length}`);
+  }
 
   return fixtures;
 }
