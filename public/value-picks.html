@@ -214,6 +214,7 @@
         odd: p.odd.toFixed(2),
       });
       if (stake) params.set('stake', stake.toFixed(2));
+      if (p.matchKey) params.set('matchKey', p.matchKey);
       return `bankroll.html?${params.toString()}`;
     }
 

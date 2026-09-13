@@ -58,6 +58,7 @@
       border-radius: 6px; padding: 5px 10px; font-size: 12px; cursor: pointer;
     }
     .startbank-row button.danger { color: var(--urgent); border-color: rgba(248,113,113,0.4); margin-left: auto; }
+    .check-status { font-size: 12px; color: var(--muted); }
 
     .tscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     table.bets { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -69,6 +70,7 @@
     table.bets .pl-neg { color: var(--urgent); }
     table.bets .del-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 2px 6px; }
     table.bets .del-btn:hover { color: var(--urgent); }
+    table.bets .auto-mark { font-size: 10px; color: var(--muted); margin-left: 4px; cursor: help; }
 
     @media (max-width: 720px) {
       h1 { font-size: 16px; }
@@ -99,6 +101,8 @@
       <span>Starting bankroll</span>
       <input type="number" id="starting-bankroll" step="1" min="0" />
       <button id="save-starting">Save</button>
+      <button id="check-results">Check results</button>
+      <span id="check-status" class="check-status"></span>
       <button id="reset-all" class="danger">Reset all data</button>
     </div>
 
@@ -128,6 +132,7 @@
       <label>Date
         <input type="date" id="f-date" />
       </label>
+      <input type="hidden" id="f-matchkey" />
       <button type="submit">Log bet</button>
     </form>
 
@@ -150,11 +155,20 @@
       or browser. A "won" bet pays out stake&nbsp;&times;&nbsp;(odd&nbsp;&minus;&nbsp;1); "lost" loses
       the stake; "void" returns the stake with no effect on the bankroll; "pending" bets don't count
       toward the record until you set a result. ROI and win rate are computed over settled
-      (won/lost) bets only. Nothing here is financial advice. Gamble responsibly.
+      (won/lost) bets only. <strong>Check results</strong> (also run automatically on page load) reads
+      real final scores from this site's own match data and fills in the result of any pending bet it
+      can settle with confidence — a "🤖" next to a result marks one it set; you can always change it
+      yourself, and doing so clears that mark. It only settles bets in the markets this site's board
+      logs bets from (1X2, Over/Under, Asian Handicap, 1/2 Goal, Handicap 1X2, Odd/Even, Both Teams to
+      Score) and, for a quarter-line handicap bet, only when the real result is a clean win/loss/push —
+      a half-win/half-loss can't be represented by this tracker's win/lost/void states, so it's left for
+      you to resolve. It reads match results only — your bets and stakes are still never sent anywhere.
+      Nothing here is financial advice. Gamble responsibly.
     </p>
   </main>
 
   <script src="bankroll-calc.js"></script>
+  <script src="bankroll-settle.js"></script>
   <script>
     const STORAGE_KEY = 'bankrollTracker.v1';
 
@@ -193,8 +207,11 @@
     const fOdd = document.getElementById('f-odd');
     const fStake = document.getElementById('f-stake');
     const fDate = document.getElementById('f-date');
+    const fMatchKey = document.getElementById('f-matchkey');
     const emptyEl = document.getElementById('empty');
     const tableEl = document.getElementById('bets-table');
+    const checkResultsBtn = document.getElementById('check-results');
+    const checkStatusEl = document.getElementById('check-status');
 
     let store = loadStore();
 
@@ -263,6 +280,7 @@
                 <option value="lost" ${b.result === 'lost' ? 'selected' : ''}>Lost</option>
                 <option value="void" ${b.result === 'void' ? 'selected' : ''}>Void</option>
               </select>
+              ${b.autoChecked ? '<span class="auto-mark" title="Set automatically by Check results, from the real final score">🤖</span>' : ''}
             </td>
             <td class="num ${plCls}">${plText}</td>
             <td><button class="del-btn" data-del title="Delete">✕</button></td>
@@ -285,6 +303,7 @@
       const bet = store.bets.find((b) => b.id === id);
       if (!bet) return;
       bet.result = select.value;
+      bet.autoChecked = false; // a manual change always overrides an auto-set result
       saveStore(store);
       renderAll();
     });
@@ -328,15 +347,17 @@
         odd,
         stake,
         result: 'pending',
+        matchKey: fMatchKey.value || null,
       });
       saveStore(store);
       addForm.reset();
       fDate.value = todayLocal();
+      fMatchKey.value = ''; // a hidden field set via JS (not an HTML value= attribute) survives form.reset()
       renderAll();
     });
 
     // Prefill from a "Log bet" link elsewhere on the site, e.g.
-    // bankroll.html?fixture=...&market=...&pick=...&odd=...&stake=...
+    // bankroll.html?fixture=...&market=...&pick=...&odd=...&stake=...&matchKey=...
     function prefillFromQuery() {
       const p = new URLSearchParams(location.search);
       if (p.has('fixture')) fFixture.value = p.get('fixture');
@@ -344,11 +365,67 @@
       if (p.has('pick')) fPick.value = p.get('pick');
       if (p.has('odd')) fOdd.value = p.get('odd');
       if (p.has('stake')) fStake.value = p.get('stake');
+      if (p.has('matchKey')) fMatchKey.value = p.get('matchKey');
     }
+
+    // ---- auto-check: reads real final scores from this site's own match
+    // data (never sends bets/stakes anywhere — see bankroll-settle.js) and
+    // fills in the result of any pending bet it can settle with
+    // confidence. Built once per page load from /api/accuracy over the
+    // widest range that route supports (its `from`/`to` form bypasses the
+    // narrower default recent-hours window — see src/routes/accuracy.js).
+    let scoreIndex = null;
+
+    async function loadScoreIndex() {
+      const to = todayLocal();
+      const res = await fetch(`/api/accuracy?from=2000-01-01&to=${to}`);
+      if (!res.ok && res.status !== 503) throw new Error(`HTTP ${res.status}`);
+      const data = res.status === 503 ? { samples: [] } : await res.json();
+      const byMatchKey = new Map();
+      for (const s of data.samples || []) {
+        if (!byMatchKey.has(s.matchKey)) byMatchKey.set(s.matchKey, s);
+      }
+      return { byMatchKey, all: [...byMatchKey.values()] };
+    }
+
+    async function autoCheckResults({ silent } = {}) {
+      if (!silent) {
+        checkResultsBtn.disabled = true;
+        checkStatusEl.textContent = 'Checking…';
+      }
+      try {
+        if (!scoreIndex) scoreIndex = await loadScoreIndex();
+        const pending = store.bets.filter((b) => b.result === 'pending');
+        let settled = 0;
+        for (const bet of pending) {
+          const score = BankrollSettle.findScore(bet, scoreIndex);
+          if (!score) continue;
+          const result = BankrollSettle.settleBet(bet, score);
+          if (!result) continue;
+          bet.result = result;
+          bet.autoChecked = true;
+          settled += 1;
+        }
+        if (settled) saveStore(store);
+        renderAll();
+        checkStatusEl.textContent = settled
+          ? `Settled ${settled} of ${pending.length} pending bet${pending.length === 1 ? '' : 's'}.`
+          : pending.length
+          ? `No results available yet for the ${pending.length} pending bet${pending.length === 1 ? '' : 's'}.`
+          : 'No pending bets to check.';
+      } catch (err) {
+        checkStatusEl.textContent = `Couldn't check results: ${err.message}`;
+      } finally {
+        checkResultsBtn.disabled = false;
+      }
+    }
+
+    checkResultsBtn.addEventListener('click', () => autoCheckResults());
 
     fDate.value = todayLocal();
     prefillFromQuery();
     renderAll();
+    autoCheckResults({ silent: true }); // best-effort, runs quietly on every page load
   </script>
 </body>
 </html>
