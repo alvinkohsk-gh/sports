@@ -575,16 +575,39 @@ document.addEventListener('keydown', (e) => {
 function renderLiveBadgeAndBody(match) {
   const odds = match.odds && match.odds.oneX2;
   const fixture = `${match.homeTeam} vs ${match.awayTeam}`;
-  const oddsRow = odds
+  const mk = match.matchKey;
+  const o = match.odds || {};
+  const oneX2Row = odds
     ? `<div class="section-label">Live SG Pools 1X2</div><div class="odds-row">${['home', 'draw', 'away']
         .map((k) => {
           const odd = odds[k];
           if (odd == null) return '';
-          const href = logBetHref(fixture, '1X2 (live)', PICK_LABEL[k], odd, match.matchKey);
+          const href = logBetHref(fixture, '1X2 (live)', PICK_LABEL[k], odd, mk);
           return `<a class="odds-cell" href="${href}" title="Click to log this bet on Bankroll"><span class="o-lab">${outcomeLabel(k)}</span>${Number(odd).toFixed(2)}</a>`;
         })
         .join('')}</div>`
     : '';
+  // `match.liveLine` is the lowest still-open Over/Under threshold
+  // (src/scrapers/singaporePools/parsers.js's extractLiveFixtures) —
+  // reused here as the live O/U row rather than re-deriving one, so this
+  // never disagrees with the goalsSoFar estimate built from the same
+  // field. Every other live market comes straight off `match.odds`, the
+  // same shape as a pre-match card's (see src/scrapers/singaporePools/
+  // index.js) — SG Pools' /live payload already carries all of them
+  // together, no extra fetches needed.
+  const liveOuRow = match.liveLine
+    ? renderOddsRow(fixture, `O/U ${match.liveLine.point} (live)`, null, match.liveLine, ['over', 'under'], match.liveLine.point, mk)
+    : '';
+  const moreOddsRows = [
+    renderHandicapRow(fixture, 'Asian Handicap (live)', o.ah, mk),
+    renderOddsRow(fixture, 'Halftime 1X2 (live)', null, o.h1, ['home', 'draw', 'away'], null, mk),
+    renderHandicapRow(fixture, '1/2 Goal (live)', o.goalHandicap, mk),
+    renderHandicapRow(fixture, 'Handicap 1X2 (live)', o.handicap1x2, mk),
+    renderOddsRow(fixture, 'Odd/Even (live)', null, o.oe, ['odd', 'even'], null, mk),
+    renderOddsRow(fixture, 'Both Teams to Score (live)', null, o.btts, ['yes', 'no'], null, mk),
+    renderOddsRow(fixture, '1st Goal (live)', null, o.firstGoal, ['home', 'away', 'none'], null, mk),
+  ].join('');
+  const oddsRow = oneX2Row + liveOuRow + moreOddsRows;
   // Real running score from Flashscore when we could match it; otherwise
   // the O/U-line estimate ("~N goals so far"). The kickoff time shown
   // here prefers Flashscore's own recorded kickoff too, for the same
