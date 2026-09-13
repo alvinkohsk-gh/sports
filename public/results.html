@@ -352,12 +352,16 @@
         (a, b) => (marketPct(b[1], market) ?? -1) - (marketPct(a[1], market) ?? -1) || marketCount(b[1], market) - marketCount(a[1], market)
       );
 
-      if (!sites.length && !tableSamples.length) {
+      const overallLabel = market === '1x2' ? '1X2' : market === 'ou' ? 'Over/Under' : market === 'ah' ? 'Asian Handicap' : 'Overall';
+
+      if (!sites.length) {
         gridEl.innerHTML = '';
         recentWrap.hidden = true;
         noteEl.textContent = '';
         emptyEl.hidden = false;
-        emptyEl.textContent = allSamples.length + allPending.length
+        emptyEl.textContent = market
+          ? `No graded ${overallLabel} picks yet — this fills in as SG Pools fixtures finish.`
+          : allSamples.length + allPending.length
           ? 'No finished Singapore Pools fixtures in this date range.'
           : 'No results yet — this fills in as SG Pools fixtures finish.';
         return;
@@ -365,7 +369,6 @@
       emptyEl.hidden = true;
 
       const bestSite = sites.find(([, b]) => marketCount(b, market) >= MIN_BEST)?.[0] || null;
-      const overallLabel = market === '1x2' ? '1X2' : market === 'ou' ? 'Over/Under' : market === 'ah' ? 'Asian Handicap' : 'Overall';
       gridEl.classList.toggle('has-selection', !!selectedSite);
       gridEl.classList.toggle('market-1x2', market === '1x2');
       gridEl.classList.toggle('market-ou', market === 'ou');
