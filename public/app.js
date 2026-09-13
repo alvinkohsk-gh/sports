@@ -159,8 +159,21 @@ function signedPct(v) {
   return `${v >= 0 ? '+' : ''}${s}%`;
 }
 
-// One market's odds row, highlighting any outcome flagged as value.
-function renderOddsRow(label, assessment, rawOdds, keys, ouPoint) {
+// Builds a bankroll.html link that prefills the "Log bet" form (see
+// bankroll.html's prefillFromQuery) with a match/market/pick/odd already
+// filled in — clicking a price on the board jumps straight to Bankroll
+// with only the stake and date left to enter.
+function logBetHref(fixture, market, pick, odd) {
+  const params = new URLSearchParams({ fixture, market, pick, odd: Number(odd).toFixed(2) });
+  return `bankroll.html?${params.toString()}`;
+}
+
+const PICK_LABEL = { home: 'Home', draw: 'Draw', away: 'Away' };
+
+// One market's odds row, highlighting any outcome flagged as value. Each
+// price is itself a link to bankroll.html (see logBetHref) so logging a bet
+// on it is one click away from the board.
+function renderOddsRow(fixture, label, assessment, rawOdds, keys, ouPoint) {
   if (!assessment && !rawOdds) return '';
   const cells = keys
     .map((k) => {
@@ -170,9 +183,11 @@ function renderOddsRow(label, assessment, rawOdds, keys, ouPoint) {
       const isVal = !!(oc && oc.value);
       const tip = oc
         ? `no-vig ${pct(oc.noVigProb)} · reference ${pct(oc.refProb)} · EV ${signedPct(oc.ev)}` +
-          (isVal ? ` · stake ¼-Kelly ${pct(oc.quarterKelly)} of bank` : '')
+          (isVal ? ` · stake ¼-Kelly ${pct(oc.quarterKelly)} of bank` : '') + ' · '
         : '';
-      return `<span class="odds-cell${isVal ? ' is-value' : ''}" title="${escapeHtml(tip)}"><span class="o-lab">${outcomeLabel(k, ouPoint)}</span>${Number(odd).toFixed(2)}</span>`;
+      const pickLabel = k === 'over' ? `Over ${ouPoint}` : k === 'under' ? `Under ${ouPoint}` : PICK_LABEL[k] || k;
+      const href = logBetHref(fixture, label, pickLabel, odd);
+      return `<a class="odds-cell${isVal ? ' is-value' : ''}" href="${href}" title="${escapeHtml(tip)}Click to log this bet on Bankroll"><span class="o-lab">${outcomeLabel(k, ouPoint)}</span>${Number(odd).toFixed(2)}</a>`;
     })
     .join('');
   if (!cells) return '';
@@ -184,10 +199,11 @@ function renderOdds(match) {
   const v = match.value;
   const o = match.odds;
   if (!v && !o) return '';
+  const fixture = `${match.homeTeam} vs ${match.awayTeam}`;
   const ouPoint = o && o.ou ? o.ou.point : null;
   const rows = [
-    renderOddsRow('1X2', v && v.oneX2, o && o.oneX2, ['home', 'draw', 'away']),
-    renderOddsRow(ouPoint != null ? `O/U ${ouPoint}` : 'O/U', v && v.ou, o && o.ou, ['over', 'under'], ouPoint),
+    renderOddsRow(fixture, '1X2', v && v.oneX2, o && o.oneX2, ['home', 'draw', 'away']),
+    renderOddsRow(fixture, ouPoint != null ? `O/U ${ouPoint}` : 'O/U', v && v.ou, o && o.ou, ['over', 'under'], ouPoint),
   ].join('');
   if (!rows) return '';
 
@@ -495,8 +511,16 @@ document.addEventListener('keydown', (e) => {
 // clock/score instead of the plain countdown-to-kickoff.
 function renderLiveBadgeAndBody(match) {
   const odds = match.odds && match.odds.oneX2;
+  const fixture = `${match.homeTeam} vs ${match.awayTeam}`;
   const oddsRow = odds
-    ? `<div class="section-label">Live SG Pools 1X2: <b>${Number(odds.home).toFixed(2)}</b> / <b>${Number(odds.draw).toFixed(2)}</b> / <b>${Number(odds.away).toFixed(2)}</b></div>`
+    ? `<div class="section-label">Live SG Pools 1X2</div><div class="odds-row">${['home', 'draw', 'away']
+        .map((k) => {
+          const odd = odds[k];
+          if (odd == null) return '';
+          const href = logBetHref(fixture, '1X2 (live)', PICK_LABEL[k], odd);
+          return `<a class="odds-cell" href="${href}" title="Click to log this bet on Bankroll"><span class="o-lab">${outcomeLabel(k)}</span>${Number(odd).toFixed(2)}</a>`;
+        })
+        .join('')}</div>`
     : '';
   // Real running score from Flashscore when we could match it; otherwise
   // the O/U-line estimate ("~N goals so far"). The kickoff time shown
@@ -530,7 +554,13 @@ function renderCard(match) {
     if (match.liveKickoffISO) div.dataset.livekickoff = match.liveKickoffISO;
     if (match.liveStage) div.dataset.livestage = match.liveStage;
   }
-  div.addEventListener('click', () => openMatchDetail(match));
+  // A "log this bet" link (see logBetHref) is itself an <a> inside the
+  // card — let its own navigation happen instead of also popping the
+  // match-detail modal underneath it.
+  div.addEventListener('click', (e) => {
+    if (e.target.closest('a')) return;
+    openMatchDetail(match);
+  });
 
   const live = match.live ? renderLiveBadgeAndBody(match) : null;
   div.innerHTML = `
