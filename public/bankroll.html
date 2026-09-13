@@ -79,7 +79,7 @@
       .summary .stat .val { font-size: 16px; }
       .bankroll-form { grid-template-columns: 1fr 1fr; }
       .tscroll { margin: 0 -14px; padding: 0 14px; }
-      table.bets { min-width: 640px; }
+      table.bets { min-width: 700px; }
     }
   </style>
 </head>
@@ -142,7 +142,7 @@
         <thead>
           <tr>
             <th>Date</th><th>Fixture</th><th>Market</th><th>Pick</th>
-            <th class="num">Odd</th><th class="num">Stake</th><th>Result</th><th class="num">P/L</th><th></th>
+            <th class="num">Odd</th><th class="num">Stake</th><th class="num">Score</th><th>Result</th><th class="num">P/L</th><th></th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -273,6 +273,7 @@
             <td>${b.pick || '—'}</td>
             <td class="num">${b.odd.toFixed(2)}</td>
             <td class="num">${b.stake.toFixed(2)}</td>
+            <td class="num">${b.score || '—'}</td>
             <td>
               <select data-result>
                 <option value="pending" ${b.result === 'pending' ? 'selected' : ''}>Pending</option>
@@ -395,23 +396,36 @@
       }
       try {
         if (!scoreIndex) scoreIndex = await loadScoreIndex();
-        const pending = store.bets.filter((b) => b.result === 'pending');
+        const pendingCount = store.bets.filter((b) => b.result === 'pending').length;
+        let scored = 0;
         let settled = 0;
-        for (const bet of pending) {
+        // Looks up every bet, not just pending ones, so an already-settled
+        // bet (set manually, or by an earlier run before this feature
+        // existed) still gets the real score filled in for reference —
+        // only the *result* is ever limited to pending bets.
+        for (const bet of store.bets) {
           const score = BankrollSettle.findScore(bet, scoreIndex);
           if (!score) continue;
+          const scoreText = `${score.homeGoals}-${score.awayGoals}`;
+          if (bet.score !== scoreText) {
+            bet.score = scoreText;
+            scored += 1;
+          }
+          if (bet.result !== 'pending') continue;
           const result = BankrollSettle.settleBet(bet, score);
           if (!result) continue;
           bet.result = result;
           bet.autoChecked = true;
           settled += 1;
         }
-        if (settled) saveStore(store);
+        if (scored || settled) saveStore(store);
         renderAll();
         checkStatusEl.textContent = settled
-          ? `Settled ${settled} of ${pending.length} pending bet${pending.length === 1 ? '' : 's'}.`
-          : pending.length
-          ? `No results available yet for the ${pending.length} pending bet${pending.length === 1 ? '' : 's'}.`
+          ? `Found ${scored} score${scored === 1 ? '' : 's'}, settled ${settled} of ${pendingCount} pending bet${pendingCount === 1 ? '' : 's'}.`
+          : pendingCount
+          ? `No results available yet for the ${pendingCount} pending bet${pendingCount === 1 ? '' : 's'}.`
+          : scored
+          ? `Found ${scored} score${scored === 1 ? '' : 's'}.`
           : 'No pending bets to check.';
       } catch (err) {
         checkStatusEl.textContent = `Couldn't check results: ${err.message}`;
