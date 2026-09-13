@@ -171,9 +171,13 @@ function signedPct(v) {
 // Builds a bankroll.html link that prefills the "Log bet" form (see
 // bankroll.html's prefillFromQuery) with a match/market/pick/odd already
 // filled in — clicking a price on the board jumps straight to Bankroll
-// with only the stake and date left to enter.
-function logBetHref(fixture, market, pick, odd) {
+// with only the stake and date left to enter. `matchKey`, when known, rides
+// along as a hidden field so bankroll.html's auto-check (see
+// bankroll-settle.js) can look the match's real result up directly instead
+// of fuzzy-matching the free-text fixture later.
+function logBetHref(fixture, market, pick, odd, matchKey) {
   const params = new URLSearchParams({ fixture, market, pick, odd: Number(odd).toFixed(2) });
+  if (matchKey) params.set('matchKey', matchKey);
   return `bankroll.html?${params.toString()}`;
 }
 
@@ -191,7 +195,7 @@ const PICK_LABEL = {
 // One market's odds row, highlighting any outcome flagged as value. Each
 // price is itself a link to bankroll.html (see logBetHref) so logging a bet
 // on it is one click away from the board.
-function renderOddsRow(fixture, label, assessment, rawOdds, keys, ouPoint) {
+function renderOddsRow(fixture, label, assessment, rawOdds, keys, ouPoint, matchKey) {
   if (!assessment && !rawOdds) return '';
   const cells = keys
     .map((k) => {
@@ -204,7 +208,7 @@ function renderOddsRow(fixture, label, assessment, rawOdds, keys, ouPoint) {
           (isVal ? ` · stake ¼-Kelly ${pct(oc.quarterKelly)} of bank` : '') + ' · '
         : '';
       const pickLabel = k === 'over' ? `Over ${ouPoint}` : k === 'under' ? `Under ${ouPoint}` : PICK_LABEL[k] || k;
-      const href = logBetHref(fixture, label, pickLabel, odd);
+      const href = logBetHref(fixture, label, pickLabel, odd, matchKey);
       return `<a class="odds-cell${isVal ? ' is-value' : ''}" href="${href}" title="${escapeHtml(tip)}Click to log this bet on Bankroll"><span class="o-lab">${outcomeLabel(k, ouPoint)}</span>${Number(odd).toFixed(2)}</a>`;
     })
     .join('');
@@ -226,7 +230,7 @@ function fmtLine(n) {
 // value/EV assessment here (none of these three feed the tipster-consensus
 // value pipeline — src/services/value.js only covers 1X2/O-U) — just the
 // raw prices, each still a log-this-bet link like every other odds cell.
-function renderHandicapRow(fixture, marketName, odds) {
+function renderHandicapRow(fixture, marketName, odds, matchKey) {
   if (!odds) return '';
   const homeLine = odds.point;
   const awayLine = -odds.point;
@@ -234,7 +238,7 @@ function renderHandicapRow(fixture, marketName, odds) {
   const cell = (side, sideLine, price) => {
     if (price == null) return '';
     const pickLabel = `${PICK_LABEL[side]} ${fmtLine(sideLine)}`;
-    const href = logBetHref(fixture, label, pickLabel, price);
+    const href = logBetHref(fixture, label, pickLabel, price, matchKey);
     return `<a class="odds-cell" href="${href}" title="Click to log this bet on Bankroll"><span class="o-lab">${outcomeLabel(side)} ${fmtLine(sideLine)}</span>${Number(price).toFixed(2)}</a>`;
   };
   const cells = [
@@ -251,17 +255,18 @@ function renderOdds(match) {
   const o = match.odds;
   if (!v && !o) return '';
   const fixture = `${match.homeTeam} vs ${match.awayTeam}`;
+  const mk = match.matchKey;
   const ouPoint = o && o.ou ? o.ou.point : null;
   const rows = [
-    renderOddsRow(fixture, '1X2', v && v.oneX2, o && o.oneX2, ['home', 'draw', 'away']),
-    renderOddsRow(fixture, ouPoint != null ? `O/U ${ouPoint}` : 'O/U', v && v.ou, o && o.ou, ['over', 'under'], ouPoint),
-    renderHandicapRow(fixture, 'Asian Handicap', o && o.ah),
-    renderOddsRow(fixture, 'Halftime 1X2', null, o && o.h1, ['home', 'draw', 'away']),
-    renderHandicapRow(fixture, '1/2 Goal', o && o.goalHandicap),
-    renderHandicapRow(fixture, 'Handicap 1X2', o && o.handicap1x2),
-    renderOddsRow(fixture, 'Odd/Even', null, o && o.oe, ['odd', 'even']),
-    renderOddsRow(fixture, 'Both Teams to Score', null, o && o.btts, ['yes', 'no']),
-    renderOddsRow(fixture, '1st Goal', null, o && o.firstGoal, ['home', 'away', 'none']),
+    renderOddsRow(fixture, '1X2', v && v.oneX2, o && o.oneX2, ['home', 'draw', 'away'], null, mk),
+    renderOddsRow(fixture, ouPoint != null ? `O/U ${ouPoint}` : 'O/U', v && v.ou, o && o.ou, ['over', 'under'], ouPoint, mk),
+    renderHandicapRow(fixture, 'Asian Handicap', o && o.ah, mk),
+    renderOddsRow(fixture, 'Halftime 1X2', null, o && o.h1, ['home', 'draw', 'away'], null, mk),
+    renderHandicapRow(fixture, '1/2 Goal', o && o.goalHandicap, mk),
+    renderHandicapRow(fixture, 'Handicap 1X2', o && o.handicap1x2, mk),
+    renderOddsRow(fixture, 'Odd/Even', null, o && o.oe, ['odd', 'even'], null, mk),
+    renderOddsRow(fixture, 'Both Teams to Score', null, o && o.btts, ['yes', 'no'], null, mk),
+    renderOddsRow(fixture, '1st Goal', null, o && o.firstGoal, ['home', 'away', 'none'], null, mk),
   ].join('');
   if (!rows) return '';
 
@@ -575,7 +580,7 @@ function renderLiveBadgeAndBody(match) {
         .map((k) => {
           const odd = odds[k];
           if (odd == null) return '';
-          const href = logBetHref(fixture, '1X2 (live)', PICK_LABEL[k], odd);
+          const href = logBetHref(fixture, '1X2 (live)', PICK_LABEL[k], odd, match.matchKey);
           return `<a class="odds-cell" href="${href}" title="Click to log this bet on Bankroll"><span class="o-lab">${outcomeLabel(k)}</span>${Number(odd).toFixed(2)}</a>`;
         })
         .join('')}</div>`
