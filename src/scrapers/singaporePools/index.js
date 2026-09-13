@@ -1,5 +1,22 @@
 const { renderWithBrowser, getLastCapture } = require('./render');
-const { parseOu, fetchSgPoolsOu, parseAh, fetchSgPoolsAh } = require('./odds');
+const {
+  parseOu,
+  fetchSgPoolsOu,
+  parseAh,
+  fetchSgPoolsAh,
+  parseH1,
+  fetchSgPoolsH1,
+  parseOe,
+  fetchSgPoolsOe,
+  parseBtts,
+  fetchSgPoolsBtts,
+  parseFirstGoal,
+  fetchSgPoolsFirstGoal,
+  parseGoalHandicap,
+  fetchSgPoolsGoalHandicap,
+  parseHandicap1X2,
+  fetchSgPoolsHandicap1X2,
+} = require('./odds');
 const {
   toFixture,
   extractFixturesFromEventsApi,
@@ -82,23 +99,45 @@ async function fetchOpenFixtures() {
   if (ouById.size === 0) ouById = await fetchSgPoolsOu();
   let ahById = rendered.ahEvents ? parseAh(rendered.ahEvents) : new Map();
   if (ahById.size === 0) ahById = await fetchSgPoolsAh();
+  let h1ById = rendered.h1Events ? parseH1(rendered.h1Events) : new Map();
+  if (h1ById.size === 0) h1ById = await fetchSgPoolsH1();
+  let oeById = rendered.oeEvents ? parseOe(rendered.oeEvents) : new Map();
+  if (oeById.size === 0) oeById = await fetchSgPoolsOe();
+  let bttsById = rendered.bttsEvents ? parseBtts(rendered.bttsEvents) : new Map();
+  if (bttsById.size === 0) bttsById = await fetchSgPoolsBtts();
+  let firstGoalById = rendered.firstGoalEvents ? parseFirstGoal(rendered.firstGoalEvents) : new Map();
+  if (firstGoalById.size === 0) firstGoalById = await fetchSgPoolsFirstGoal();
+  let goalHandicapById = rendered.goalHandicapEvents ? parseGoalHandicap(rendered.goalHandicapEvents) : new Map();
+  if (goalHandicapById.size === 0) goalHandicapById = await fetchSgPoolsGoalHandicap();
+  let handicap1x2ById = rendered.handicap1x2Events ? parseHandicap1X2(rendered.handicap1x2Events) : new Map();
+  if (handicap1x2ById.size === 0) handicap1x2ById = await fetchSgPoolsHandicap1X2();
+
   let x12 = 0;
-  let ouCount = 0;
-  let ahCount = 0;
+  const counts = { ou: 0, ah: 0, h1: 0, oe: 0, btts: 0, firstGoal: 0, goalHandicap: 0, handicap1x2: 0 };
   for (const f of fixtures) {
     if (f.odds && f.odds.oneX2) x12 += 1;
-    const o = ouById.get(String(f.sgpMatchId));
-    if (o) {
-      f.odds = { ...(f.odds || { oneX2: null }), ou: o };
-      ouCount += 1;
-    }
-    const ah = ahById.get(String(f.sgpMatchId));
-    if (ah) {
-      f.odds = { ...(f.odds || { oneX2: null, ou: null }), ah };
-      ahCount += 1;
-    }
+    const attach = (key, byId, countKey) => {
+      const val = byId.get(String(f.sgpMatchId));
+      if (val) {
+        f.odds = { ...(f.odds || { oneX2: null, ou: null }), [key]: val };
+        counts[countKey] += 1;
+      }
+    };
+    attach('ou', ouById, 'ou');
+    attach('ah', ahById, 'ah');
+    attach('h1', h1ById, 'h1');
+    attach('oe', oeById, 'oe');
+    attach('btts', bttsById, 'btts');
+    attach('firstGoal', firstGoalById, 'firstGoal');
+    attach('goalHandicap', goalHandicapById, 'goalHandicap');
+    attach('handicap1x2', handicap1x2ById, 'handicap1x2');
   }
-  if (DEBUG) console.log(`[singaporePools] odds: 1X2 on ${x12}/${fixtures.length}, O/U on ${ouCount}, AH on ${ahCount}`);
+  if (DEBUG)
+    console.log(
+      `[singaporePools] odds: 1X2 on ${x12}/${fixtures.length}, O/U on ${counts.ou}, AH on ${counts.ah}, ` +
+        `H1 on ${counts.h1}, O/E on ${counts.oe}, BTTS on ${counts.btts}, 1st-goal on ${counts.firstGoal}, ` +
+        `1/2-goal on ${counts.goalHandicap}, handicap-1X2 on ${counts.handicap1x2}`
+    );
 
   lastInPlay = extractLiveFixtures(rendered.liveEvents);
   if (DEBUG) console.log(`[singaporePools] in-play: ${lastInPlay.length}`);

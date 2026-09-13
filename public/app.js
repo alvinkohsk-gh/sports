@@ -145,7 +145,16 @@ function escapeHtml(s) {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-const OUTCOME_LABEL_BASE = { home: 'H', draw: 'D', away: 'A' };
+const OUTCOME_LABEL_BASE = {
+  home: 'H',
+  draw: 'D',
+  away: 'A',
+  odd: 'Odd',
+  even: 'Even',
+  yes: 'Yes',
+  no: 'No',
+  none: 'None',
+};
 
 function outcomeLabel(key, ouPoint) {
   if (key === 'over') return `O${ouPoint}`;
@@ -168,7 +177,16 @@ function logBetHref(fixture, market, pick, odd) {
   return `bankroll.html?${params.toString()}`;
 }
 
-const PICK_LABEL = { home: 'Home', draw: 'Draw', away: 'Away' };
+const PICK_LABEL = {
+  home: 'Home',
+  draw: 'Draw',
+  away: 'Away',
+  odd: 'Odd',
+  even: 'Even',
+  yes: 'Yes',
+  no: 'No',
+  none: 'No 1st Goal',
+};
 
 // One market's odds row, highlighting any outcome flagged as value. Each
 // price is itself a link to bankroll.html (see logBetHref) so logging a bet
@@ -195,6 +213,39 @@ function renderOddsRow(fixture, label, assessment, rawOdds, keys, ouPoint) {
   return `<div class="odds-row"><span class="odds-market">${label}</span>${cells}${margin}</div>`;
 }
 
+// A signed line for display: "+1.5" / "-0.75" / "0" (a pick'em line has no
+// sign either way).
+function fmtLine(n) {
+  return n > 0 ? `+${n}` : `${n}`;
+}
+
+// A home/away(/draw) handicap market — Asian Handicap, "1/2 Goal", and
+// "Handicap 1X2" all share this shape (see src/scrapers/singaporePools/
+// odds.js): a single `point` that's the home side's line, the away side's
+// being its negation, plus an optional draw price at that same line. No
+// value/EV assessment here (none of these three feed the tipster-consensus
+// value pipeline — src/services/value.js only covers 1X2/O-U) — just the
+// raw prices, each still a log-this-bet link like every other odds cell.
+function renderHandicapRow(fixture, marketName, odds) {
+  if (!odds) return '';
+  const homeLine = odds.point;
+  const awayLine = -odds.point;
+  const label = `${marketName} ${fmtLine(homeLine)}`;
+  const cell = (side, sideLine, price) => {
+    if (price == null) return '';
+    const pickLabel = `${PICK_LABEL[side]} ${fmtLine(sideLine)}`;
+    const href = logBetHref(fixture, label, pickLabel, price);
+    return `<a class="odds-cell" href="${href}" title="Click to log this bet on Bankroll"><span class="o-lab">${outcomeLabel(side)} ${fmtLine(sideLine)}</span>${Number(price).toFixed(2)}</a>`;
+  };
+  const cells = [
+    cell('home', homeLine, odds.home),
+    odds.draw != null ? cell('draw', homeLine, odds.draw) : '',
+    cell('away', awayLine, odds.away),
+  ].join('');
+  if (!cells) return '';
+  return `<div class="odds-row"><span class="odds-market">${label}</span>${cells}</div>`;
+}
+
 function renderOdds(match) {
   const v = match.value;
   const o = match.odds;
@@ -204,6 +255,13 @@ function renderOdds(match) {
   const rows = [
     renderOddsRow(fixture, '1X2', v && v.oneX2, o && o.oneX2, ['home', 'draw', 'away']),
     renderOddsRow(fixture, ouPoint != null ? `O/U ${ouPoint}` : 'O/U', v && v.ou, o && o.ou, ['over', 'under'], ouPoint),
+    renderHandicapRow(fixture, 'Asian Handicap', o && o.ah),
+    renderOddsRow(fixture, 'Halftime 1X2', null, o && o.h1, ['home', 'draw', 'away']),
+    renderHandicapRow(fixture, '1/2 Goal', o && o.goalHandicap),
+    renderHandicapRow(fixture, 'Handicap 1X2', o && o.handicap1x2),
+    renderOddsRow(fixture, 'Odd/Even', null, o && o.oe, ['odd', 'even']),
+    renderOddsRow(fixture, 'Both Teams to Score', null, o && o.btts, ['yes', 'no']),
+    renderOddsRow(fixture, '1st Goal', null, o && o.firstGoal, ['home', 'away', 'none']),
   ].join('');
   if (!rows) return '';
 

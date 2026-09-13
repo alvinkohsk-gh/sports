@@ -143,4 +143,218 @@ async function fetchSgPoolsAh() {
   }
 }
 
-module.exports = { fetchSgPoolsOu, parseOu, fetchSgPoolsAh, parseAh, parseHcapValue };
+// ---- the rest of SG Pools' football bet types (confirmed via a live
+// capture of https://online2.singaporepools.com/en/api/lov/football_bet_type
+// on 2026-09-13, which lists every betType code SG Pools offers) ----
+//
+// Two are deliberately NOT scraped: FS ("1st Goal Scorer") and LS ("Last
+// Goal Scorer") are player-prop markets — one outcome per player on the
+// roster, not a small fixed set — so there's no sane way to show them on a
+// match card, and both returned 0 events in that capture regardless.
+//
+// Four more are scraped but intentionally left off the match card, not
+// missing by oversight: TG2 (Halftime Total Goals, 4 outcomes), HF
+// (Halftime-Fulltime, 9 outcomes), EG (exact Total Goals, 10 outcomes) and
+// CS (Pick the Score, 36+ outcomes) all have too many outcomes to fit a
+// compact card alongside seven other markets — see app.js's renderOdds,
+// which only wires up the ones below plus AH.
+//
+// Every remaining market is either a small (2-3 outcome) simple-odds
+// market — Halftime 1X2 (H1), Total Goals Odd/Even (OE), Both Teams to
+// Score (BG), Team to Score 1st Goal (NGN) — parsed the same way as the
+// 1X2/O-U markets above, or a home/away(/draw) handicap market — 1/2 Goal
+// (WH) and Handicap 1X2 (MH) — parsed the same way as Asian Handicap
+// above (reading the real line off `prices[0].hcapValue`, not the
+// market's own top-level `handicapValue`, for the same reason AH does).
+
+function makeUpcomingFetcher(betType, parseFn) {
+  const url = `https://api.singaporepools.com/football/events/v1/upcoming-event?lang=en&betType=${betType}`;
+  return async function fetchFn() {
+    try {
+      const res = await axios.get(url, { timeout: TIMEOUT_MS, headers: { 'User-Agent': 'sg-pools-live-odds' } });
+      return parseFn(res.data && res.data.events);
+    } catch (err) {
+      console.error(`[sgpools-odds] ${betType} fetch failed:`, err.message || err);
+      return new Map();
+    }
+  };
+}
+
+const H1_MARKET_RE = /^Halftime 1X2$/;
+function parseH1(events) {
+  const byId = new Map();
+  for (const ev of events || []) {
+    for (const mkt of ev.markets || []) {
+      if (!H1_MARKET_RE.test(mkt.name || '')) continue;
+      const o = {};
+      for (const out of mkt.outcomes || []) {
+        const price = priceOf(out);
+        if (out.minorCode === 'H') o.home = price;
+        else if (out.minorCode === 'D') o.draw = price;
+        else if (out.minorCode === 'A') o.away = price;
+      }
+      if (o.home && o.draw && o.away) {
+        byId.set(String(ev.id), o);
+        break; // one halftime-1X2 market per event
+      }
+    }
+  }
+  return byId;
+}
+const fetchSgPoolsH1 = makeUpcomingFetcher('H1', parseH1);
+
+const OE_MARKET_RE = /^Total Goals Odd\/Even$/;
+function parseOe(events) {
+  const byId = new Map();
+  for (const ev of events || []) {
+    for (const mkt of ev.markets || []) {
+      if (!OE_MARKET_RE.test(mkt.name || '')) continue;
+      const o = {};
+      for (const out of mkt.outcomes || []) {
+        const price = priceOf(out);
+        const name = (out.name || '').toLowerCase();
+        if (name === 'odd') o.odd = price;
+        else if (name === 'even') o.even = price;
+      }
+      if (o.odd && o.even) {
+        byId.set(String(ev.id), o);
+        break; // one full-time odd/even market per event
+      }
+    }
+  }
+  return byId;
+}
+const fetchSgPoolsOe = makeUpcomingFetcher('OE', parseOe);
+
+const BTTS_MARKET_RE = /^Will Both Teams Score$/;
+function parseBtts(events) {
+  const byId = new Map();
+  for (const ev of events || []) {
+    for (const mkt of ev.markets || []) {
+      if (!BTTS_MARKET_RE.test(mkt.name || '')) continue;
+      const o = {};
+      for (const out of mkt.outcomes || []) {
+        const price = priceOf(out);
+        if (out.minorCode === 'Y') o.yes = price;
+        else if (out.minorCode === 'N') o.no = price;
+      }
+      if (o.yes && o.no) {
+        byId.set(String(ev.id), o);
+        break; // one full-time BTTS market per event
+      }
+    }
+  }
+  return byId;
+}
+const fetchSgPoolsBtts = makeUpcomingFetcher('BG', parseBtts);
+
+const NGN_MARKET_RE = /^Team to Score 1st Goal$/;
+function parseFirstGoal(events) {
+  const byId = new Map();
+  for (const ev of events || []) {
+    for (const mkt of ev.markets || []) {
+      if (!NGN_MARKET_RE.test(mkt.name || '')) continue;
+      const o = {};
+      for (const out of mkt.outcomes || []) {
+        const price = priceOf(out);
+        if (out.minorCode === 'H') o.home = price;
+        else if (out.minorCode === 'A') o.away = price;
+        else if (out.minorCode === 'N') o.none = price;
+      }
+      if (o.home && o.away && o.none) {
+        byId.set(String(ev.id), o);
+        break; // one full-time "1st to score" market per event
+      }
+    }
+  }
+  return byId;
+}
+const fetchSgPoolsFirstGoal = makeUpcomingFetcher('NGN', parseFirstGoal);
+
+// "1/2 Goal" — a plain goal-margin handicap, distinct from Asian Handicap
+// (WH's lines only ever seen as whole/half numbers, never quarters, in the
+// capture this was confirmed against). Filtered by minorCode AND exact
+// name for the same reason AH is: there's also a "Half Time 1/2 Goal"
+// market at the same minorCode.
+const WH_MARKET_RE = /^1\/2 Goal$/;
+function parseGoalHandicap(events) {
+  const byId = new Map();
+  for (const ev of events || []) {
+    for (const mkt of ev.markets || []) {
+      if (mkt.minorCode !== 'WH' || !WH_MARKET_RE.test(mkt.name || '')) continue;
+      let point = null;
+      const o = {};
+      for (const out of mkt.outcomes || []) {
+        const hcap = out.prices && out.prices[0] && parseHcapValue(out.prices[0].hcapValue);
+        const price = priceOf(out);
+        if (out.minorCode === 'H') {
+          o.home = price;
+          if (Number.isFinite(hcap)) point = hcap;
+        } else if (out.minorCode === 'A') {
+          o.away = price;
+        }
+      }
+      if (o.home && o.away && Number.isFinite(point)) {
+        byId.set(String(ev.id), { point, home: o.home, away: o.away });
+        break; // one full-time 1/2-Goal market per event
+      }
+    }
+  }
+  return byId;
+}
+const fetchSgPoolsGoalHandicap = makeUpcomingFetcher('WH', parseGoalHandicap);
+
+// "Handicap 1X2" — a 3-way (home/draw/away) match on top of a goal
+// handicap, rather than the 2-way Asian Handicap. Only offered on a small
+// minority of fixtures in the capture this was confirmed against (2/97).
+// The draw outcome's minorCode is 'L', not 'D' (unlike Halftime 1X2 above)
+// — SG Pools' own inconsistency, not a typo here.
+const MH_MARKET_RE = /^Handicap 1X2$/;
+function parseHandicap1X2(events) {
+  const byId = new Map();
+  for (const ev of events || []) {
+    for (const mkt of ev.markets || []) {
+      if (mkt.minorCode !== 'MH' || !MH_MARKET_RE.test(mkt.name || '')) continue;
+      let point = null;
+      const o = {};
+      for (const out of mkt.outcomes || []) {
+        const hcap = out.prices && out.prices[0] && parseHcapValue(out.prices[0].hcapValue);
+        const price = priceOf(out);
+        if (out.minorCode === 'H') {
+          o.home = price;
+          if (Number.isFinite(hcap)) point = hcap;
+        } else if (out.minorCode === 'L') {
+          o.draw = price;
+        } else if (out.minorCode === 'A') {
+          o.away = price;
+        }
+      }
+      if (o.home && o.draw && o.away && Number.isFinite(point)) {
+        byId.set(String(ev.id), { point, home: o.home, draw: o.draw, away: o.away });
+        break; // one full-time Handicap-1X2 market per event
+      }
+    }
+  }
+  return byId;
+}
+const fetchSgPoolsHandicap1X2 = makeUpcomingFetcher('MH', parseHandicap1X2);
+
+module.exports = {
+  fetchSgPoolsOu,
+  parseOu,
+  fetchSgPoolsAh,
+  parseAh,
+  parseHcapValue,
+  fetchSgPoolsH1,
+  parseH1,
+  fetchSgPoolsOe,
+  parseOe,
+  fetchSgPoolsBtts,
+  parseBtts,
+  fetchSgPoolsFirstGoal,
+  parseFirstGoal,
+  fetchSgPoolsGoalHandicap,
+  parseGoalHandicap,
+  fetchSgPoolsHandicap1X2,
+  parseHandicap1X2,
+};

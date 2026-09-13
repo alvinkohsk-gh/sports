@@ -116,7 +116,22 @@ async function renderWithBrowser() {
     let ouEvents = null;
     let ahEvents = null;
     let liveEvents = null;
+    let h1Events = null;
+    let oeEvents = null;
+    let bttsEvents = null;
+    let firstGoalEvents = null;
+    let goalHandicapEvents = null;
+    let handicap1x2Events = null;
     try {
+      // All bet-type fetches run in parallel (rather than the sequential
+      // awaits this used to do for just OU/AH/live) — still every hit
+      // inside this one legit render session (see the comment above this
+      // function), just fewer round trips now that there are 8 of them
+      // instead of 3. betType codes confirmed via a live capture of SG
+      // Pools' own football_bet_type lookup table (2026-09-13) — see
+      // odds.js for which markets each maps to and why FS/LS (player-prop
+      // goalscorer markets) and TG2/HF/EG/CS (too many outcomes for a
+      // match card) are fetched nowhere at all.
       const res = await page.evaluate(async () => {
         const grab = async (url) => {
           try {
@@ -129,23 +144,37 @@ async function renderWithBrowser() {
           }
         };
         const base = 'https://api.singaporepools.com/football/events/v1/';
-        return {
-          ou: await grab(`${base}upcoming-event?lang=en&betType=HL`),
+        const upcoming = (betType) => grab(`${base}upcoming-event?lang=en&betType=${betType}`);
+        const [ou, ah, live, h1, oe, btts, firstGoal, goalHandicap, handicap1x2] = await Promise.all([
+          upcoming('HL'),
           // Asian Handicap — betType=AH confirmed via a live capture
           // (2026-09-12): a plain "Asian Handicap" market per event
           // (there's also a "Half Time Asian Handicap" one, filtered out
           // in odds.js) whose outcomes carry the real settlement line(s)
           // in `prices[0].hcapValue`, not the market's own top-level
           // `handicapValue` (seen stale/unrelated in that capture).
-          ah: await grab(`${base}upcoming-event?lang=en&betType=AH`),
-          live: await grab(`${base}live?lang=en`),
-        };
+          upcoming('AH'),
+          grab(`${base}live?lang=en`),
+          upcoming('H1'),
+          upcoming('OE'),
+          upcoming('BG'),
+          upcoming('NGN'),
+          upcoming('WH'),
+          upcoming('MH'),
+        ]);
+        return { ou, ah, live, h1, oe, btts, firstGoal, goalHandicap, handicap1x2 };
       });
       ouEvents = res.ou;
       ahEvents = res.ah;
       liveEvents = res.live;
+      h1Events = res.h1;
+      oeEvents = res.oe;
+      bttsEvents = res.btts;
+      firstGoalEvents = res.firstGoal;
+      goalHandicapEvents = res.goalHandicap;
+      handicap1x2Events = res.handicap1x2;
     } catch (err) {
-      if (DEBUG) console.log('[singaporePools] in-page O/U + AH + live fetch failed:', err.message);
+      if (DEBUG) console.log('[singaporePools] in-page odds fetch failed:', err.message);
     }
 
     // A capture against the wrong URL rendered the site's own 404 page
@@ -201,7 +230,19 @@ async function renderWithBrowser() {
       capturedJson.forEach((c, i) => console.log(`[singaporePools]   JSON response #${i}: ${c.url}`));
     }
 
-    return { html, capturedJson, ouEvents, ahEvents, liveEvents };
+    return {
+      html,
+      capturedJson,
+      ouEvents,
+      ahEvents,
+      liveEvents,
+      h1Events,
+      oeEvents,
+      bttsEvents,
+      firstGoalEvents,
+      goalHandicapEvents,
+      handicap1x2Events,
+    };
   });
 }
 
