@@ -114,6 +114,7 @@ async function renderWithBrowser() {
     // legit render session (a bare server-side request on top got the
     // runner IP throttled — see odds.js history).
     let ouEvents = null;
+    let ahEvents = null;
     let liveEvents = null;
     try {
       const res = await page.evaluate(async () => {
@@ -130,13 +131,21 @@ async function renderWithBrowser() {
         const base = 'https://api.singaporepools.com/football/events/v1/';
         return {
           ou: await grab(`${base}upcoming-event?lang=en&betType=HL`),
+          // Asian Handicap — betType=AH confirmed via a live capture
+          // (2026-09-12): a plain "Asian Handicap" market per event
+          // (there's also a "Half Time Asian Handicap" one, filtered out
+          // in odds.js) whose outcomes carry the real settlement line(s)
+          // in `prices[0].hcapValue`, not the market's own top-level
+          // `handicapValue` (seen stale/unrelated in that capture).
+          ah: await grab(`${base}upcoming-event?lang=en&betType=AH`),
           live: await grab(`${base}live?lang=en`),
         };
       });
       ouEvents = res.ou;
+      ahEvents = res.ah;
       liveEvents = res.live;
     } catch (err) {
-      if (DEBUG) console.log('[singaporePools] in-page O/U + live fetch failed:', err.message);
+      if (DEBUG) console.log('[singaporePools] in-page O/U + AH + live fetch failed:', err.message);
     }
 
     // A capture against the wrong URL rendered the site's own 404 page
@@ -192,7 +201,7 @@ async function renderWithBrowser() {
       capturedJson.forEach((c, i) => console.log(`[singaporePools]   JSON response #${i}: ${c.url}`));
     }
 
-    return { html, capturedJson, ouEvents, liveEvents };
+    return { html, capturedJson, ouEvents, ahEvents, liveEvents };
   });
 }
 

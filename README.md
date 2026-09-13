@@ -72,15 +72,57 @@ from before `odds-history.json` existed, or a fixture with no recorded
 SG Pools price yet at capture time.
 
 `results.html`'s date range and league filters both have a **Market**
-sibling (`1X2 + O/U` / `1X2 only` / `Over/Under only`) — picking one
-re-sorts the site leaderboard by that market's own accuracy alone (a site
-great at 1X2 but poor at O/U, or vice versa, can rank very differently
-depending which is selected) instead of the combined overall figure, dims
-the other market's bar on each card, and narrows the recent-picks table's
-pills to just that market's pick (a match where the filtered site made no
-pick in that market drops out of the table, same as the existing per-site
-click-to-filter). Sites with zero graded picks in the selected market are
-left off the leaderboard entirely rather than shown at 0/0.
+sibling (`All markets` / `1X2 only` / `Over/Under only` / `Asian Handicap
+only`) — picking one re-sorts the site leaderboard by that market's own
+accuracy alone (a site great at 1X2 but poor at O/U, or vice versa, can
+rank very differently depending which is selected) instead of the combined
+overall figure, dims the other markets' bars on each card, and narrows the
+recent-picks table's pills to just that market's pick (a match where the
+filtered site made no pick in that market drops out of the table, same as
+the existing per-site click-to-filter). Sites with zero graded picks in the
+selected market are left off the leaderboard entirely rather than shown at
+0/0.
+
+### Asian Handicap accuracy
+
+The third accuracy category is Asian Handicap, added on top of SG Pools'
+own AH market (`betType=AH` — confirmed via a live capture 2026-09-12,
+alongside the existing `betType=HL` for O/U).
+
+- **No tipster site publishes an explicit AH pick.** Like O/U's
+  `totalsFromScoreline`, a pick is derived instead — from whichever site
+  gives a predicted correct score (only Forebet and PredictZ currently do;
+  every other site's `totalsPick` lacks the `homeGoals`/`awayGoals` fields
+  that derivation needs, so they simply never produce an AH pick, an
+  honest reflection of what data exists) — comparing the predicted goal
+  margin against SG Pools' actual handicap line
+  (`src/services/asianHandicap.js`'s `resolveAhPick`).
+- `src/scrapers/singaporePools/odds.js`'s `parseAh` reads the line from
+  each outcome's own `prices[0].hcapValue` (e.g. `"-0.50,-1.00,"` for a
+  -0.75 line), not the market's own top-level `handicapValue`, which was
+  seen stale/unrelated to the real per-outcome line in that capture. The
+  in-page fetch this piggybacks on (`render.js`, alongside the existing
+  O/U one) keeps every SG Pools API hit inside the one legit render
+  session — a bare extra server-side call got the runner IP throttled
+  before (see the O/U comment in `odds.js`), so `fetchSgPoolsAh` is a
+  fallback path only, same as `fetchSgPoolsOu`.
+- **Settlement matches real money-line rules**, not just win/lose: a whole
+  line (e.g. -1) can push (`src/results/history.js` captures the SG Pools
+  line once per match, `src/services/asianHandicap.js`'s `settleAh` does
+  the actual math against the final score); a half line (-0.5) never
+  pushes; a **quarter line** (-0.25, -0.75, ...) is really two equal-stake
+  bets at the adjacent half/whole lines — confirmed against SG Pools' own
+  `hcapValue` field, which encodes exactly that split — each settled
+  independently and averaged, producing one of five outcomes: win,
+  half-win, push, half-loss, loss. `results.html` renders these as
+  ✔ / ½✔ / P / ½✘ / ✘ rather than forcing a binary tick/cross.
+  A push is excluded from the win-rate denominator (same convention the
+  bankroll tracker uses for a `void` bet); win rate is the average
+  "equity retained" fraction over decided samples (win=100%,
+  half-win=75%, half-loss=25%, loss=0%).
+- No rolling CLV series for AH (unlike 1X2/O/U's `odds-history.json`) — the
+  line/price is captured once, at the same "last value seen before
+  kickoff" moment the pick itself is.
 
 The snapshot job runs a **FlareSolverr** service container and points
 `FLARESOLVERR_URL` at it. `src/scrapers/tipsters/fetchHtml.js` sends any

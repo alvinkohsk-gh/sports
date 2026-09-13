@@ -1,5 +1,5 @@
 const { renderWithBrowser, getLastCapture } = require('./render');
-const { parseOu, fetchSgPoolsOu } = require('./odds');
+const { parseOu, fetchSgPoolsOu, parseAh, fetchSgPoolsAh } = require('./odds');
 const {
   toFixture,
   extractFixturesFromEventsApi,
@@ -80,8 +80,11 @@ async function fetchOpenFixtures() {
   // that came back empty do we make a bare server-side call as a fallback.
   let ouById = rendered.ouEvents ? parseOu(rendered.ouEvents) : new Map();
   if (ouById.size === 0) ouById = await fetchSgPoolsOu();
+  let ahById = rendered.ahEvents ? parseAh(rendered.ahEvents) : new Map();
+  if (ahById.size === 0) ahById = await fetchSgPoolsAh();
   let x12 = 0;
   let ouCount = 0;
+  let ahCount = 0;
   for (const f of fixtures) {
     if (f.odds && f.odds.oneX2) x12 += 1;
     const o = ouById.get(String(f.sgpMatchId));
@@ -89,8 +92,13 @@ async function fetchOpenFixtures() {
       f.odds = { ...(f.odds || { oneX2: null }), ou: o };
       ouCount += 1;
     }
+    const ah = ahById.get(String(f.sgpMatchId));
+    if (ah) {
+      f.odds = { ...(f.odds || { oneX2: null, ou: null }), ah };
+      ahCount += 1;
+    }
   }
-  if (DEBUG) console.log(`[singaporePools] odds: 1X2 on ${x12}/${fixtures.length}, O/U on ${ouCount}`);
+  if (DEBUG) console.log(`[singaporePools] odds: 1X2 on ${x12}/${fixtures.length}, O/U on ${ouCount}, AH on ${ahCount}`);
 
   lastInPlay = extractLiveFixtures(rendered.liveEvents);
   if (DEBUG) console.log(`[singaporePools] in-play: ${lastInPlay.length}`);
