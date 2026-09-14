@@ -368,12 +368,18 @@ function renderFixturesTable(fixtures) {
 // *this* match, not a past-meeting perspective that needs flipping).
 function renderTeamStatsTable(homeTeam, awayTeam, stats) {
   if (!stats || (!stats.home && !stats.away)) return '<div class="detail-muted">No stats available.</div>';
+  // `s.played` is the real games count this team's GF/GA totals are drawn
+  // from (src/scrapers/tipsters/forebetMatchInfo.js's summarizeOvd) — the
+  // panel is nominally "last 6 matches" but a team with fewer than 6
+  // played can have a smaller real sample, so this is shown per team
+  // rather than assumed from the section heading.
   const row = (label, s) =>
     !s
       ? ''
       : `
       <tr>
         <td class="teams">${escapeHtml(label)}</td>
+        <td class="num">${s.played ?? '—'}</td>
         <td class="num">${s.goalsScored.fullTime ?? '—'}</td>
         <td class="num">${s.goalsConceded.fullTime ?? '—'}</td>
         <td class="num">${s.goalsScored.firstHalf ?? '—'}</td>
@@ -382,7 +388,7 @@ function renderTeamStatsTable(homeTeam, awayTeam, stats) {
         <td class="num">${s.goalsConceded.secondHalf ?? '—'}</td>
       </tr>`;
   return `<table class="h2h-table stats-table"><thead><tr>
-    <th>Team</th><th class="num">GF</th><th class="num">GA</th>
+    <th>Team</th><th class="num">P</th><th class="num">GF</th><th class="num">GA</th>
     <th class="num">1H GF</th><th class="num">1H GA</th><th class="num">2H GF</th><th class="num">2H GA</th>
   </tr></thead><tbody>${row(homeTeam, stats.home)}${row(awayTeam, stats.away)}</tbody></table>`;
 }
