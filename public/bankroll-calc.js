@@ -3,7 +3,8 @@
 // loads it as a plain <script> (UMD-ish export at the bottom picks whichever
 // environment it's running in).
 //
-// A bet: { id, date (YYYY-MM-DD), fixture, market, pick, odd, stake, result }
+// A bet: { id, date (YYYY-MM-DD), fixture, market, pick, odd, stake, result,
+//          score (optional, the real final "H-A" score once known) }
 // result is 'pending' | 'won' | 'lost' | 'void'. Decimal odds throughout,
 // consistent with the rest of the site (see public/app.js).
 
