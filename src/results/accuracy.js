@@ -101,6 +101,13 @@ function grade(history, results, prevSamples, { windowHours = 48, nowMs = Date.n
       league: e.league || null,
       fixture: `${e.homeTeam} vs ${e.awayTeam}`,
       score: `${r.homeGoals}-${r.awayGoals}`,
+      // Half-time score, when Flashscore's feed carried it (see
+      // flashscoreResults.js) — null for a result sourced from Forebet's
+      // or the archive's fallback, neither of which has it. Not used for
+      // grading here (nothing derives a halftime pick yet); carried
+      // through purely so the Bankroll page's auto-check can settle a
+      // "Halftime 1X2" bet against it.
+      htScore: Number.isFinite(r.htHomeGoals) && Number.isFinite(r.htAwayGoals) ? `${r.htHomeGoals}-${r.htAwayGoals}` : null,
       pick: e.pick || null,
       actual1x2: act,
       oneX2Correct,

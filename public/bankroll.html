@@ -156,11 +156,12 @@
       the stake; "void" returns the stake with no effect on the bankroll; "pending" bets don't count
       toward the record until you set a result. ROI and win rate are computed over settled
       (won/lost) bets only. <strong>Check results</strong> (also run automatically on page load) reads
-      real final scores from this site's own match data and fills in the result of any pending bet it
-      can settle with confidence — a "🤖" next to a result marks one it set; you can always change it
-      yourself, and doing so clears that mark. It only settles bets in the markets this site's board
-      logs bets from (1X2, Over/Under, Asian Handicap, 1/2 Goal, Handicap 1X2, Odd/Even, Both Teams to
-      Score) and, for a quarter-line handicap bet, only when the real result is a clean win/loss/push —
+      real final scores (and, for a Halftime 1X2 bet, a real half-time score when one's on record) from
+      this site's own match data and fills in the result of any pending bet it can settle with
+      confidence — a "🤖" next to a result marks one it set; you can always change it yourself, and
+      doing so clears that mark. It only settles bets in the markets this site's board logs bets from
+      (1X2, Over/Under, Asian Handicap, 1/2 Goal, Handicap 1X2, Odd/Even, Both Teams to Score, Halftime
+      1X2) and, for a quarter-line handicap bet, only when the real result is a clean win/loss/push —
       a half-win/half-loss can't be represented by this tracker's win/lost/void states, so it's left for
       you to resolve. It reads match results only — your bets and stakes are still never sent anywhere.
       Nothing here is financial advice. Gamble responsibly.
@@ -256,6 +257,15 @@
         `<path d="${path}" fill="none" stroke="${lineColor}" stroke-width="2" />`;
     }
 
+    // A Halftime 1X2 bet's own real result is the HT score, not the FT one
+    // — showing FT there would look like the wrong number was checked.
+    // Every other market shows the full-time score as before.
+    function scoreCellText(b) {
+      const isHalftime = (b.market || '').toLowerCase().startsWith('halftime 1x2');
+      if (isHalftime) return b.htScore || '—';
+      return b.score || '—';
+    }
+
     function renderTable() {
       const bets = store.bets.slice().sort((a, b) => Date.parse(b.date) - Date.parse(a.date) || (b.id > a.id ? 1 : -1));
       emptyEl.hidden = bets.length > 0;
@@ -273,7 +283,7 @@
             <td>${b.pick || '—'}</td>
             <td class="num">${b.odd.toFixed(2)}</td>
             <td class="num">${b.stake.toFixed(2)}</td>
-            <td class="num">${b.score || '—'}</td>
+            <td class="num" title="${b.htScore ? `Half-time: ${b.htScore}` : ''}">${scoreCellText(b)}</td>
             <td>
               <select data-result>
                 <option value="pending" ${b.result === 'pending' ? 'selected' : ''}>Pending</option>
@@ -407,8 +417,13 @@
           const score = BankrollSettle.findScore(bet, scoreIndex);
           if (!score) continue;
           const scoreText = `${score.homeGoals}-${score.awayGoals}`;
-          if (bet.score !== scoreText) {
+          const htScoreText =
+            Number.isFinite(score.htHomeGoals) && Number.isFinite(score.htAwayGoals)
+              ? `${score.htHomeGoals}-${score.htAwayGoals}`
+              : null;
+          if (bet.score !== scoreText || bet.htScore !== htScoreText) {
             bet.score = scoreText;
+            bet.htScore = htScoreText;
             scored += 1;
           }
           if (bet.result !== 'pending') continue;

@@ -7,8 +7,12 @@ const axios = require('axios');
 //   local-global.flashscore.ninja/2/x/feed/f_1_<dayOffset>_3_en_1
 // (dayOffset 0 = today, -1 = yesterday, …) and needs a static-ish
 // `x-fsign` header. Match fields: AA id, AB status ("3" = finished),
-// AD kickoff unix ts, AE/AF home/away, AG/AH full-time score, ZA the
-// tournament name (carried forward until the next ZA).
+// AD kickoff unix ts, AE/AF home/away, AG/AH full-time score, BC/BD
+// half-time score, ZA the tournament name (carried forward until the
+// next ZA). BC/BD aren't documented anywhere — confirmed via a live
+// capture (2026-09-15, 15/15 finished matches) that both are always
+// ≤ their full-time AG/AH counterpart, exactly the invariant a
+// half-time score must satisfy.
 const HOST = process.env.FLASHSCORE_HOST || 'https://local-global.flashscore.ninja/2/x/feed';
 const FSIGN = process.env.FLASHSCORE_FSIGN || 'SW9D1eZo';
 const DAY_OFFSETS = [0, -1, -2]; // covers the 2–60h grading window
@@ -53,6 +57,17 @@ function parseFeed(text, mode = 'finished') {
       if (mode === 'live') {
         row.stage = LIVE_STAGE[cur.AC] || 'live';
         row.kickoffISO = iso;
+      } else {
+        // half-time score — only meaningful for a finished match; not
+        // every finished record carries it (BC/BD absent rather than 0
+        // for some, e.g. abandoned/walkover matches), so both must parse
+        // as finite numbers or it's left off entirely.
+        const htHg = Number(cur.BC);
+        const htAg = Number(cur.BD);
+        if (Number.isFinite(htHg) && Number.isFinite(htAg)) {
+          row.htHomeGoals = htHg;
+          row.htAwayGoals = htAg;
+        }
       }
       out.push(row);
     }
@@ -90,9 +105,11 @@ async function fetchFeedText(dayOffset) {
 }
 
 /**
- * Returns [{ homeTeam, awayTeam, homeGoals, awayGoals, dayISO, league }]
- * for every finished match in the last few days. Never throws — a failed
- * or rejected fetch (e.g. the fsign rotated) just yields fewer rows.
+ * Returns [{ homeTeam, awayTeam, homeGoals, awayGoals, dayISO, league,
+ * htHomeGoals?, htAwayGoals? }] for every finished match in the last few
+ * days — the ht* fields are only present when the feed actually carried
+ * them. Never throws — a failed or rejected fetch (e.g. the fsign
+ * rotated) just yields fewer rows.
  */
 async function fetchFlashscoreResults() {
   const byKey = new Map();

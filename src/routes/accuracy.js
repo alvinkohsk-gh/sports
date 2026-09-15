@@ -175,6 +175,7 @@ router.get('/accuracy', async (req, res) => {
         league: cleanLeague(s.league),
         fixture: s.fixture,
         score: s.score,
+        htScore: s.htScore || null,
         pick: s.pick || null,
         oneX2Correct: s.oneX2Correct ?? null,
         oneX2Odd: s.oneX2Odd ?? null,
