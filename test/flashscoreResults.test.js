@@ -52,3 +52,27 @@ test('parseFeed (live): HT, 1st half, extra time, and penalties codes all map co
   const rows = parseFeed(text, 'live');
   assert.deepEqual(rows.map((r) => r.stage), ['HT', '1st half', 'extra time', 'extra time', 'penalties']);
 });
+
+// ---- parseFeed (finished): BC/BD half-time score — confirmed via a live
+// capture (2026-09-15) that both are always <= their AG/AH full-time
+// counterpart across 15/15 finished matches, exactly the invariant a
+// half-time score must satisfy. ----
+test('parseFeed (finished): reads BC/BD as the half-time score alongside the AG/AH full-time one', () => {
+  const text = feed([{ AA: 'id1', AB: '3', AD: KICKOFF_TS, AE: 'Team A', AF: 'Team B', AG: '2', AH: '1', BC: '1', BD: '0' }]);
+  const [row] = parseFeed(text, 'finished');
+  assert.equal(row.homeGoals, 2);
+  assert.equal(row.awayGoals, 1);
+  assert.equal(row.htHomeGoals, 1);
+  assert.equal(row.htAwayGoals, 0);
+});
+test('parseFeed (finished): a record missing BC/BD leaves the ht* fields off entirely, not zeroed', () => {
+  const text = feed([{ AA: 'id1', AB: '3', AD: KICKOFF_TS, AE: 'Team A', AF: 'Team B', AG: '1', AH: '0' }]);
+  const [row] = parseFeed(text, 'finished');
+  assert.equal('htHomeGoals' in row, false);
+  assert.equal('htAwayGoals' in row, false);
+});
+test('parseFeed (live mode): never attaches ht* fields (BC/BD only read in finished mode)', () => {
+  const text = feed([{ AA: 'id1', AB: '2', AC: '13', AD: KICKOFF_TS, AE: 'Team A', AF: 'Team B', AG: '1', AH: '0', BC: '1', BD: '0' }]);
+  const [row] = parseFeed(text, 'live');
+  assert.equal('htHomeGoals' in row, false);
+});

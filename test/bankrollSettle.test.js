@@ -12,7 +12,7 @@ test('parseScore: anything else (null, postponed, malformed) -> null', () => {
   assert.equal(parseScore(''), null);
 });
 
-const score = (h, a) => ({ homeGoals: h, awayGoals: a });
+const score = (h, a, htH, htA) => ({ homeGoals: h, awayGoals: a, htHomeGoals: htH, htAwayGoals: htA });
 
 // ---- 1X2 ----
 test('settleBet: 1X2 — home win, home pick', () => {
@@ -89,10 +89,22 @@ test('settleBet: Both Teams to Score', () => {
   assert.equal(settleBet({ market: 'Both Teams to Score', pick: 'No' }, score(2, 0)), 'won');
 });
 
-// ---- unsettleable markets / unrecognized text ----
-test('settleBet: "1st Goal" and Halftime markets have no data to settle against -> null', () => {
-  assert.equal(settleBet({ market: '1st Goal', pick: 'Home' }, score(1, 0)), null);
+// ---- Halftime 1X2 (needs a real half-time score — see flashscoreResults.js) ----
+test('settleBet: Halftime 1X2 settles off the half-time score, not the full-time one', () => {
+  // HT 0-0, FT 2-1 — the halftime pick cares only about the HT scoreline
+  assert.equal(settleBet({ market: 'Halftime 1X2', pick: 'Draw' }, score(2, 1, 0, 0)), 'won');
+  assert.equal(settleBet({ market: 'Halftime 1X2', pick: 'Home' }, score(2, 1, 0, 0)), 'lost');
+});
+test('settleBet: "Halftime 1X2 (live)" settles the same way as the pre-match label', () => {
+  assert.equal(settleBet({ market: 'Halftime 1X2 (live)', pick: 'Away' }, score(1, 2, 0, 1)), 'won');
+});
+test('settleBet: Halftime 1X2 with no half-time score on record -> null, never falls back to the full-time score', () => {
   assert.equal(settleBet({ market: 'Halftime 1X2', pick: 'Home' }, score(1, 0)), null);
+});
+
+// ---- unsettleable markets / unrecognized text ----
+test('settleBet: "1st Goal" has no data to settle against at all -> null', () => {
+  assert.equal(settleBet({ market: '1st Goal', pick: 'Home' }, score(1, 0)), null);
 });
 test('settleBet: unrecognized/hand-typed market or pick text -> null, never guessed', () => {
   assert.equal(settleBet({ market: 'Correct Score', pick: '2-1' }, score(2, 1)), null);
@@ -120,14 +132,24 @@ test('findScore: a bet with a matchKey looks itself up directly', () => {
     byMatchKey: new Map([['k1', { matchKey: 'k1', fixture: 'A vs B', kickoffISO: '2026-01-01T00:00:00Z', score: '2-1' }]]),
     all: [],
   };
-  assert.deepEqual(findScore({ matchKey: 'k1', fixture: 'A vs B', date: '2026-01-01' }, index), { homeGoals: 2, awayGoals: 1 });
+  assert.deepEqual(findScore({ matchKey: 'k1', fixture: 'A vs B', date: '2026-01-01' }, index), {
+    homeGoals: 2,
+    awayGoals: 1,
+    htHomeGoals: null,
+    htAwayGoals: null,
+  });
 });
 test('findScore: falls back to fixture text + nearby date when there is no matchKey', () => {
   const index = {
     byMatchKey: new Map(),
     all: [{ matchKey: 'k1', fixture: 'Man Utd vs Arsenal', kickoffISO: '2026-01-10T15:00:00Z', score: '3-1' }],
   };
-  assert.deepEqual(findScore({ fixture: 'Man Utd v Arsenal', date: '2026-01-10' }, index), { homeGoals: 3, awayGoals: 1 });
+  assert.deepEqual(findScore({ fixture: 'Man Utd v Arsenal', date: '2026-01-10' }, index), {
+    homeGoals: 3,
+    awayGoals: 1,
+    htHomeGoals: null,
+    htAwayGoals: null,
+  });
 });
 test('findScore: no confident match (wrong teams, or date too far off) -> null', () => {
   const index = {
@@ -136,4 +158,18 @@ test('findScore: no confident match (wrong teams, or date too far off) -> null',
   };
   assert.equal(findScore({ fixture: 'Chelsea v Liverpool', date: '2026-01-10' }, index), null);
   assert.equal(findScore({ fixture: 'Man Utd v Arsenal', date: '2026-03-01' }, index), null);
+});
+test('findScore: surfaces the half-time score alongside the full-time one when the entry has it', () => {
+  const index = {
+    byMatchKey: new Map([['k1', { matchKey: 'k1', fixture: 'A vs B', kickoffISO: '2026-01-01T00:00:00Z', score: '2-1', htScore: '1-0' }]]),
+    all: [],
+  };
+  assert.deepEqual(findScore({ matchKey: 'k1' }, index), { homeGoals: 2, awayGoals: 1, htHomeGoals: 1, htAwayGoals: 0 });
+});
+test('findScore: a matched entry with no half-time score on record leaves ht fields null (not the whole lookup)', () => {
+  const index = {
+    byMatchKey: new Map([['k1', { matchKey: 'k1', fixture: 'A vs B', kickoffISO: '2026-01-01T00:00:00Z', score: '2-1', htScore: null }]]),
+    all: [],
+  };
+  assert.deepEqual(findScore({ matchKey: 'k1' }, index), { homeGoals: 2, awayGoals: 1, htHomeGoals: null, htAwayGoals: null });
 });

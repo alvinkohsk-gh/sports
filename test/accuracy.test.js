@@ -123,6 +123,17 @@ test('grade: an entry with only an AH pick (no 1X2/O/U pick) still gets graded, 
   assert.equal(result.samples[0].ouCorrect, null);
 });
 
+// ---- half-time score pass-through (for the Bankroll page's auto-check —
+// see public/bankroll-settle.js; nothing here derives a halftime pick) ----
+test('grade: carries the half-time score through as htScore when the result has one', () => {
+  const result = grade(historyWith({}), [{ ...RESULT[0], htHomeGoals: 1, htAwayGoals: 0 }], [], { nowMs: NOW });
+  assert.equal(result.samples[0].htScore, '1-0');
+});
+test('grade: htScore is null when the result has no half-time score on record', () => {
+  const result = grade(historyWith({}), RESULT, [], { nowMs: NOW });
+  assert.equal(result.samples[0].htScore, null);
+});
+
 test('summarize: AH win rate excludes pushes and treats half-win/half-loss as partial equity', () => {
   const samples = [
     { site: 'forebet', kickoffISO: KICKOFF, ahResult: 'win', ahValue: 1 },
