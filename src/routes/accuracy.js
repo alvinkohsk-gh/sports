@@ -182,6 +182,10 @@ router.get('/accuracy', async (req, res) => {
         ou: s.ou || null,
         ouCorrect: s.ouCorrect ?? null,
         ouOdd: s.ouOdd ?? null,
+        ah: s.ah || null,
+        ahResult: s.ahResult || null,
+        ahValue: s.ahValue ?? null,
+        ahOdd: s.ahOdd ?? null,
       })),
     pending: pending.slice(0, 3000),
   });

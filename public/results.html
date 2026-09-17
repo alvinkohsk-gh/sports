@@ -53,6 +53,9 @@
     .bar.x12 > span { background: var(--ok); }
     .bar.ou > span { background: var(--accent); }
     .bar.ah > span { background: var(--soon); }
+    .roi-metric { border-top: 1px dashed var(--card-border); padding-top: 10px; margin-top: 2px; margin-bottom: 0; }
+    .roi-metric .roi-pos { color: var(--ok); }
+    .roi-metric .roi-neg { color: var(--urgent); }
     .muted-note { color: var(--muted); font-size: 13px; line-height: 1.5; margin-top: 40px; text-align: center; }
     .tscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 28px; }
     table.recent { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -128,6 +131,12 @@
           <option value="ah">Asian Handicap only</option>
         </select>
       </label>
+      <label>Sort by
+        <select id="rank">
+          <option value="">Accuracy</option>
+          <option value="roi">Return (odds-adjusted)</option>
+        </select>
+      </label>
       <span class="range-note" id="range-note"></span>
     </div>
 
@@ -165,7 +174,15 @@
       "result pending". The small "@N.NN" next to a result mark is the Singapore Pools price on that
       pick at the moment it was captured (the site's final pre-kickoff call) — not today's price; it's
       blank for older samples from before this was tracked, or a fixture with no recorded price
-      that early. Past performance says nothing about future results. Gamble responsibly.
+      that early. Each card's <b>Return (odds-adjusted)</b> line tallies that same price as a flat
+      1-unit bet on every pick — win pays odd&minus;1, lose forfeits the stake, and a quarter-line
+      Asian Handicap splits into two half-stakes exactly like real settlement — over just the picks a
+      price was actually recorded for, so its sample size (and therefore its ranking) can differ from
+      the accuracy figure above it. Switch <b>Sort by</b> to "Return (odds-adjusted)" to rank the site
+      cards on that instead of raw accuracy; 💰 marks the best return over the selected scope, same
+      minimum sample size as 🏆. Neither figure is what you'd actually win — no site publishes its
+      stake size, and a real bettor stakes unevenly, not one flat unit per pick. Past performance says
+      nothing about future results. Gamble responsibly.
     </p>
   </main>
 
