@@ -3,7 +3,7 @@ const SITE_LABELS = {
   sportsmole: 'Sports Mole', matchoutlook: 'MatchOutlook', eaglepredict: 'EaglePredict', footystats: 'FootyStats',
   statarea: 'Statarea', footballpredictions: 'FootballPredictions', vitibet: 'Vitibet',
 };
-const MIN_BEST = 10; // graded picks needed before a site can get the 🏆
+const MIN_BEST = 10; // graded (or odds-priced) picks needed before a site can get the 🏆/💰
 const statusEl = document.getElementById('status');
 const gridEl = document.getElementById('accgrid');
 const emptyEl = document.getElementById('empty');
@@ -15,6 +15,7 @@ const toEl = document.getElementById('to');
 const presetsEl = document.getElementById('presets');
 const leagueEl = document.getElementById('league');
 const marketEl = document.getElementById('market');
+const rankEl = document.getElementById('rank');
 const rangeNoteEl = document.getElementById('range-note');
 
 function label(s) { return SITE_LABELS[s] || s; }
@@ -58,6 +59,20 @@ const AH_MARK = {
   push: ['P', 'dash'],
   'half-loss': ['½✘', 'half half-loss'],
   loss: ['✘', 'cross'],
+};
+
+// Profit on a flat 1-unit stake at the recorded price, in the same
+// win/half-win/push/half-loss/loss vocabulary as ahResult. A quarter
+// line is two 0.5-unit sub-bets at the same price (see
+// src/services/asianHandicap.js), so a half-win banks half the
+// odds-profit and a half-loss forfeits half the stake while the other
+// half pushes back to zero.
+const AH_PROFIT = {
+  win: (odd) => odd - 1,
+  'half-win': (odd) => (odd - 1) / 2,
+  push: () => 0,
+  'half-loss': () => -0.5,
+  loss: () => -1,
 };
 
 // `market` narrows which pick bit(s) a pill shows: '' (default) shows
@@ -115,14 +130,23 @@ function computePerSite(samples) {
     const b = (per[s.site] = per[s.site] || {
       oneX2Correct: 0, oneX2Total: 0, ouCorrect: 0, ouTotal: 0,
       ahWin: 0, ahHalfWin: 0, ahPush: 0, ahHalfLoss: 0, ahLoss: 0, ahDecided: 0, ahEquitySum: 0,
+      oneX2Profit: 0, oneX2Staked: 0, ouProfit: 0, ouStaked: 0, ahProfit: 0, ahStaked: 0,
     });
     if (s.oneX2Correct !== null && s.oneX2Correct !== undefined) {
       b.oneX2Total += 1;
       if (s.oneX2Correct) b.oneX2Correct += 1;
+      if (typeof s.oneX2Odd === 'number') {
+        b.oneX2Staked += 1;
+        b.oneX2Profit += s.oneX2Correct ? s.oneX2Odd - 1 : -1;
+      }
     }
     if (s.ouCorrect !== null && s.ouCorrect !== undefined) {
       b.ouTotal += 1;
       if (s.ouCorrect) b.ouCorrect += 1;
+      if (typeof s.ouOdd === 'number') {
+        b.ouStaked += 1;
+        b.ouProfit += s.ouCorrect ? s.ouOdd - 1 : -1;
+      }
     }
     if (s.ahResult) {
       if (s.ahResult === 'win') b.ahWin += 1;
@@ -134,6 +158,10 @@ function computePerSite(samples) {
         b.ahDecided += 1;
         b.ahEquitySum += (s.ahValue + 1) / 2;
       }
+      if (typeof s.ahOdd === 'number' && AH_PROFIT[s.ahResult]) {
+        b.ahStaked += 1;
+        b.ahProfit += AH_PROFIT[s.ahResult](s.ahOdd);
+      }
     }
   }
   for (const b of Object.values(per)) {
@@ -143,6 +171,17 @@ function computePerSite(samples) {
     b.ahPct = b.ahDecided ? Math.round((100 * b.ahEquitySum) / b.ahDecided) : null;
     b.graded = b.oneX2Total + b.ouTotal + b.ahDecided;
     b.overall = b.graded ? (b.oneX2Correct + b.ouCorrect + b.ahEquitySum) / b.graded : null;
+    // Return on a flat 1-unit stake at the price recorded when each pick
+    // was made, over just the picks a price was actually recorded for
+    // (older samples, and some fixtures, have none — see oneX2Odd/ouOdd/
+    // ahOdd above). This is what "accounting for odds" ranks sites by,
+    // as opposed to the plain correct/total accuracy above.
+    b.oneX2Roi = b.oneX2Staked ? Math.round((100 * b.oneX2Profit) / b.oneX2Staked) : null;
+    b.ouRoi = b.ouStaked ? Math.round((100 * b.ouProfit) / b.ouStaked) : null;
+    b.ahRoi = b.ahStaked ? Math.round((100 * b.ahProfit) / b.ahStaked) : null;
+    b.roiProfit = b.oneX2Profit + b.ouProfit + b.ahProfit;
+    b.roiStaked = b.oneX2Staked + b.ouStaked + b.ahStaked;
+    b.roiPct = b.roiStaked ? Math.round((100 * b.roiProfit) / b.roiStaked) : null;
   }
   return per;
 }
@@ -173,12 +212,55 @@ function marketCorrect(b, market) {
   return b.oneX2Correct + b.ouCorrect + Math.round(b.ahEquitySum * 10) / 10;
 }
 
-function render(perSite, tableSamples, singleDay, market) {
+// Same narrowing as marketPct/marketCount, but for the odds-adjusted
+// return (see computePerSite) instead of raw accuracy — `roi` is the
+// "Sort by" filter's value, '' (accuracy, default) or 'roi'.
+function marketRoi(b, market) {
+  if (market === '1x2') return b.oneX2Roi;
+  if (market === 'ou') return b.ouRoi;
+  if (market === 'ah') return b.ahRoi;
+  return b.roiPct;
+}
+function marketRoiStaked(b, market) {
+  if (market === '1x2') return b.oneX2Staked;
+  if (market === 'ou') return b.ouStaked;
+  if (market === 'ah') return b.ahStaked;
+  return b.roiStaked;
+}
+function marketRoiProfit(b, market) {
+  if (market === '1x2') return b.oneX2Profit;
+  if (market === 'ou') return b.ouProfit;
+  if (market === 'ah') return b.ahProfit;
+  return b.roiProfit;
+}
+
+// The value/sample-size pair the "Sort by" filter ranks site cards on:
+// plain accuracy (marketPct/marketCount) by default, or the
+// odds-adjusted return (marketRoi/marketRoiStaked) when rank === 'roi'.
+function rankValue(b, market, rank) { return rank === 'roi' ? marketRoi(b, market) : marketPct(b, market); }
+function rankCount(b, market, rank) { return rank === 'roi' ? marketRoiStaked(b, market) : marketCount(b, market); }
+
+function roiMetric(b, market) {
+  const roi = marketRoi(b, market);
+  const staked = marketRoiStaked(b, market);
+  const profit = marketRoiProfit(b, market);
+  const sign = (n) => (n > 0 ? '+' : '');
+  const cls = roi == null ? '' : roi > 0 ? 'roi-pos' : roi < 0 ? 'roi-neg' : '';
+  return `
+    <div class="metric roi-metric">
+      <div class="metric-top"><span>Return (odds-adjusted)</span><b class="${cls}">${roi == null ? '—' : sign(roi) + roi + '%'}</b></div>
+      <div class="metric-top"><span></span><span>${staked ? `${sign(profit)}${profit.toFixed(2)}u on ${staked} pick${staked === 1 ? '' : 's'} with a recorded price` : 'no picks with a recorded price yet'}</span></div>
+    </div>`;
+}
+
+function render(perSite, tableSamples, singleDay, market, rank) {
   let siteEntries = Object.entries(perSite);
   if (market) siteEntries = siteEntries.filter(([, b]) => marketCount(b, market) > 0);
-  const sites = siteEntries.sort(
-    (a, b) => (marketPct(b[1], market) ?? -1) - (marketPct(a[1], market) ?? -1) || marketCount(b[1], market) - marketCount(a[1], market)
-  );
+  const sites = siteEntries.sort((a, b) => {
+    const va = rankValue(a[1], market, rank);
+    const vb = rankValue(b[1], market, rank);
+    return (vb ?? -Infinity) - (va ?? -Infinity) || rankCount(b[1], market, rank) - rankCount(a[1], market, rank);
+  });
 
   const overallLabel = market === '1x2' ? '1X2' : market === 'ou' ? 'Over/Under' : market === 'ah' ? 'Asian Handicap' : 'Overall';
 
@@ -196,7 +278,8 @@ function render(perSite, tableSamples, singleDay, market) {
   }
   emptyEl.hidden = true;
 
-  const bestSite = sites.find(([, b]) => marketCount(b, market) >= MIN_BEST)?.[0] || null;
+  const bestSite = sites.find(([, b]) => rankCount(b, market, rank) >= MIN_BEST)?.[0] || null;
+  const crown = rank === 'roi' ? '💰 best return' : '🏆 most accurate';
   gridEl.classList.toggle('has-selection', !!selectedSite);
   gridEl.classList.toggle('market-1x2', market === '1x2');
   gridEl.classList.toggle('market-ou', market === 'ou');
@@ -207,11 +290,12 @@ function render(perSite, tableSamples, singleDay, market) {
     <div class="acccard site-${site}${site === bestSite ? ' best' : ''}${site === selectedSite ? ' selected' : ''}"
          data-site="${site}" role="button" tabindex="0"
          aria-pressed="${site === selectedSite}" title="Show only ${label(site)}'s picks">
-      <h3>${site === bestSite ? '<span class="crown">🏆 most accurate</span>' : ''}${label(site)}</h3>
+      <h3>${site === bestSite ? `<span class="crown">${crown}</span>` : ''}${label(site)}</h3>
       <div class="metric-block market-block-1x2">${metric('1X2 (home/draw/away)', b.oneX2Correct, b.oneX2Total, b.oneX2Pct, 'x12')}</div>
       <div class="metric-block market-block-ou">${metric('Over / Under goals', b.ouCorrect, b.ouTotal, b.ouPct, 'ou')}</div>
       <div class="metric-block market-block-ah">${ahMetric(b)}</div>
       <div class="metric-top"><span>${overallLabel}</span><span>${marketPct(b, market) == null ? '—' : marketPct(b, market) + '%'} · ${marketCorrect(b, market)}/${marketCount(b, market)}</span></div>
+      ${roiMetric(b, market)}
     </div>`
     )
     .join('');
@@ -288,19 +372,25 @@ function apply() {
   const singleDay = fromEl.value && fromEl.value === toEl.value;
   const perSite = computePerSite(graded);
   if (selectedSite && !perSite[selectedSite]) selectedSite = null; // nothing for it in this scope
-  const market = marketEl.value; // '' | '1x2' | 'ou'
-  render(perSite, graded.concat(pending), singleDay, market);
+  const market = marketEl.value; // '' | '1x2' | 'ou' | 'ah'
+  const rank = rankEl.value; // '' (accuracy) | 'roi'
+  render(perSite, graded.concat(pending), singleDay, market, rank);
 
   const rangeLabel = fromEl.value && toEl.value
     ? (singleDay ? fromEl.value : `${fromEl.value} → ${toEl.value}`)
     : 'all dates';
   const marketLabel = market === '1x2' ? '1X2' : market === 'ou' ? 'Over/Under' : market === 'ah' ? 'Asian Handicap' : null;
   const best = Object.entries(perSite)
-    .filter(([, b]) => marketCount(b, market) >= MIN_BEST)
-    .sort((a, b) => (marketPct(b[1], market) ?? -1) - (marketPct(a[1], market) ?? -1))[0];
+    .filter(([, b]) => rankCount(b, market, rank) >= MIN_BEST)
+    .sort((a, b) => (rankValue(b[1], market, rank) ?? -Infinity) - (rankValue(a[1], market, rank) ?? -Infinity))[0];
+  const bestLabel = best
+    ? rank === 'roi'
+      ? `${rankValue(best[1], market, rank) > 0 ? '+' : ''}${rankValue(best[1], market, rank)}% return`
+      : `${rankValue(best[1], market, rank)}%`
+    : null;
   rangeNoteEl.innerHTML =
     `${rangeLabel}${lg ? ` · ${lg}` : ''}${marketLabel ? ` · ${marketLabel} only` : ''} · ${graded.length} graded pick${graded.length === 1 ? '' : 's'}` +
-    (best ? ` · best: ${label(best[0])} ${marketPct(best[1], market)}%` : '') +
+    (best ? ` · best: ${label(best[0])} ${bestLabel}` : '') +
     (selectedSite ? ` · <b>${label(selectedSite)} only</b> <button class="clear-site" id="clear-site">show all</button>` : '');
   const clearBtn = document.getElementById('clear-site');
   if (clearBtn) clearBtn.addEventListener('click', () => { selectedSite = null; apply(); });
@@ -344,6 +434,7 @@ presetsEl.addEventListener('click', (e) => {
 );
 leagueEl.addEventListener('change', apply);
 marketEl.addEventListener('change', apply);
+rankEl.addEventListener('change', apply);
 
 async function load() {
   try {
