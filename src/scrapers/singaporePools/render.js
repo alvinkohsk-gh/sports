@@ -35,6 +35,21 @@ function getLastCapture() {
   return lastCapture;
 }
 
+// See the throttle-history comment where this is called (inside
+// renderWithBrowser) for why these 6 markets rotate instead of all being
+// fetched every scrape. Pure/deterministic off wall-clock time (not
+// persisted state — each scrape is a fresh process) so two batches
+// naturally alternate across scrapes without any run needing to know
+// what the previous one picked.
+const ROTATE_BATCHES = [
+  ['h1', 'oe', 'btts'],
+  ['firstGoal', 'goalHandicap', 'handicap1x2'],
+];
+const ROTATE_WINDOW_MS = 15 * 60 * 1000;
+function pickRotateBatch(nowMs) {
+  return ROTATE_BATCHES[Math.floor(nowMs / ROTATE_WINDOW_MS) % ROTATE_BATCHES.length];
+}
+
 /**
  * Renders the sports page with a headless browser (needed because this is
  * a client-side-rendered app) and captures JSON responses the page itself
@@ -122,17 +137,28 @@ async function renderWithBrowser() {
     let firstGoalEvents = null;
     let goalHandicapEvents = null;
     let handicap1x2Events = null;
+    // Growing this to 8 parallel bet-type calls (on top of OU/AH/live,
+    // added 2026-09-12/13) reintroduced — worse than before — the exact
+    // throttling that "SG Pools: stop the extra API calls that got the
+    // runner throttled" (2026-09-08) fixed: runs from ~2026-09-20T19:00Z
+    // onward got a stuck near-empty fixture payload on every single scrape
+    // for 11+ hours straight, never recovering the way the "short sliding
+    // window" throttle this file used to assume would. OU/AH/live are the
+    // proven-safe core (fetched every scrape, matching the pre-regression
+    // baseline plus AH, which real settlement logic elsewhere depends on);
+    // the other 6 markets are split into two batches and alternated by a
+    // 15-minute wall-clock bucket (pickRotateBatch), so any one scrape
+    // fetches at most 6 in-page calls total (down from 9) and a given
+    // market refreshes on roughly every other scrape instead of every one
+    // — a market can go briefly unpriced on its "off" cycle rather than
+    // for good. Each fetch is still made from inside the page
+    // (same-origin to the SPA's own calls), never a bare server-side
+    // request — see odds.js's header for why a bare call is worse.
+    const rotateBatch = pickRotateBatch(Date.now());
+    const attempted = ['ou', 'ah', ...rotateBatch];
+    if (DEBUG) console.log(`[singaporePools] this scrape's extra-market batch: ${rotateBatch.join(', ')}`);
     try {
-      // All bet-type fetches run in parallel (rather than the sequential
-      // awaits this used to do for just OU/AH/live) — still every hit
-      // inside this one legit render session (see the comment above this
-      // function), just fewer round trips now that there are 8 of them
-      // instead of 3. betType codes confirmed via a live capture of SG
-      // Pools' own football_bet_type lookup table (2026-09-13) — see
-      // odds.js for which markets each maps to and why FS/LS (player-prop
-      // goalscorer markets) and TG2/HF/EG/CS (too many outcomes for a
-      // match card) are fetched nowhere at all.
-      const res = await page.evaluate(async () => {
+      const res = await page.evaluate(async (batch) => {
         const grab = async (url) => {
           try {
             const r = await fetch(url, { credentials: 'omit' });
@@ -145,6 +171,7 @@ async function renderWithBrowser() {
         };
         const base = 'https://api.singaporepools.com/football/events/v1/';
         const upcoming = (betType) => grab(`${base}upcoming-event?lang=en&betType=${betType}`);
+        const want = (name) => batch.includes(name);
         const [ou, ah, live, h1, oe, btts, firstGoal, goalHandicap, handicap1x2] = await Promise.all([
           upcoming('HL'),
           // Asian Handicap — betType=AH confirmed via a live capture
@@ -155,15 +182,15 @@ async function renderWithBrowser() {
           // `handicapValue` (seen stale/unrelated in that capture).
           upcoming('AH'),
           grab(`${base}live?lang=en`),
-          upcoming('H1'),
-          upcoming('OE'),
-          upcoming('BG'),
-          upcoming('NGN'),
-          upcoming('WH'),
-          upcoming('MH'),
+          want('h1') ? upcoming('H1') : Promise.resolve(null),
+          want('oe') ? upcoming('OE') : Promise.resolve(null),
+          want('btts') ? upcoming('BG') : Promise.resolve(null),
+          want('firstGoal') ? upcoming('NGN') : Promise.resolve(null),
+          want('goalHandicap') ? upcoming('WH') : Promise.resolve(null),
+          want('handicap1x2') ? upcoming('MH') : Promise.resolve(null),
         ]);
         return { ou, ah, live, h1, oe, btts, firstGoal, goalHandicap, handicap1x2 };
-      });
+      }, rotateBatch);
       ouEvents = res.ou;
       ahEvents = res.ah;
       liveEvents = res.live;
@@ -242,8 +269,13 @@ async function renderWithBrowser() {
       firstGoalEvents,
       goalHandicapEvents,
       handicap1x2Events,
+      // which of the rotating extra markets this scrape actually fetched
+      // in-page — see the throttling-history comment above. index.js uses
+      // this to only bare-call-fallback a market it genuinely tried and
+      // got nothing for, never one deliberately skipped this cycle.
+      attempted,
     };
   });
 }
 
-module.exports = { renderWithBrowser, getLastCapture };
+module.exports = { renderWithBrowser, getLastCapture, pickRotateBatch };
