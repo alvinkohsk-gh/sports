@@ -145,13 +145,35 @@ async function loadPublished(file, fallback) {
   // Guard against a transient Singapore Pools failure (render throttled /
   // served a near-empty fixture list) nuking a healthy live board: if the
   // fixture count collapsed while the tipster scrape is clearly fine, keep
-  // the previous snapshot rather than publishing the broken one.
+  // the previous snapshot rather than publishing the broken one — but only
+  // for a bounded amount of time. A flat count threshold alone can't tell
+  // a genuine throttle blip apart from SG Pools legitimately just having a
+  // quiet fixture list right now (confirmed against the live site
+  // 2026-09-21 — this guard had been silently freezing the board on stale
+  // data for 17+ hours straight, mistaking "always exactly N, every
+  // scrape" for an ongoing block rather than the real fixture count). So:
+  // hold back only while the currently-published snapshot is still fresh
+  // enough that waiting for a better one costs little; once it's gone
+  // stale, a persistently low count is far more likely real than a blip,
+  // and showing it beats showing an increasingly outdated board forever.
+  const PUBLISH_GUARD_MAX_STALE_MS = 45 * 60 * 1000; // 45 min
   if (snapshot.matches.length < 15 && snapshot.counts.tipsterPicks > 50) {
+    const prevSnapshot = await loadPublished('snapshot.json', null);
+    const prevAgeMs = prevSnapshot && prevSnapshot.generatedAt ? Date.now() - Date.parse(prevSnapshot.generatedAt) : Infinity;
+    if (prevAgeMs < PUBLISH_GUARD_MAX_STALE_MS) {
+      console.error(
+        `[scrape-snapshot] only ${snapshot.matches.length} SG Pools fixtures but ` +
+          `${snapshot.counts.tipsterPicks} tipster picks — holding back, published snapshot is only ` +
+          `${Math.round(prevAgeMs / 60000)}m old (guard lifts once it's ${PUBLISH_GUARD_MAX_STALE_MS / 60000}m+ stale)`
+      );
+      process.exit(1);
+    }
     console.error(
       `[scrape-snapshot] only ${snapshot.matches.length} SG Pools fixtures but ` +
-        `${snapshot.counts.tipsterPicks} tipster picks — treating as a transient SG Pools failure, not publishing`
+        `${snapshot.counts.tipsterPicks} tipster picks — publishing anyway, published snapshot is ` +
+        `${prevAgeMs === Infinity ? 'unavailable' : `${Math.round(prevAgeMs / 60000)}m stale`}, ` +
+        'too long to keep withholding on a low count that may well be real'
     );
-    process.exit(1);
   }
 
   // ---- prediction history + accuracy grading + value-pick log(s) ----
