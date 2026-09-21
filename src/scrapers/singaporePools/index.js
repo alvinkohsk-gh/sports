@@ -5,17 +5,11 @@ const {
   parseAh,
   fetchSgPoolsAh,
   parseH1,
-  fetchSgPoolsH1,
   parseOe,
-  fetchSgPoolsOe,
   parseBtts,
-  fetchSgPoolsBtts,
   parseFirstGoal,
-  fetchSgPoolsFirstGoal,
   parseGoalHandicap,
-  fetchSgPoolsGoalHandicap,
   parseHandicap1X2,
-  fetchSgPoolsHandicap1X2,
 } = require('./odds');
 const {
   toFixture,
@@ -92,25 +86,28 @@ async function fetchOpenFixtures() {
 
   const fixtures = extractFixtures(rendered);
   // fixtures may already carry `odds: { oneX2, ou: null }` from the events
-  // payload (parsers.js). Add the O/U line — whatever point it's set at
-  // (1.5, 2.5, 3.5, ...) — from the in-page fetch (render.js); only if
-  // that came back empty do we make a bare server-side call as a fallback.
+  // payload (parsers.js). `rendered.attempted` (render.js) lists which of
+  // OU/AH/the 6 rotating markets this scrape actually fetched in-page —
+  // OU and AH are always in it (the proven-safe core, matching the
+  // pre-2026-09-12 baseline plus AH); the other 6 rotate two-per-batch to
+  // keep any one scrape's call count down (see render.js's throttle-
+  // history comment). A bare server-side fallback call is kept only for
+  // OU/AH, matching that same historical baseline — the 6 rotating
+  // markets get NO fallback at all: a market not in this scrape's batch
+  // just goes unpriced until its next cycle, rather than the fallback
+  // silently restoring full call volume (and the throttling it caused)
+  // every time the in-page fetch looks thin.
+  const attempted = new Set(rendered.attempted || ['ou', 'ah']);
   let ouById = rendered.ouEvents ? parseOu(rendered.ouEvents) : new Map();
-  if (ouById.size === 0) ouById = await fetchSgPoolsOu();
+  if (ouById.size === 0 && attempted.has('ou')) ouById = await fetchSgPoolsOu();
   let ahById = rendered.ahEvents ? parseAh(rendered.ahEvents) : new Map();
-  if (ahById.size === 0) ahById = await fetchSgPoolsAh();
-  let h1ById = rendered.h1Events ? parseH1(rendered.h1Events) : new Map();
-  if (h1ById.size === 0) h1ById = await fetchSgPoolsH1();
-  let oeById = rendered.oeEvents ? parseOe(rendered.oeEvents) : new Map();
-  if (oeById.size === 0) oeById = await fetchSgPoolsOe();
-  let bttsById = rendered.bttsEvents ? parseBtts(rendered.bttsEvents) : new Map();
-  if (bttsById.size === 0) bttsById = await fetchSgPoolsBtts();
-  let firstGoalById = rendered.firstGoalEvents ? parseFirstGoal(rendered.firstGoalEvents) : new Map();
-  if (firstGoalById.size === 0) firstGoalById = await fetchSgPoolsFirstGoal();
-  let goalHandicapById = rendered.goalHandicapEvents ? parseGoalHandicap(rendered.goalHandicapEvents) : new Map();
-  if (goalHandicapById.size === 0) goalHandicapById = await fetchSgPoolsGoalHandicap();
-  let handicap1x2ById = rendered.handicap1x2Events ? parseHandicap1X2(rendered.handicap1x2Events) : new Map();
-  if (handicap1x2ById.size === 0) handicap1x2ById = await fetchSgPoolsHandicap1X2();
+  if (ahById.size === 0 && attempted.has('ah')) ahById = await fetchSgPoolsAh();
+  const h1ById = rendered.h1Events ? parseH1(rendered.h1Events) : new Map();
+  const oeById = rendered.oeEvents ? parseOe(rendered.oeEvents) : new Map();
+  const bttsById = rendered.bttsEvents ? parseBtts(rendered.bttsEvents) : new Map();
+  const firstGoalById = rendered.firstGoalEvents ? parseFirstGoal(rendered.firstGoalEvents) : new Map();
+  const goalHandicapById = rendered.goalHandicapEvents ? parseGoalHandicap(rendered.goalHandicapEvents) : new Map();
+  const handicap1x2ById = rendered.handicap1x2Events ? parseHandicap1X2(rendered.handicap1x2Events) : new Map();
 
   // Attaches every {key: Map<sgpMatchId, odds>} entry in `maps` onto each
   // fixture's `odds`, tallying a per-key count. Shared between the
