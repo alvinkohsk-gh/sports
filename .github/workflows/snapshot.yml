@@ -6,16 +6,7 @@ name: Scrape tipster snapshot
 # that, so live user requests never wait on (or time out on) the scrape.
 on:
   schedule:
-    # Slowed from */5 to */20 on 2026-09-21: api.singaporepools.com has
-    # been serving a stuck near-empty fixture payload (exactly 6 events,
-    # every single scrape, unchanging) since ~19:00 UTC on 2026-09-20 —
-    # see "SG Pools: cut extra bet-type call volume to unblock the
-    # throttled scraper" for the call-volume half of this fix. That fix
-    # alone didn't clear the block in testing; cutting scrape frequency
-    # ~4x as well gives whatever's throttling/blocking this traffic more
-    # room to lift. Revert to */5 once scheduled runs are consistently
-    # getting a real fixture count again.
-    - cron: '*/20 * * * *' # every 20 min (GitHub may delay under load)
+    - cron: '*/5 * * * *' # every 5 min (GitHub may delay under load)
   workflow_dispatch:
     inputs:
       publish_debug:
