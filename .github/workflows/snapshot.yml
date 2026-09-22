@@ -85,7 +85,15 @@ jobs:
       - name: Publish snapshot + history + accuracy + value-picks to data-snapshot branch
         run: |
           set -euo pipefail
-          test -s snapshot.json
+          # scrape-snapshot.js now exits 0 (not 1) when it deliberately holds
+          # back a thin-but-plausibly-real snapshot rather than overwrite a
+          # still-fresh published one (see its publish guard) — that's not a
+          # failure, just nothing new to publish this run, so skip quietly
+          # instead of crashing on a snapshot.json that was never written.
+          if [ ! -s snapshot.json ]; then
+            echo "no snapshot.json written this run (scrape held back) — nothing to publish"
+            exit 0
+          fi
           work="$(mktemp -d)"
           cp snapshot.json "$work/"
           # history/accuracy/value-picks are best-effort — copy if the scrape wrote them
