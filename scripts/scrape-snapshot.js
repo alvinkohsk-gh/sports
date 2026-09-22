@@ -166,7 +166,12 @@ async function loadPublished(file, fallback) {
           `${snapshot.counts.tipsterPicks} tipster picks — holding back, published snapshot is only ` +
           `${Math.round(prevAgeMs / 60000)}m old (guard lifts once it's ${PUBLISH_GUARD_MAX_STALE_MS / 60000}m+ stale)`
       );
-      process.exit(1);
+      // Deliberately declining to publish a thinner-but-plausibly-real
+      // snapshot while a fresh one already exists isn't a failure — it's
+      // the guard doing its job. Exit 0 so the Actions run history only
+      // shows red for an actual problem (nothing scraped at all, a
+      // crash), not for this expected, self-resolving hold-back.
+      process.exit(0);
     }
     console.error(
       `[scrape-snapshot] only ${snapshot.matches.length} SG Pools fixtures but ` +
