@@ -5,8 +5,18 @@ name: Scrape tipster snapshot
 # raw.githubusercontent.com/<repo>/data-snapshot/snapshot.json and serves
 # that, so live user requests never wait on (or time out on) the scrape.
 on:
+  # GitHub's own scheduler for this workflow has been badly degraded since
+  # ~2026-08-26 (see github.com/orgs/community/discussions/207346 and
+  # /205984) — schedule events arrive hours late or not at all, sometimes
+  # for many hours at a stretch. Left in place below because it's free
+  # when it does fire, but treat it as a bonus, not the real trigger: an
+  # external scheduler now hits `workflow_dispatch` on this workflow
+  # roughly hourly to keep the published snapshot from going stale. If
+  # GitHub's scheduling reliability recovers, the schedule trigger below
+  # can go back to being the sole source of runs and the external
+  # dispatcher retired.
   schedule:
-    - cron: '*/5 * * * *' # every 5 min (GitHub may delay under load)
+    - cron: '*/5 * * * *' # every 5 min (GitHub may delay under load, or drop runs for hours at a time)
   workflow_dispatch:
     inputs:
       publish_debug:
