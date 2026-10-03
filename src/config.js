@@ -18,7 +18,7 @@ const SNAPSHOT_REPO = process.env.SNAPSHOT_REPO || 'alvinkohsk-gh/sports';
 const SNAPSHOT_BRANCH = process.env.SNAPSHOT_BRANCH || 'data-snapshot';
 const SNAPSHOT_FILE = process.env.SNAPSHOT_FILE || 'snapshot.json';
 const SNAPSHOT_URL = process.env.SNAPSHOT_URL || null;
-const SNAPSHOT_MAX_AGE_MS = Number(process.env.SNAPSHOT_MAX_AGE_MS || 45 * 60 * 1000);
+const SNAPSHOT_MAX_AGE_MS = Number(process.env.SNAPSHOT_MAX_AGE_MS || 3 * 60 * 60 * 1000);
 const SNAPSHOT_REFETCH_MS = Number(process.env.SNAPSHOT_REFETCH_MS || 90 * 1000);
 
 module.exports = {
